@@ -1,0 +1,11 @@
+string task_type       # GUIDE SERVE COLLECT COOK
+int64 visit_id
+int64 order_id
+int64 item_id
+int32 table_id
+string menu
+int32 priority
+---
+bool accepted
+string task_id
+string message

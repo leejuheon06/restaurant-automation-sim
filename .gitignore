@@ -1,0 +1,11 @@
+build/
+install/
+log/
+runs/
+__pycache__/
+*.pyc
+*.db
+# 외부 저장소 (deps.repos 로 받음)
+src/pinky_pro/
+src/mycobot_ros2/
+회의안건_*.pdf

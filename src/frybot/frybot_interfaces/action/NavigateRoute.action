@@ -1,0 +1,16 @@
+# Route execution on an AMR. mode=GUIDE is the "GuideGuest" behaviour (reverse driving + guest follow check).
+string task_id
+string robot_id
+int32 plan_version
+string mode            # NORMAL | GUIDE
+int64 visit_id         # guest group to keep in sight (GUIDE)
+frybot_interfaces/Waypoint[] route
+---
+bool success
+int32 plan_version
+int32 reached_index
+string reason          # OK PREEMPTED CANCELED GUEST_LOST E_STOP
+---
+int32 plan_version
+int32 reached_index
+string state           # ACCEPTED MOVING WAIT_GRANT PAUSED_GUEST ARRIVED

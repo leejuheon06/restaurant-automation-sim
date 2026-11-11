@@ -1,0 +1,9 @@
+repositories:
+  src/pinky_pro:
+    type: git
+    url: https://github.com/pinklab-art/pinky_pro.git
+    version: 014a09f
+  src/mycobot_ros2:
+    type: git
+    url: https://github.com/elephantrobotics/mycobot_ros2.git
+    version: d42ff61

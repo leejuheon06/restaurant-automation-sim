@@ -1,0 +1,7 @@
+int32 table_id
+string[] menu_codes    # FRIED SEASONED FRIED_RICE
+int32[] quantities
+---
+bool accepted
+int64 order_id
+string message

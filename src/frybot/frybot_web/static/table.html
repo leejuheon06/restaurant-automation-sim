@@ -1,0 +1,20 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>테이블 주문</title><link rel="stylesheet" href="/static/app.css"></head><body>
+<header><h1 id="title">FryBot · 테이블</h1><span id="st"></span><span class="sp"></span><a href="/">처음으로</a></header><main style="max-width:720px">
+<div class="card"><h2>메뉴</h2><div id="menu"></div><div class="row" style="margin-top:12px"><button class="primary" id="ob" onclick="confirmOrder()">주문 확인</button><span id="msg"></span></div>
+<div id="confirm" class="card" style="display:none;margin-top:12px;background:#fff7ed"></div></div>
+<div class="card"><h2>주문 진행 상태</h2><div id="orders" class="mute">주문 내역이 없습니다.</div></div>
+<div class="card"><button id="end" onclick="endUse()" disabled>이용 종료</button> <span class="mute">모든 음식이 전달된 뒤에 누를 수 있습니다.</span></div></main>
+<script src="/static/map.js"></script><script>
+const id=+new URLSearchParams(location.search).get('id')||1;title.textContent=`FryBot · ${id}번 테이블`;const qty={};let MENU={};
+function render(){menu.innerHTML=Object.entries(MENU).map(([k,m])=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee"><b>${m.name}</b>
+<div class="qty"><button onclick="ch('${k}',-1)">−</button><b>${qty[k]||0}</b><button onclick="ch('${k}',1)">＋</button></div></div>`).join('')}
+function ch(k,d){qty[k]=Math.max(0,Math.min(5,(qty[k]||0)+d));render();confirm.style.display='none'}
+function confirmOrder(){const it=Object.entries(qty).filter(e=>e[1]>0);if(!it.length){msg.textContent='메뉴를 선택해 주세요.';return}
+ confirm.style.display='block';confirm.innerHTML=`<b>${id}번 테이블 주문 확인</b><br>`+it.map(([k,q])=>`${MENU[k].name} × ${q}`).join('<br>')+`<div class="row" style="margin-top:8px"><button class="primary" onclick="order()">주문 확정</button><button onclick="confirm.style.display='none'">수정</button></div>`}
+async function order(){const r=await postJSON('/api/order',{table_id:id,items:Object.entries(qty).map(([menu,q])=>({menu,qty:q}))});msg.textContent=r.message;msg.style.color=r.ok?'#15803d':'#b91c1c';if(r.ok){for(const k in qty)qty[k]=0;render()}confirm.style.display='none'}
+async function endUse(){const r=await postJSON('/api/end_use',{table_id:id,source:'TABLET'});msg.textContent=r.message}
+async function tick(){const s=await getJSON('/api/state');const R=s.rest||{};if(!Object.keys(MENU).length&&R.menu){MENU=R.menu;render()}
+ const t=(R.tables||[]).find(t=>t.id===id)||{};st.innerHTML=tag(t.state||'?');end.disabled=!t.can_end;ob.disabled=!(t.state==='IN_USE'||t.state==='VACANT_CHECK');
+ const os=(R.orders||[]).filter(o=>o.table===id&&o.visit===t.visit);
+ orders.innerHTML=os.length?os.map(o=>`<div style="margin-bottom:8px"><b>주문 #${o.id}</b> ${tag(o.state)} <span class="mute">${ko(o.state)}</span><br>`+o.items.map(i=>`· ${i.name} — ${ko(i.state)}`).join('<br>')+'</div>').join(''):'주문 내역이 없습니다.'}
+setInterval(tick,1000);tick()</script></body></html>

@@ -1,0 +1,10 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>입구 접수</title><link rel="stylesheet" href="/static/app.css"></head><body>
+<header><h1>FryBot · 입구 접수</h1><span class="sp"></span><a href="/">처음으로</a></header><main style="max-width:720px">
+<div class="card center"><h2>어서 오세요! 몇 분이신가요?</h2><div class="row" style="justify-content:center" id="btns"></div>
+<p id="msg"></p><div class="big" id="tbl"></div></div>
+<div class="card"><h2>테이블 현황</h2><div id="tables" class="row"></div></div></main>
+<script src="/static/map.js"></script><script>
+for(let n=1;n<=6;n++)btns.innerHTML+=`<button class="primary" style="font-size:22px;width:74px;height:74px" onclick="go(${n})">${n}명</button>`;
+async function go(n){const r=await postJSON('/api/checkin',{party_size:n});msg.textContent=r.message;msg.style.color=r.ok?'#15803d':'#b91c1c';tbl.textContent=r.ok?`${r.table_id}번 테이블`:'';}
+async function tick(){const s=await getJSON('/api/state');tables.innerHTML=((s.rest||{}).tables||[]).map(t=>`<div>T${t.id} (${t.seats}인) ${tag(t.state)}</div>`).join('')}
+setInterval(tick,1000);tick()</script></body></html>

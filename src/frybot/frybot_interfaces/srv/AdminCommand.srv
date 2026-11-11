@@ -1,0 +1,6 @@
+string command         # ESTOP RESUME REASSIGN CANCEL_TASK RETRY_TASK SET_SCHEDULER SET_PLANNER SET_TABLE CANCEL_VISIT
+string target
+string arg
+---
+bool ok
+string message

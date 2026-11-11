@@ -1,0 +1,7 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FryBot</title><link rel="stylesheet" href="/static/app.css"></head><body>
+<header><h1>FryBot · 스마트 레스토랑</h1></header><main><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+<a class="card" href="/reception" style="text-decoration:none;color:inherit"><h2>입구 접수 태블릿</h2><div class="mute">인원 입력 → 테이블 배정 → AMR 안내</div></a>
+<div class="card"><h2>테이블 주문 태블릿</h2><div class="row" id="tl"></div></div>
+<a class="card" href="/admin" style="text-decoration:none;color:inherit"><h2>관리자 화면</h2><div class="mute">통합 관제 · 알고리즘 교체 · 오류 복구</div></a>
+<a class="card" id="sim" style="text-decoration:none;color:inherit"><h2>손님 시뮬레이터 (별도 UI)</h2><div class="mute">손님 입장 · 메뉴 선택 · 퇴장을 흉내 냅니다</div></a></div></main>
+<script>for(let i=1;i<=6;i++)tl.innerHTML+=`<a href="/table?id=${i}"><button>${i}번</button></a>`;sim.href=`http://${location.hostname}:8090/`</script></body></html>

@@ -1,0 +1,11 @@
+string task_id
+string arm_id
+string job             # LOAD UNLOAD COLLECT_DISHES RETURN_DISHES LOAD_BASKET DROP_IN_FRYER LIFT_DRAIN PLATE PLACE_HANDOFF TO_WOK ADD_SAUCE ADD_INGREDIENTS STIR_FRY
+float32 duration
+string params_json
+---
+bool success
+string reason
+---
+string phase
+float32 progress

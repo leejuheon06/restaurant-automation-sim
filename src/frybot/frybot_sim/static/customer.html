@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>손님 시뮬레이터</title>
+<script>window.FRYBOT_API='';document.write(`<link rel="stylesheet" href="http://${location.hostname}:8080/static/app.css">`)</script></head><body>
+<header style="background:#4c1d95"><h1>손님 시뮬레이터</h1><span class="mute" style="color:#ddd">시스템 아키텍처 밖의 시험용 UI — 손님의 행동을 대신 만들어 줍니다</span><span class="sp"></span><span id="msg" style="color:#fde68a"></span><a id="adm">관리자 화면 열기</a></header>
+<main><div class="grid" style="grid-template-columns:minmax(360px,2fr) minmax(480px,3fr)"><div>
+<div class="card"><h2>① 손님이 들어왔다</h2><div class="row" id="btns"></div><div class="mute" style="margin-top:8px">입구 접수 태블릿에 인원을 입력한 것과 같습니다. 5명 이상은 안내 불가로 처리됩니다.</div>
+ <label class="row" style="margin-top:10px"><input type="checkbox" id="auto"> 자동 손님 (착석하면 임의 메뉴 주문, 다 먹으면 퇴장)</label></div>
+<div class="card"><h2>② 손님별 행동</h2><div id="visits" class="mute">아직 손님이 없습니다.</div></div></div>
+<div><div class="card"><canvas id="cv" width="900"></canvas></div><div class="card"><h2>테이블</h2><div class="row" id="tables"></div></div></div></div></main>
+<script>document.write(`<script src="http://${location.hostname}:8080/static/map.js"><\/script>`)</script><script>
+adm.href=`http://${location.hostname}:8080/admin`;let L=null,MENU={};const qty={},autoDone={},eatAt={};
+for(let n=1;n<=6;n++)btns.innerHTML+=`<button class="primary" style="width:64px;height:56px;font-size:18px" onclick="enter(${n})">${n}명</button>`;
+function say(r){msg.textContent=(r.ok?'✔ ':'✖ ')+(r.message||'');setTimeout(()=>msg.textContent='',6000)}
+async function enter(n){say(await postJSON('/api/enter',{party_size:n}))}
+function ch(v,k,d){qty[v]=qty[v]||{};qty[v][k]=Math.max(0,Math.min(5,(qty[v][k]||0)+d));draw()}
+async function order(v,t){const items=Object.entries(qty[v]||{}).map(([menu,q])=>({menu,qty:q}));say(await postJSON('/api/order',{table_id:t,items}));qty[v]={}}
+async function leave(t,mode,v){say(await postJSON('/api/leave',{table_id:t,mode,visit_id:v}))}
+async function straggle(v,on){say(await postJSON('/api/straggle',{visit_id:v,on}))}
+let S={};function draw(){const R=S.rest||{},W=S.world||{};const tb={};(R.tables||[]).forEach(t=>tb[t.id]=t);
+ const vs=(R.visits||[]).filter(v=>!['LEFT','CANCELED','REJECTED'].includes(v.state)).reverse();
+ visits.innerHTML=vs.length?vs.map(v=>{const g=(W.guests||{})[v.id]||{};const t=tb[v.table]||{};const os=(R.orders||[]).filter(o=>o.visit===v.id);let h=`<div class="card" style="border-left:6px solid ${GC[v.id%GC.length]}"><div class="row"><b>손님${v.id}</b> ${v.party}명 · T${v.table} ${tag(v.state)} <span class="mute">${ko(v.state)}</span></div>`;
+  if(v.state==='GUIDING'||v.state==='GUIDE_FAILED')h+=`<div class="row" style="margin-top:8px">${g.straggle?`<button onclick="straggle(${v.id},false)">다시 따라가기</button>`:`<button onclick="straggle(${v.id},true)">멈춰 서기 (동행 이탈)</button>`}<span class="mute">로봇이 멈춰 기다리는지 확인 · 20초 넘으면 동행 실패 알림</span></div>`;
+  if(v.state==='SEATED'&&g.phase!=='GONE'){h+=`<div style="margin-top:8px"><b>③ 이 테이블에서 주문할 음식</b>`+Object.entries(MENU).map(([k,m])=>`<div class="row" style="justify-content:space-between;padding:4px 0"><span>${m.name}</span><div class="qty"><button class="sm" onclick="ch(${v.id},'${k}',-1)">−</button><b>${(qty[v.id]||{})[k]||0}</b><button class="sm" onclick="ch(${v.id},'${k}',1)">＋</button></div></div>`).join('')+`<button class="primary" onclick="order(${v.id},${v.table})">주문하기</button></div>`}
+  if(os.length)h+=`<div class="mute" style="margin-top:8px">`+os.map(o=>`주문 #${o.id} ${ko(o.state)}: `+o.items.map(i=>`${i.name}(${ko(i.state)})`).join(', ')).join('<br>')+`</div>`;
+  if(v.state==='SEATED'&&g.phase!=='GONE')h+=`<div class="row" style="margin-top:8px"><button ${t.can_end?'':'disabled'} onclick="leave(${v.table},'tablet',${v.id})">④ 이용 종료 버튼 누르고 나가기</button><button ${t.can_end?'':'disabled'} onclick="leave(${v.table},'walkout',${v.id})">그냥 나가기 (의자 QR로 판정)</button></div>`;
+  if(g.phase==='GONE')h+=`<div class="mute" style="margin-top:8px">자리를 떠남 — 천장 카메라가 빈 의자 QR을 확인하는 중…</div>`;return h+'</div>'}).join(''):'아직 손님이 없습니다.';
+ tables.innerHTML=(R.tables||[]).map(t=>`<div>T${t.id}(${t.seats}) ${tag(t.state)}</div>`).join('');drawMap(cv,L,S)}
+async function autoPlay(){const R=S.rest||{},W=S.world||{};const tb={};(R.tables||[]).forEach(t=>tb[t.id]=t);const keys=Object.keys(MENU);
+ for(const v of (R.visits||[])){if(v.state!=='SEATED'||((W.guests||{})[v.id]||{}).phase==='GONE')continue;const os=(R.orders||[]).filter(o=>o.visit===v.id);
+  if(!os.length&&!autoDone[v.id]){autoDone[v.id]=1;const items=[];for(let i=0;i<Math.max(1,Math.ceil(v.party/2));i++)items.push({menu:keys[Math.floor(Math.random()*keys.length)],qty:1});await postJSON('/api/order',{table_id:v.table,items})}
+  else if(os.length&&(tb[v.table]||{}).can_end){eatAt[v.id]=eatAt[v.id]||Date.now()+15000;if(Date.now()>eatAt[v.id]&&autoDone[v.id]<2){autoDone[v.id]=2;await leave(v.table,v.id%2?'tablet':'walkout',v.id)}}}}
+async function tick(){if(!L){try{L=await getJSON('/api/layout')}catch(e){}}try{S=await getJSON('/api/state')}catch(e){return}if(S.rest&&S.rest.menu)MENU=S.rest.menu;draw();if(auto.checked)autoPlay()}
+setInterval(tick,700);tick()</script></body></html>

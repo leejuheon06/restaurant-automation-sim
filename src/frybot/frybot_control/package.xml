@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>frybot_control</name>
+  <version>0.1.0</version>
+  <description>FryBot main server: Central Control + Task Manager (pluggable scheduler / path planner)</description>
+  <maintainer email="oneteam@example.com">OneTeam</maintainer>
+  <license>Apache-2.0</license>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>frybot_interfaces</exec_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

@@ -1,0 +1,29 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FryBot 관제</title><link rel="stylesheet" href="/static/app.css"></head><body>
+<header><h1>FryBot · 통합 관제</h1><span class="mute" id="run" style="color:#bbb"></span><span class="sp"></span><span id="msg" style="color:#fbbf24"></span><a href="/">처음으로</a></header>
+<main><div class="grid" style="grid-template-columns:minmax(520px,3fr) minmax(360px,2fr)">
+<div><div class="card"><canvas id="cv" width="1100"></canvas></div>
+ <div class="card"><h2>AMR 임무</h2><table id="tasks"></table></div>
+ <div class="card"><h2>주문 · 조리</h2><table id="orders"></table><div class="mute" id="cook" style="margin-top:8px"></div></div></div>
+<div><div class="card"><h2>알고리즘 (실행 중 교체)</h2>
+  <div class="row"><label>스케줄러 <select id="sch" onchange="adm('SET_SCHEDULER',this.value)"></select></label><label>경로 계획 <select id="pln" onchange="adm('SET_PLANNER',this.value)"></select></label></div>
+  <label class="row" style="margin-top:6px"><input type="checkbox" id="sb" onchange="adm('SET_STANDBY',this.checked?'on':'off')"> 대기 위치 사용 (한 대는 충전대, 나머지는 조리 구역 옆 대기)</label><div class="mute" id="algd" style="margin-top:6px"></div><table id="met" style="margin-top:8px"></table></div>
+ <div class="card"><h2>AMR</h2><table id="robots"></table></div>
+ <div class="card"><h2>테이블</h2><table id="tables"></table></div>
+ <div class="card"><h2>알림 · 오류</h2><table id="inc"></table></div></div></div></main>
+<script src="/static/map.js"></script><script>
+let L=null,filled=false;getJSON('/api/layout').then(l=>L=l);
+async function adm(command,target,arg){const r=await postJSON('/api/admin',{command,target,arg:arg||''});msg.textContent=(r.ok?'✔ ':'✖ ')+r.message;setTimeout(()=>msg.textContent='',5000)}
+const MK={grants:'통행 허가',blocked_wait:'점유 대기(초)',planned_wait:'계획 대기(초)',stalls:'정체 감지',replans:'재계획',retreats:'비켜서기',flips:'우선순위 교환',plan_fail:'계획 실패',plan_calls:'계획 호출',plan_ms:'계획 시간 합(ms)',tasks_done:'완료 임무'};
+async function tick(){const S=await getJSON('/api/state');const R=S.rest||{},F=S.fms||{};drawMap(cv,L,S);run.textContent=R.run_id||'';
+ const A=F.algorithms;if(A){if(!filled){sch.innerHTML=Object.keys(A.schedulers).map(k=>`<option>${k}</option>`).join('');pln.innerHTML=Object.keys(A.planners).map(k=>`<option>${k}</option>`).join('');filled=true}
+  sb.checked=!!A.standby;if(document.activeElement!==sch)sch.value=A.scheduler;if(document.activeElement!==pln)pln.value=A.planner;algd.innerHTML=`${A.schedulers[A.scheduler]}<br>${A.planners[A.planner]}`}
+ met.innerHTML=Object.entries(F.metrics||{}).map(([k,v])=>`<tr><th>${MK[k]||k}</th><td>${v}</td></tr>`).join('');
+ robots.innerHTML='<tr><th>ID</th><th>상태</th><th>임무</th><th>배터리</th><th>위치</th><th></th></tr>'+(F.robots||[]).map(r=>`<tr><td><b style="color:${RC[r.id]}">${r.id}</b></td><td>${tag(r.state)}${r.blocked_by?` <span class="mute">대기←${r.blocked_by}</span>`:''}</td><td>${r.task||'-'}</td><td>${r.battery}%${r.charging?' ⚡':''}</td><td class="mute">${r.heading?r.node+'→'+r.heading:r.node}</td>
+  <td>${r.state==='E_STOP'?`<button class="sm" onclick="adm('RESUME','${r.id}')">재개</button>`:`<button class="sm danger" onclick="adm('ESTOP','${r.id}','admin')">비상 정지</button>`}</td></tr>`).join('');
+ tasks.innerHTML='<tr><th>임무</th><th>유형</th><th>상태</th><th>AMR</th><th>대상</th><th>경과</th><th></th></tr>'+(F.tasks||[]).filter(t=>t.type!=='COOK').slice(-12).reverse().map(t=>`<tr><td>${t.id}</td><td>${t.type}</td><td>${tag(t.state)} <span class="mute">${t.reason||''}</span></td><td>${t.robot||'-'}</td><td>T${t.table}${t.menu?' · '+t.menu:''}</td><td>${t.age}s</td>
+  <td>${t.state==='SUSPENDED'?`<button class="sm" onclick="adm('RETRY_TASK','${t.id}')">재시도</button> <button class="sm" onclick="adm('REASSIGN','${t.id}')">재할당</button> <button class="sm danger" onclick="adm('CANCEL_TASK','${t.id}')">취소</button>`:(t.state==='PENDING'?`<button class="sm danger" onclick="adm('CANCEL_TASK','${t.id}')">취소</button>`:'')}</td></tr>`).join('');
+ orders.innerHTML='<tr><th>주문</th><th>테이블</th><th>상태</th><th>음식별 진행</th><th>경과</th></tr>'+(R.orders||[]).slice(-8).reverse().map(o=>`<tr><td>#${o.id}</td><td>T${o.table}</td><td>${tag(o.state)}</td><td>${o.items.map(i=>`${i.name}: ${ko(i.state)}`).join('<br>')}</td><td>${o.age}s</td></tr>`).join('');
+ const C=F.cooking||{};cook.innerHTML='조리 셀 — '+Object.entries(C.resources||{}).map(([k,v])=>`${k}: ${v||'비어 있음'}`).join(' · ')+' · 인계대 '+Object.entries(C.slots||{}).map(([k,v])=>`${k}=${v}`).join(', ')+'<br>'+(C.jobs||[]).map(j=>`${j.task} ${j.menu} → ${j.step}${j.retries?` (재튀김 ${j.retries})`:''}`).join(' / ');
+ tables.innerHTML='<tr><th>테이블</th><th>좌석</th><th>상태</th><th>손님</th><th></th></tr>'+(R.tables||[]).map(t=>`<tr><td>T${t.id}</td><td>${t.seats}</td><td>${tag(t.state)}</td><td>${t.visit||'-'}</td><td>${t.state==='IN_USE'||t.state==='VACANT_CHECK'?`<button class="sm" onclick="adm('END_USE',${t.id})">이용 종료</button>`:''}${t.state==='COLLECTING'?`<button class="sm" onclick="adm('SET_TABLE',${t.id},'AVAILABLE')">수동 가용</button>`:''}</td></tr>`).join('');
+ inc.innerHTML=(R.incidents||[]).length?'<tr><th>임무</th><th>장치</th><th>원인</th><th>처리</th></tr>'+R.incidents.slice().reverse().map(i=>`<tr><td>${i.task}</td><td>${i.robot||i.type}</td><td>${i.reason}</td><td>${i.resolved?tag(i.resolved):tag('SUSPENDED')}</td></tr>`).join(''):'<tr><td class="mute">알림 없음</td></tr>'}
+setInterval(tick,500);tick()</script></body></html>

@@ -1,0 +1,6 @@
+int32 party_size
+---
+bool accepted
+int64 visit_id
+int32 table_id
+string message
