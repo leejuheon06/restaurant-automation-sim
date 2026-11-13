@@ -33,6 +33,7 @@ class ReservationTable:
         self.res = {}        # node -> sorted list of (t0, t1, owner)
         self.pad = pad
         self.conflict = conflict or {}   # node -> nodes too close to be occupied at the same time
+        self.itineraries = []            # other robots' motion as [(node, time), ...] (for trajectory-based planners)
 
     def add(self, node, t0, t1, owner):
         for n in (node, *self.conflict.get(node, ())):
@@ -44,6 +45,7 @@ class ReservationTable:
     def copy(self):
         c = ReservationTable(self.pad, self.conflict)
         c.res = {k: list(v) for k, v in self.res.items()}
+        c.itineraries = list(self.itineraries)
         return c
 
     def add_plan(self, owner, steps, last_hold=INF):

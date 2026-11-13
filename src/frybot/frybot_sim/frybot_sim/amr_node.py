@@ -14,6 +14,7 @@ import rclpy
 from geometry_msgs.msg import TransformStamped, Twist
 from nav_msgs.msg import Odometry
 from nav2_msgs.action import NavigateToPose
+from nav2_msgs.msg import SpeedLimit
 from nav2_msgs.srv import ClearEntireCostmap
 from rclpy.action import ActionClient
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -50,8 +51,8 @@ class Amr(Node):
         self.follow_dist, self.resume_dist = p('follow_pause_dist', 0.30).value, p('follow_resume_dist', 0.22).value
         self.guest_timeout = p('guest_timeout', 20.0).value
         g = Graph()
-        idx = int(self.rid[-1]) - 1 if self.rid[-1].isdigit() else 0
-        self.home = g.pos(['CH1', 'CH2', 'CH3'][idx % 3])
+        self.home = g.nodes[g.home_of(self.rid)]
+        self.chargers = [g.nodes[n] for n in g.home_nodes]
         self.x, self.y, self.yaw = self.home[0], self.home[1], 0.0
         self.spawn = (self.x, self.y)
         self.battery, self.charging = p('battery', 100.0).value, False
@@ -68,9 +69,12 @@ class Amr(Node):
         self.pub_cmd = self.create_publisher(Twist, f'/{self.rid}/cmd_vel', 10)
         self.create_subscription(TrafficGrant, '/fms/traffic_grant', self._grant, QOS, callback_group=cb)
         self.create_subscription(String, '/sim/world_state', self._world, 10, callback_group=cb)
-        self.n2 = dict(key=None, state='', handle=None, t_fail=0.0, fails=0)
+        self.n2 = dict(key=None, state='', handle=None, t_fail=0.0, fails=0, fail_key=None, turning=None, direct=None, try_fk=None,
+                       try_t0=0.0, try_pos=(0.0, 0.0), goal_fk=None)
         if self.drive == 'nav2':
             self.nav2 = ActionClient(self, NavigateToPose, f'/{self.rid}/navigate_to_pose', callback_group=cb)
+            self.pub_limit = self.create_publisher(SpeedLimit, f'/{self.rid}/speed_limit', 10)
+            self._limit = None
             self.clear_local = self.create_client(ClearEntireCostmap, f'/{self.rid}/local_costmap/clear_entirely_local_costmap',
                                                   callback_group=cb)
         self.odom, self.have_truth = (0.0, 0.0, 0.0), False
@@ -136,6 +140,8 @@ class Amr(Node):
     def _navigate(self, gh):
         goal = gh.request
         route, pv, guide = goal.route, goal.plan_version, goal.mode == 'GUIDE'
+        yielding = goal.mode == 'YIELD'
+        rev, back_streak, yield_rev = {}, True, None   # segment index -> drive in reverse
         self.pv, self.task_id = pv, goal.task_id
         res = NavigateRoute.Result(plan_version=pv)
         reached = 0 if route and math.hypot(route[0].x - self.x, route[0].y - self.y) < 0.012 else -1
@@ -177,16 +183,36 @@ class Amr(Node):
                             return res
                         time.sleep(dt)
                         continue
+            if tgt not in rev:
+                # GUIDE: back up the whole guided leg, facing the guests.  YIELD: back out of the way into the side
+                # spot.  NORMAL: when a new plan starts by going back the way we came (paths crossed), back up those
+                # first segments instead of turning round in the one-robot-wide aisle.
+                err = abs(wrap(math.atan2(route[tgt].y - self.y, route[tgt].x - self.x) - self.yaw))
+                if math.hypot(route[tgt].x - self.x, route[tgt].y - self.y) < 0.05:
+                    rev[tgt] = err > math.pi / 2          # settling onto a node a few cm away: never turn round for it
+                elif guide and tgt > 0:
+                    rev[tgt] = True
+                elif yielding:
+                    if yield_rev is None:                 # the first real segment decides: back out if the spot is behind
+                        yield_rev = err > math.pi / 2
+                    rev[tgt] = yield_rev
+                else:
+                    rev[tgt] = back_streak and tgt <= 2 and err > 2.1
+                    back_streak = rev[tgt]
             self.nav_state = 'MOVING'
             if self.drive == 'nav2':
-                done = self._nav2_segment((pv, tgt), route[tgt].x, route[tgt].y)
+                self._set_speed_limit(self.guide_speed if guide and tgt > 0 else None)
+                done = self._nav2_segment((pv, tgt), route[tgt].x, route[tgt].y, rev[tgt])
             else:
-                done = self._step_toward(route[tgt].x, route[tgt].y, guide and tgt > 0, dt)
+                done = self._step_toward(route[tgt].x, route[tgt].y, rev[tgt], dt,
+                                         self.guide_speed if guide and tgt > 0 else self.speed)
             if done:
                 reached = self.reached = tgt
                 self._fb(gh, pv, reached, 'MOVING')
             time.sleep(dt)
         self._stop()
+        if self.drive == 'nav2':
+            self._set_speed_limit(None)
         self.nav_state = 'IDLE'
         res.success, res.reached_index, res.reason = True, reached, 'OK'
         gh.succeed()
@@ -195,11 +221,11 @@ class Amr(Node):
     def _fb(self, gh, pv, reached, state):
         gh.publish_feedback(NavigateRoute.Feedback(plan_version=pv, reached_index=reached, state=state))
 
-    def _step_toward(self, tx, ty, reverse, dt):
-        """Navigator: turn in place, then drive straight. reverse=True drives backwards (facing the guest)."""
+    def _step_toward(self, tx, ty, reverse, dt, v=None):
+        """Navigator: turn in place, then drive straight. reverse=True drives backwards (rear toward the target)."""
         dx, dy = tx - self.x, ty - self.y
         d = math.hypot(dx, dy)
-        v = self.guide_speed if reverse else self.speed
+        v = self.speed if v is None else v
         tol = 0.004 if self.drive == 'kinematic' else 0.015
         if d <= max(tol, v * dt if self.drive == 'kinematic' else 0):
             if self.drive == 'kinematic':
@@ -233,10 +259,59 @@ class Amr(Node):
             self._nav2_cancel()
 
     # ------------------------------------------------------------ Nav2 segment driving
-    def _nav2_segment(self, key, tx, ty):
-        """Drive to one granted roadmap node with Nav2. Returns True once the node is reached."""
+    def _set_speed_limit(self, v):
+        """Guiding is slower than normal driving: cap the Nav2 controller through its speed-limit topic."""
+        if v != self._limit:
+            self._limit = v
+            m = SpeedLimit()
+            m.header.stamp = self.get_clock().now().to_msg()
+            m.percentage, m.speed_limit = False, float(v or 0.0)      # 0 = no limit
+            self.pub_limit.publish(m)
+
+    def _nav2_segment(self, key, tx, ty, reverse=False):
+        """Drive to one granted roadmap node with Nav2. Returns True once the node is reached.
+        reverse=True: turn the rear toward the node, then let the controller (allow_reversing) back up to it."""
         n = self.n2
+        # Progress watch per target node (not per plan version: the Task Manager may re-send the same segment under
+        # a new version every few seconds, which used to reset the failure count so the fallback never triggered).
+        fk, now = (round(tx, 3), round(ty, 3)), time.time()
+        if n.get('try_fk') != fk or math.hypot(self.x - n['try_pos'][0], self.y - n['try_pos'][1]) > 0.02:
+            if n.get('try_fk') != fk and n.get('direct') != fk:
+                n['direct'] = None
+            n.update(try_fk=fk, try_t0=now, try_pos=(self.x, self.y))
+        elif now - n['try_t0'] > 15.0 and n.get('direct') != fk:
+            self.get_logger().warn(f'{self.rid}: no progress toward {fk} for 15 s under Nav2, driving it directly')
+            self._nav2_cancel()
+            n.update(direct=fk, fails=0)
+        if n.get('direct') == fk:                                   # Nav2 gave up on this segment: drive it directly
+            v = self.guide_speed if self._limit else self.speed
+            if self._step_toward(tx, ty, reverse, 0.05, v):
+                self.pub_cmd.publish(Twist())
+                n.update(key=None, state='', fails=0, direct=None, try_fk=None)
+                return True
+            return False
         if n['key'] != key:
+            # Turn toward the node before handing the segment to Nav2. Turning in place inside the controller makes
+            # the footprint corners sweep cells marked by the lidar (aisle walls, a robot on the neighbouring node),
+            # so RPP reports "collision ahead" and never finishes a U-turn after a replan sends the robot back.
+            d = math.hypot(tx - self.x, ty - self.y)
+            err = wrap(math.atan2(ty - self.y, tx - self.x) + (math.pi if reverse else 0.0) - self.yaw)
+            if d > 0.05 and abs(err) > (0.15 if n.get('turning') == key else 0.5):
+                n['turning'] = key
+                self.nav_state = 'TURN'
+                cmd = Twist()
+                cmd.angular.z = max(-1.5, min(1.5, 2.5 * err))
+                if abs(cmd.angular.z) < 0.4:
+                    cmd.angular.z = math.copysign(0.4, err)
+                self.pub_cmd.publish(cmd)
+                return False
+            if n.get('turning') == key:
+                n['turning'] = None
+                self.pub_cmd.publish(Twist())
+            if n['fails'] >= 3 and n.get('fail_key') == fk:
+                self.get_logger().warn(f'{self.rid}: Nav2 failed segment to {fk} {n["fails"]} times, driving it directly')
+                n.update(direct=fk, state='', fails=0)
+                return False
             if not self.nav2.server_is_ready():
                 self.nav_state = 'WAIT_NAV2'
                 return False
@@ -250,18 +325,19 @@ class Amr(Node):
             g.pose.header.frame_id = 'map'
             g.pose.header.stamp = self.get_clock().now().to_msg()
             g.pose.pose.position.x, g.pose.pose.position.y = float(tx), float(ty)
-            yaw = math.atan2(ty - self.y, tx - self.x)
+            yaw = math.atan2(ty - self.y, tx - self.x) + (math.pi if reverse else 0.0)
             g.pose.pose.orientation.z, g.pose.pose.orientation.w = math.sin(yaw / 2), math.cos(yaw / 2)
-            n.update(key=key, state='ACTIVE', handle=None)
+            n.update(key=key, state='ACTIVE', handle=None, goal_fk=fk)
             self.nav2.send_goal_async(g).add_done_callback(lambda f, key=key: self._nav2_accepted(f, key))
             return False
         if n['state'] == 'SUCCEEDED':
-            n.update(key=None, state='', fails=0)
+            n.update(key=None, state='', fails=0, fail_key=None, try_fk=None)
             return True
         if n['state'] == 'FAILED':
             if math.hypot(tx - self.x, ty - self.y) < 0.03:       # close enough: count the node as reached
-                n.update(key=None, state='', fails=0)
+                n.update(key=None, state='', fails=0, fail_key=None, try_fk=None)
                 return True
+            n['fail_key'] = fk
             n['key'] = None                                         # blocked (obstacle in the costmap): try again
             self.nav_state = 'NAV2_RETRY'
         return False
@@ -290,10 +366,14 @@ class Amr(Node):
         if fut.result().status == 4:                                # GoalStatus.STATUS_SUCCEEDED
             n['state'] = 'SUCCEEDED'
         else:
-            n.update(state='FAILED', t_fail=time.time(), fails=n['fails'] + 1)
+            fails = n['fails'] + 1 if n.get('fail_key') in (None, n.get('goal_fk')) else 1
+            n.update(state='FAILED', t_fail=time.time(), fails=fails)
 
     def _nav2_cancel(self):
         n = self.n2
+        if n.get('turning') is not None or n.get('direct') is not None:
+            self.pub_cmd.publish(Twist())
+            n['turning'] = None            # 'direct' stays: it belongs to the target node, not to this plan version
         if n['key'] is not None:
             if n['handle'] is not None:
                 n['handle'].cancel_goal_async()
@@ -318,8 +398,8 @@ class Amr(Node):
     # ------------------------------------------------------------ status / TF
     def _publish(self):
         now = self.get_clock().now().to_msg()
-        at_home = math.hypot(self.x - self.home[0], self.y - self.home[1]) < 0.02
-        self.charging = at_home and self.nav_state == 'IDLE'
+        on_charger = any(math.hypot(self.x - cx, self.y - cy) < 0.02 for cx, cy in self.chargers)
+        self.charging = on_charger and self.nav_state == 'IDLE'
         if self.charging:
             self.battery = min(100.0, self.battery + 0.05)
         else:

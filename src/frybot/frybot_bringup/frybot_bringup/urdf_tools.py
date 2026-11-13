@@ -25,7 +25,7 @@ def jetcobot_urdf(scale=1.0):
     return ET.tostring(root, encoding='unicode')
 
 
-def pinky_gz_urdf(rid, fortress=True):
+def pinky_gz_urdf(rid, fortress=False):
     """Pinky model for Gazebo with every topic / frame under the robot name."""
     urdf = pinky_urdf(namespace=rid + '/', is_sim=True)
     # the upstream xacro prefixes the <gazebo reference> link names, but the links themselves are not prefixed
@@ -33,4 +33,16 @@ def pinky_gz_urdf(rid, fortress=True):
     if fortress:                       # Fortress (ROS 2 Humble) still uses the ignition names
         urdf = urdf.replace('gz-sim-', 'ignition-gazebo-').replace('gz::sim::systems', 'ignition::gazebo::systems')
         urdf = urdf.replace('gz_frame_id', 'ignition_frame_id')
+    else:
+        # Harmonic's bridge no longer copies the pose name of /world/<w>/dynamic_pose/info into child_frame_id, so
+        # each robot publishes its own world pose (header child_frame_id = model name) on /model/<rid>/pose
+        urdf = urdf.replace('</robot>', '''  <gazebo>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose><publish_link_pose>false</publish_link_pose>
+      <publish_collision_pose>false</publish_collision_pose><publish_visual_pose>false</publish_visual_pose>
+      <publish_sensor_pose>false</publish_sensor_pose><publish_nested_model_pose>false</publish_nested_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg><update_frequency>50</update_frequency>
+    </plugin>
+  </gazebo>
+</robot>''', 1)
     return urdf

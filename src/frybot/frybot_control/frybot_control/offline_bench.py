@@ -2,7 +2,7 @@
 (no ROS, faster than real time) and prints one row per (scheduler, planner) pair for the same customer script.
 
     ros2 run frybot_control fleet_bench            # all combinations
-    ros2 run frybot_control fleet_bench --scenario rush --schedulers hungarian --planners sipp independent_astar
+    ros2 run frybot_control fleet_bench --scenario rush --schedulers min_cost --planners sipp independent_astar
 """
 import argparse
 import itertools
@@ -10,6 +10,7 @@ import math
 import statistics as st
 
 from .fleet_core import FleetCore, FleetIO
+from .layout import robot_ids
 from .restaurant import Restaurant, RestaurantIO
 from .planners import PLANNERS
 from .schedulers import SCHEDULERS
@@ -37,10 +38,11 @@ class SimRobot:
 
 
 class OfflineWorld(FleetIO, RestaurantIO):
-    def __init__(self, scheduler, planner, scenario, dt=0.1, speed=0.08, guide_speed=0.05, cook_scale=20.0, verbose=False, standby=True):
+    def __init__(self, scheduler, planner, scenario, dt=0.1, speed=0.08, guide_speed=0.05, cook_scale=20.0, verbose=False, standby=True,
+                 robots=3):
         self.dt, self.t, self.verbose = dt, 0.0, verbose
         self.speed, self.guide_speed = speed, guide_speed
-        self.core = FleetCore(self, scheduler=scheduler, planner=planner, speed=speed, guide_speed=guide_speed,
+        self.core = FleetCore(self, robot_ids=robot_ids(robots), scheduler=scheduler, planner=planner, speed=speed, guide_speed=guide_speed,
                               cook_time_scale=cook_scale, use_doneness=False, use_standby=standby)
         self.rest = Restaurant(self)
         self.bots = {r.id: SimRobot(r.id, r.x, r.y) for r in self.core.robots.values()}
@@ -158,13 +160,13 @@ class OfflineWorld(FleetIO, RestaurantIO):
                 and all(r.task is None and not r.route and not r.pending_goal for r in self.core.robots.values()))
 
 
-def run(scheduler, planner, scenario='normal', max_t=1500.0, verbose=False, standby=True, seed=0):
+def run(scheduler, planner, scenario='normal', max_t=1500.0, verbose=False, standby=True, seed=0, robots=3):
     import random
     random.seed(seed)
     script = SCENARIOS[scenario]
     if seed:                                          # same guests, arrival times shifted a little per seed
         script = sorted((max(0.0, a[0] + random.uniform(-4, 4)),) + a[1:] for a in script)
-    w = OfflineWorld(scheduler, planner, script, verbose=verbose, standby=standby)
+    w = OfflineWorld(scheduler, planner, script, verbose=verbose, standby=standby, robots=robots)
     while w.t < max_t and not (w.t > 5 and w.finished()):
         w.step()
     m, s = w.core.m, w.stats
@@ -190,13 +192,14 @@ def main():
     ap.add_argument('--planners', nargs='*', default=sorted(PLANNERS))
     ap.add_argument('--csv', default='')
     ap.add_argument('--seeds', type=int, default=1, help='runs per pair (arrival times jittered); values are means')
+    ap.add_argument('--robots', type=int, default=3, help='number of AMRs (pinky1..N)')
     ap.add_argument('--verbose', action='store_true')
     ap.add_argument('--no-standby', action='store_true', help='idle robots always return to their charger')
     a = ap.parse_args()
     rows = []
     for s in a.schedulers:
         for p in a.planners:
-            rs = [run(s, p, a.scenario, verbose=a.verbose, standby=not a.no_standby, seed=k) for k in range(a.seeds)]
+            rs = [run(s, p, a.scenario, verbose=a.verbose, standby=not a.no_standby, seed=k, robots=a.robots) for k in range(a.seeds)]
             row = dict(scheduler=s, planner=p, finished=f"{sum(r['finished'] for r in rs)}/{len(rs)}")
             for c in COLS[3:]:
                 vals = [r[c] for r in rs if r[c] == r[c]]

@@ -16,5 +16,6 @@ setup(
         'customer_ui = frybot_sim.customer_ui_node:main',
         'scenario = frybot_sim.scenario_runner:main',
         'gz_world = frybot_sim.gz_world_gen:main',
+        'nav2_watchdog = frybot_sim.nav2_watchdog:main',
     ]},
 )

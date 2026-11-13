@@ -1,6 +1,6 @@
 """Scripted guests for a repeatable full-service run (uses the guest simulator's HTTP API).
 
-    ros2 run frybot_sim scenario --scenario demo
+    ros2 run frybot_sim scenario --scenario demo      (demo | normal | rush | single)
 Guests enter on schedule, order after being seated, and leave when everything was delivered
 (odd visits press the tablet button, even visits just walk out -> chair QR path).
 """
@@ -14,6 +14,9 @@ SCENARIOS = {
     'rush': [(0, 2, [('FRIED_RICE', 1)]), (3, 4, [('FRIED_RICE', 2)]), (6, 2, [('FRIED', 1)]),
              (9, 4, [('FRIED_RICE', 1), ('SEASONED', 1)]), (12, 2, [('FRIED_RICE', 1)]), (15, 2, [('FRIED_RICE', 1)])],
     'single': [(0, 2, [('FRIED_RICE', 1)])],
+    # same guests as the offline benchmark's `normal`: five groups, 20-40 s apart
+    'normal': [(0, 2, [('FRIED', 1)]), (20, 4, [('FRIED_RICE', 2), ('SEASONED', 1)]), (45, 2, [('FRIED_RICE', 1)]),
+               (80, 3, [('FRIED', 1), ('FRIED_RICE', 1)]), (120, 2, [('SEASONED', 1)])],
 }
 
 
@@ -28,7 +31,8 @@ def main():
     ap.add_argument('--scenario', default='demo', choices=sorted(SCENARIOS))
     ap.add_argument('--ui', default='http://127.0.0.1:8090')
     ap.add_argument('--eat', type=float, default=12.0, help='seconds between last dish and leaving')
-    ap.add_argument('--timeout', type=float, default=900.0)
+    ap.add_argument('--timeout', type=float, default=2400.0,
+                    help='give up after this many seconds (normal takes 20-25 min in Gazebo with the GUI on)')
     a, _ = ap.parse_known_args()
     script = list(SCENARIOS[a.scenario])
     t0 = time.time()

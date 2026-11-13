@@ -9,3 +9,5 @@ __pycache__/
 src/pinky_pro/
 src/mycobot_ros2/
 회의안건_*.pdf
+# Gazebo 검증 실행의 콘솔 로그 원본 (용량이 커서 제외, 이벤트·시나리오 로그는 포함)
+docs/gz_validation/*.launch.log

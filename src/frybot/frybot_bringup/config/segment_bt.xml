@@ -1,6 +1,6 @@
 <!-- One granted roadmap segment: plan on the global costmap, follow with the controller, re-plan once a second.
      No spin / back-up recoveries: in the single-lane aisles the Task Manager resolves blockages, not the robot. -->
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <PipelineSequence name="SegmentWithReplanning">
       <RateController hz="1.0">

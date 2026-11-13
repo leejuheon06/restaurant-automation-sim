@@ -1,0 +1,13 @@
+hungarian_eta_rh__sipp__run1 nav2_active=3
+hungarian_eta_rh__sipp__run1 done elapsed=577
+rmf_task__rmf__run1 nav2_active=3
+rmf_task__rmf__run1 done elapsed=494
+hungarian_eta_rh__sipp__run2 nav2_active=3
+hungarian_eta_rh__sipp__run2 done elapsed=380
+rmf_task__rmf__run2 nav2_active=3
+rmf_task__rmf__run2 done elapsed=408
+hungarian_eta_rh__sipp__run3 nav2_active=3
+hungarian_eta_rh__sipp__run3 done elapsed=346
+rmf_task__rmf__run3 nav2_active=3
+rmf_task__rmf__run3 done elapsed=391
+ALL_DONE

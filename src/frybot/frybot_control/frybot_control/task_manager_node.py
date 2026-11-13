@@ -22,7 +22,7 @@ class TaskManager(Node, FleetIO):
         super().__init__('task_manager')
         p = self.declare_parameter
         self.robot_ids = p('robot_ids', ['pinky1', 'pinky2', 'pinky3']).value
-        self.core = FleetCore(self, robot_ids=self.robot_ids, scheduler=p('scheduler', 'hungarian').value,
+        self.core = FleetCore(self, robot_ids=self.robot_ids, scheduler=p('scheduler', 'min_cost_eta_rh').value,
                               planner=p('planner', 'sipp').value, speed=p('speed', 0.08).value,
                               guide_speed=p('guide_speed', 0.05).value, cook_time_scale=p('cook_time_scale', 20.0).value,
                               stall_timeout=p('stall_timeout', 3.0).value, use_doneness=p('use_doneness', True).value,

@@ -29,7 +29,7 @@ class CentralControl(Node, RestaurantIO):
         p = self.declare_parameter
         self.runlog = RunLogger(p('run_dir', '~/frybot_ws/runs').value, p('run_id', '').value or None,
                                 manifest=dict(scenario=p('scenario', 'interactive').value, map_version='frybot_200x100_v1',
-                                              robots=['pinky1', 'pinky2', 'pinky3'], simulation=True))
+                                              robots=list(p('robot_ids', ['pinky1', 'pinky2', 'pinky3']).value), simulation=True))
         self.store = Store(os.path.join(self.runlog.dir, 'frybot.db'))
         self.lock = threading.RLock()
         self.pending = []                       # SubmitTask requests waiting for the task manager

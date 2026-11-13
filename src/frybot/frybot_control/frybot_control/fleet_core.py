@@ -52,6 +52,7 @@ class Task:
     finished_at: float = 0.0
     reason: str = ''
     start_node: str = ''
+    rebalanced: int = 0             # times the rolling-horizon scheduler moved it to another robot
 
 
 @dataclass
@@ -87,6 +88,9 @@ class Robot:
     online: bool = False
     needs_replan: bool = False
     park: str = ''                  # where this robot waits when idle (charger or standby spot)
+    yield_to: str = ''              # robot we stepped aside for; we resume only once it has passed
+    yield_from: str = ''            # node we vacated for it
+    yield_until: float = 0.0        # give up waiting for it after this time
 
 
 class CookJob:
@@ -114,12 +118,12 @@ class FleetCore:
         self.plan_speed_factor = plan_speed_factor
         self.use_standby, self.standby_min_battery = use_standby, standby_min_battery
         self.scheduler = make_scheduler(scheduler)
+        self.scheduler.core = self
         self.planner = make_planner(planner)
         self.robots = {}
         self.locks = {}                      # node -> robot id
-        homes = ['CH1', 'CH2', 'CH3']
-        for i, rid in enumerate(robot_ids):
-            home = self.graph.resolve(homes[i % 3])
+        for rid in robot_ids:                 # any number of AMRs: the home spots come from the layout
+            home = self.graph.home_of(rid)
             r = Robot(rid, home, home, speed=speed)
             r.x, r.y = self.graph.nodes[home]
             r.held = {home}
@@ -144,6 +148,7 @@ class FleetCore:
     # ------------------------------------------------------------------ algorithms (hot swap)
     def set_scheduler(self, name):
         self.scheduler = make_scheduler(name)
+        self.scheduler.core = self
         self.io.log('SET_SCHEDULER', result=name)
 
     def set_planner(self, name):
@@ -169,9 +174,10 @@ class FleetCore:
         return t.id
 
     def _program(self, t):
-        tbl = f'T{t.table_id}'
+        tbl = f'T{t.table_id}:serve'                 # serving / collecting point(s) of the table
         if t.type == 'GUIDE':
-            return [('move', 'ENTRANCE', 'NORMAL'), ('event', 'AT_START'), ('move', tbl, 'GUIDE'), ('event', 'ARRIVED')]
+            return [('move', 'ENTRANCE', 'NORMAL'), ('event', 'AT_START'), ('move', f'T{t.table_id}:guide', 'GUIDE'),
+                    ('event', 'ARRIVED')]
         if t.type == 'SERVE':
             pickup = MENU[t.menu]['pickup']
             return [('move', pickup, 'NORMAL'), ('arm', 'LOAD', 3.0), ('event', 'LOADED'),
@@ -187,7 +193,7 @@ class FleetCore:
         self._last_tick = self.now = now
         self._schedule()
         for r in self.robots.values():
-            if r.needs_replan:
+            if r.needs_replan and not (r.pending_goal and not r.route and not self._yield_done(r)):
                 r.needs_replan = False
                 if (r.route or r.pending_goal) and not r.estop:
                     g, mode = (r.pending_goal[0], r.pending_goal[1]) if r.pending_goal else (r.goal, r.mode)
@@ -240,8 +246,11 @@ class FleetCore:
         if self.scheduler.rebalance and self.now - self._last_rebalance >= self.scheduler.rebalance_period:
             self._last_rebalance = self.now
             # not started = still driving to the first stop (no guest picked up, nothing loaded)
+            # A task may change hands at most twice, and not within 6 s of its last assignment: otherwise two robots
+            # can keep handing the same task to each other (each turns round, which flips the ETA comparison again).
             open_ = [t for t in self.tasks.values() if t.state == 'IN_PROGRESS' and t.type in AMR_TASKS and t.pi == 0
-                     and not t.carrying and not self.robots[t.robot_id].estop]
+                     and not t.carrying and not self.robots[t.robot_id].estop
+                     and t.rebalanced < 2 and self.now - t.assigned_at >= 6.0]
             if open_:
                 robots = free + [self.robots[t.robot_id] for t in open_]
                 # a robot that is released again plans from where it is now
@@ -255,6 +264,7 @@ class FleetCore:
                             old = self.robots[t.robot_id]
                             old.task = None
                             t.robot_id, t.state = '', 'PENDING'
+                            t.rebalanced += 1
                             self.m['reassign'] += 1
                             self.io.log('TASK_REBALANCE', task_id=t.id, robot_id=old.id, result=new[t.id].id,
                                         reason=f'gain={gain:.1f}')
@@ -298,8 +308,16 @@ class FleetCore:
                 t.pi += 1
                 continue
             if ph[0] == 'move':
+                if len(self.graph.table_nodes.get(ph[1], ())) > 1:      # table reachable from several sides
+                    ph = t.phases[t.pi] = ('move', self._table_side(r, ph[1]), ph[2])
                 goal = self.graph.resolve(ph[1])
-                if r.node == goal and not r.heading and not r.route:
+                if r.node == goal and not r.heading:
+                    # Already standing on the goal. A route may still be active (e.g. the robot was on its way home
+                    # and got this task while passing the node): drop it instead of planning a one-node route, whose
+                    # arrival is never reported (progress only counts indices above the current one).
+                    if r.route:
+                        self._stop_route(r)
+                    r.returning, r.pending_goal = False, None
                     t.pi += 1
                     continue
                 self._start_move(r, goal, ph[2])
@@ -310,12 +328,29 @@ class FleetCore:
                 self.io.log('ARM_START', task_id=t.id, robot_id=r.id, zone_id=r.node, result=ph[1])
                 return
 
+    def _table_side(self, r, table):
+        """Service node of a table that can be approached from several sides: the nearest one for this robot, with a
+        penalty when another robot stands on it / is heading for it. The choice is kept for the rest of the move."""
+        src = r.heading or r.node
+
+        def cost(n):
+            busy = any(o.id != r.id and (o.goal == n and (o.route or o.pending_goal) or o.node == n)
+                       for o in self.robots.values())
+            return self.graph.shortest_dist(src, n) + (0.6 if busy else 0.0)
+        return min(self.graph.table_nodes[table], key=cost)
+
     def _park_goal(self, r, force_home=False):
         """Where an idle robot waits. Chargers sit next to the entrance (guiding); the standby spots sit next to the
         cook zone (serving). Keep one robot on the entrance side, send the others to a free standby spot."""
+        others = [o for o in self.robots.values() if o.id != r.id and not o.estop]
+        if r.battery < self.standby_min_battery and r.home not in self.graph.home_nodes:
+            # an AMR without its own charger borrows a free one (nobody parked on it or heading for it)
+            used = {o.park for o in others} | {o.node for o in others}
+            free = [n for n in self.graph.home_nodes if n not in used and self._blocker(n, r.id) is None]
+            if free:
+                return min(free, key=lambda n: self.graph.shortest_dist(r.heading or r.node, n))
         if force_home or not self.use_standby or r.battery < self.standby_min_battery:
             return r.home
-        others = [o for o in self.robots.values() if o.id != r.id and not o.estop]
         entrance_side = sum(1 for o in others if o.task is None and (o.park or o.node) in self.graph.home_nodes)
         if entrance_side < 1:
             return r.home
@@ -350,14 +385,24 @@ class FleetCore:
             if optimistic and (o.route or o.pending_goal) and not o.estop:
                 for n in o.held:
                     tb.add(n, self.now, self.now + 5.0, o.id)
+                    tb.itineraries.append([(n, self.now), (n, self.now + 5.0)])
             elif o.route and self.planner.coordinated and o.route[0].arrive > 0:
                 rem = o.route[max(o.idx, 0):]
-                tb.add_plan(o.id, rem, last_hold=self._hold_estimate(o, at_goal=True))
+                hold = self._hold_estimate(o, at_goal=True)
+                tb.add_plan(o.id, rem, last_hold=hold)
                 for n in o.held:                       # what it physically occupies right now
                     tb.add(n, self.now, self.now + 1.5, o.id)
+                pts = [(rem[0].node, min(self.now, rem[0].depart))]
+                for i, st in enumerate(rem):
+                    if i:
+                        pts.append((st.node, st.arrive))
+                    pts.append((st.node, st.depart if i + 1 < len(rem) else st.arrive + hold))
+                tb.itineraries.append(pts)
             else:
+                hold = self._hold_estimate(o)
                 for n in o.held:
-                    tb.add(n, self.now, self.now + self._hold_estimate(o), o.id)
+                    tb.add(n, self.now, self.now + hold, o.id)
+                    tb.itineraries.append([(n, self.now), (n, self.now + hold)])
         return tb
 
     def _hold_estimate(self, o, at_goal=False):
@@ -412,7 +457,24 @@ class FleetCore:
         return True
 
     def _adopt(self, r, steps, goal, mode, replan=False):
+        same_kind = r.goal == goal and r.mode == mode
         r.goal, r.mode, r.pending_goal = goal, mode, None
+        if len(steps) == 1 and not r.heading and steps[0].node == r.node:
+            # start == goal: nothing to drive, so no progress report would ever come. Treat it as arrived now.
+            if r.route:
+                self._stop_route(r)
+            r.plan_version += 1
+            self._arrived(r)
+            return
+        if replan and r.route and r.heading and same_kind and not r.yield_to and steps[0].arrive > 0:
+            # The robot is between two nodes and the new plan visits the same nodes: only the timing changed. Keep the
+            # route and its version and take over the new times. Re-sending it restarts the robot's current segment,
+            # and a robot that is re-planned every few seconds (others keep changing plans) then never arrives.
+            k = r.idx + 1
+            if [s.node for s in r.route[k:]] == [s.node for s in steps]:
+                for old, new in zip(r.route[k:], steps):
+                    old.arrive, old.depart = new.arrive, new.depart
+                return
         r.plan_version += 1
         r.route, r.idx, r.granted = steps, -1 if r.heading else 0, 0
         r.wait_since, r.blocked_by = None, ''
@@ -457,7 +519,7 @@ class FleetCore:
     def _drive(self, r, dt):
         if r.estop:
             return
-        if r.pending_goal and self.now >= r.pending_goal[2]:
+        if r.pending_goal and self.now >= r.pending_goal[2] and self._yield_done(r):
             g, mode, _ = r.pending_goal
             self._start_move(r, g, mode, replan=True)
         if not r.route or r.idx < 0 or r.idx != r.granted:
@@ -523,6 +585,21 @@ class FleetCore:
         if mutual or o.estop:
             self._retreat(r, o)
 
+    def _yield_done(self, r):
+        """After stepping aside for robot `o`, stay out of the way until `o` has passed the node we vacated (or finished,
+        or 30 s went by). Resuming earlier puts us straight back in its way and the two keep swapping places."""
+        if not r.yield_to:
+            return True
+        o = self.robots.get(r.yield_to)
+        region = {r.yield_from} | self.graph.conflict.get(r.yield_from, set())
+        ahead = {st.node for st in o.route[max(o.idx, 0):]} if o and o.route else set()
+        passed = o is None or o.estop or (not o.route and not o.pending_goal) or \
+            (o.route is not None and o.node not in region and o.heading not in region and not (ahead & region))
+        if passed or self.now > r.yield_until:
+            r.yield_to = r.yield_from = ''
+            return True
+        return False
+
     def _rank(self, r):
         p = r.task.priority if r.task else 0
         return (p + (1 if r.task and r.task.carrying else 0), -int(r.id[-1]) if r.id[-1].isdigit() else 0)
@@ -530,7 +607,14 @@ class FleetCore:
     def _retreat(self, r, o, goal=None, mode=None):
         """Step aside so the other robot(s) can pass, then continue to the goal. Searches the free nodes around us and
         prefers a lay-by (비켜 서는 곳), then any node that is not on another robot's route."""
-        avoid = {s.node for x in self.robots.values() if x.id != r.id and x.route for s in x.route[max(x.idx, 0):]}
+        # keep clear of the others' remaining routes AND of every node too close to them: a side spot next to the
+        # aisle node the other robot needs (closer than SAFE_DIST) still blocks it, and the two would swap forever
+        avoid = set()
+        for x in self.robots.values():
+            if x.id != r.id and x.route:
+                for st in x.route[max(x.idx, 0):]:
+                    avoid.add(st.node)
+                    avoid |= self.graph.conflict[st.node]
         prev, order = {r.node: None}, [r.node]
         for u in order:                                   # BFS over nodes we could enter right now
             for n, _ in self.graph.adj[u]:
@@ -547,7 +631,25 @@ class FleetCore:
             while prev[n] is not None:
                 n, d = prev[n], d + 1
             return d
-        cands.sort(key=lambda n: (n in avoid, n not in self.graph.bay_nodes, depth(n)))
+        # The aisles are one robot wide, so the robot backs out of the way instead of turning round: prefer spots whose
+        # first step lies behind it (away from the robot it yields to), then the nearest, counting a lay-by / standby spot as two nodes closer.
+        pull_in = self.graph.bay_nodes | set(self.graph.standby_nodes)
+        hx, hy = math.cos(r.yaw), math.sin(r.yaw)
+        if o is not None:                                 # facing unknown / sideways: "behind" = away from the other robot
+            ox, oy = o.x - r.x, o.y - r.y
+            if ox * hx + oy * hy <= 0.0 and math.hypot(ox, oy) > 1e-6:
+                d = math.hypot(ox, oy)
+                hx, hy = ox / d, oy / d
+        x0, y0 = self.graph.nodes[r.node]
+
+        def behind(n):
+            first = n
+            while prev[first] is not None and prev[first] != r.node:
+                first = prev[first]
+            fx, fy = self.graph.nodes[first]
+            return (fx - x0) * hx + (fy - y0) * hy < 0.0
+        # a lay-by / standby spot is worth two extra nodes of backing up, no more: long reverse runs block the aisle
+        cands.sort(key=lambda n: (n in avoid, not behind(n), depth(n) + (0 if n in pull_in else 2), depth(n)))
         side = cands[0]
         path = [side]
         while prev[path[-1]] is not None:
@@ -570,7 +672,8 @@ class FleetCore:
         r.wait_since, r.blocked_by = None, ''
         r.pending_goal = (goal, mode, t + random.uniform(0.0, 3.0))
         r.goal = side
-        self.io.send_route(r.id, r.task.id if r.task else 'RETURN', r.plan_version, 'NORMAL', 0, r.route)
+        r.yield_to, r.yield_from, r.yield_until = (o.id if o else ''), r.node, t + 30.0
+        self.io.send_route(r.id, r.task.id if r.task else 'RETURN', r.plan_version, 'YIELD', 0, r.route)
         self.io.log('RETREAT', robot_id=r.id, zone_id=side, plan_version=r.plan_version,
                     reason=f'yield_to={o.id if o else "plan"}')
 

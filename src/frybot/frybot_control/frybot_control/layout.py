@@ -33,17 +33,46 @@ STANDBY = {'STANDBY_U': (150, 1, 164, 11), 'STANDBY_L': (150, 89, 164, 99)}
 BAY_NODES = {'BAY_U1': (86, 6), 'BAY_U2': (101, 6), 'BAY_L1': (86, 94), 'BAY_L2': (101, 94)}
 STANDBY_NODES = {'STANDBY_U': (157, 6), 'STANDBY_L': (157, 94)}
 CHARGERS = {'CH1': (0, 13, 12, 27), 'CH2': (0, 43, 12, 57), 'CH3': (0, 73, 12, 87)}
+# Home spot of AMR number i (0-based): the chargers first, then waiting spots without a charger. The fleet size is
+# a launch argument (robots:=N); to go beyond this list, add a charger / spot here (keep them SAFE_DIST apart).
+# The charger zone only fits three chargers 15.5 cm apart, so AMR 4.. wait in the lay-bys and charge at a free charger.
+HOME_SPOTS = ['CH1', 'CH2', 'CH3', 'BAY_U1', 'BAY_L1', 'BAY_U2', 'BAY_L2']
+MAX_ROBOTS = len(HOME_SPOTS)
 
-# table id: seats, seat zone (no-go for robots), table rect, chair rects, service node (cm)
+
+def robot_ids(n):
+    """['pinky1', ..., 'pinkyN'] - the one place the AMR naming lives."""
+    n = int(n)
+    if not 1 <= n <= MAX_ROBOTS:
+        raise ValueError(f'robots must be 1..{MAX_ROBOTS} (add home spots to layout.HOME_SPOTS for more)')
+    return [f'pinky{i + 1}' for i in range(n)]
+
+
+def robot_index(rid):
+    """0-based number of an AMR from its id ('pinky4' -> 3)."""
+    digits = ''.join(c for c in rid if c.isdigit())
+    return int(digits) - 1 if digits else 0
+
+# table id: seats, seat zone (no-go for robots), table rect, chair rects (cm), and the roadmap nodes used for it:
+#   guide = where the AMR stops when it brings guests to the table, serve = where it serves and collects dishes.
+# A table can have several of each (one per side); the Task Manager picks the quickest one for the robot.
+# The two 4-seat tables in the middle are turned 90 deg clockwise from the dimension sheet (long side along y, chairs
+# on the left and right) and are reached from the upper and the lower aisle. Points picked by the team on the map.
 TABLES = {
-    1: dict(seats=2, zone=(40, 0, 68, 12), table=(47, 0, 61, 12), chairs=[(40, 0, 47, 12), (61, 0, 68, 12)], service=(54, 24)),
-    2: dict(seats=2, zone=(120, 0, 148, 12), table=(127, 0, 141, 12), chairs=[(120, 0, 127, 12), (141, 0, 148, 12)], service=(134, 24)),
-    3: dict(seats=4, zone=(62, 36, 88, 64), table=(62, 43, 88, 57),
-            chairs=[(62, 36, 75, 43), (75, 36, 88, 43), (62, 57, 75, 64), (75, 57, 88, 64)], service=(50, 50)),
-    4: dict(seats=4, zone=(114, 36, 140, 64), table=(114, 43, 140, 57),
-            chairs=[(114, 36, 127, 43), (127, 36, 140, 43), (114, 57, 127, 64), (127, 57, 140, 64)], service=(150, 50)),
-    5: dict(seats=2, zone=(40, 88, 68, 100), table=(47, 88, 61, 100), chairs=[(40, 88, 47, 100), (61, 88, 68, 100)], service=(54, 76)),
-    6: dict(seats=2, zone=(120, 88, 148, 100), table=(127, 88, 141, 100), chairs=[(120, 88, 127, 100), (141, 88, 148, 100)], service=(134, 76)),
+    1: dict(seats=2, zone=(40, 0, 68, 12), table=(47, 0, 61, 12), chairs=[(40, 0, 47, 12), (61, 0, 68, 12)],
+            guide=[(54, 24)], serve=[(54, 24)]),
+    2: dict(seats=2, zone=(120, 0, 148, 12), table=(127, 0, 141, 12), chairs=[(120, 0, 127, 12), (141, 0, 148, 12)],
+            guide=[(134, 24)], serve=[(134, 24)]),
+    3: dict(seats=4, zone=(61, 37, 89, 63), table=(68, 37, 82, 63),
+            chairs=[(61, 37, 68, 50), (61, 50, 68, 63), (82, 37, 89, 50), (82, 50, 89, 63)],
+            guide=[(86, 24), (86, 76)], serve=[(70, 76), (70, 24)]),
+    4: dict(seats=4, zone=(113, 37, 141, 63), table=(120, 37, 134, 63),
+            chairs=[(113, 37, 120, 50), (113, 50, 120, 63), (134, 37, 141, 50), (134, 50, 141, 63)],
+            guide=[(134, 24), (134, 76)], serve=[(118, 24), (118, 76)]),
+    5: dict(seats=2, zone=(40, 88, 68, 100), table=(47, 88, 61, 100), chairs=[(40, 88, 47, 100), (61, 88, 68, 100)],
+            guide=[(54, 76)], serve=[(54, 76)]),
+    6: dict(seats=2, zone=(120, 88, 148, 100), table=(127, 88, 141, 100), chairs=[(120, 88, 127, 100), (141, 88, 148, 100)],
+            guide=[(134, 76)], serve=[(134, 76)]),
 }
 
 MENU = {
@@ -78,7 +107,10 @@ def build_roadmap():
     line([(x, 76) for x in xs])                                   # lower aisle
     line([(22, y) for y in (8, 24, 37, 50, 63, 76, 92)])          # charger-front aisle
     line([(38, y) for y in (24, 37, 50, 63, 76)])                 # gap left of table 3
-    line([(22, 50), (38, 50), (50, 50)])                          # T3 service point: 6 cm clear of the chairs
+    line([(22, 50), (38, 50), (50, 50)])                          # spur left of table 3
+    line([(38, 37), (50, 37), (54, 24)])                          # team-added shortcuts left of table 3 ...
+    line([(50, 37), (50, 50), (52, 62), (54, 76)])
+    line([(38, 63), (52, 62)])                                    # ... linking both aisles past the spur
     line([(101, y) for y in (24, 37, 50, 63, 76)])                # link aisle
     line([(150, y) for y in (24, 37, 50, 63, 76)])                # gap right of table 4
     line([(150, 50), (166, 50), (183, 50)])
@@ -95,7 +127,8 @@ def build_roadmap():
     alias = {'CH1': _nid(6, 20), 'CH2': _nid(6, 50), 'CH3': _nid(6, 80), 'ENTRANCE': _nid(22, 8),
              'FRY_PICKUP': _nid(183, 24), 'WOK_PICKUP': _nid(183, 76), 'DISH_RETURN': _nid(*DISH_RETURN_CM)}
     for tid, t in TABLES.items():
-        alias[f'T{tid}'] = _nid(*t['service'])
+        alias[f'T{tid}'] = alias[f'T{tid}:serve'] = _nid(*t['serve'][0])
+        alias[f'T{tid}:guide'] = _nid(*t['guide'][0])
     for k, v in {**BAY_NODES, **STANDBY_NODES}.items():
         alias[k] = _nid(*v)
     return nodes, e, alias
@@ -113,10 +146,20 @@ class Graph:
         # robots are bigger than the node spacing in places: nodes closer than this cannot be occupied together
         self.conflict = {n: {k for k in self.nodes if k != n and math.dist(self.nodes[n], self.nodes[k]) < SAFE_DIST}
                          for n in self.nodes}
+        # 'T3:guide' / 'T3:serve' -> nodes usable for that table (the middle 4-seat tables have two of each)
+        self.table_nodes = {f'T{tid}:{kind}': [_nid(*p) for p in t[kind]]
+                            for tid, t in TABLES.items() for kind in ('guide', 'serve')}
         self.bay_nodes = {self.alias[k] for k in BAY_NODES}
         self.standby_nodes = [self.alias[k] for k in STANDBY_NODES]
         self.home_nodes = {self.alias[k] for k in CHARGERS}
         self._sp = {}
+
+    def home_of(self, rid):
+        """Home node of an AMR (its charger, or a waiting spot for AMRs beyond the number of chargers)."""
+        i = robot_index(rid)
+        if not 0 <= i < len(HOME_SPOTS):
+            raise ValueError(f'no home spot for {rid}: add one to layout.HOME_SPOTS')
+        return self.alias[HOME_SPOTS[i]]
 
     def resolve(self, name):
         return self.alias.get(name, name)
@@ -169,10 +212,12 @@ def to_json():
         'chargers': {k: rect(v) for k, v in CHARGERS.items()},
         'bays': {k: rect(v) for k, v in BAYS.items()}, 'standby': {k: rect(v) for k, v in STANDBY.items()},
         'tables': {str(k): {'seats': t['seats'], 'zone': rect(t['zone']), 'table': rect(t['table']),
-                            'chairs': [rect(c) for c in t['chairs']], 'service': list(m(*t['service']))}
+                            'chairs': [rect(c) for c in t['chairs']], 'service': list(m(*t['serve'][0])),
+                            'guide': [list(m(*p)) for p in t['guide']], 'serve': [list(m(*p)) for p in t['serve']]}
                    for k, t in TABLES.items()},
         'menu': MENU,
         'nodes': {k: list(v) for k, v in g.nodes.items()}, 'edges': g.edges, 'alias': g.alias,
         'cook_arms': {k: {'pos': list(m(*v['pos_cm'])), 'label': v['label']} for k, v in COOK_ARMS.items()},
+        'max_robots': MAX_ROBOTS,
         'door': list(m(*ENTRANCE_DOOR_CM)), 'dish_return': list(m(*DISH_RETURN_CM)),
     }

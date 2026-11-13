@@ -1,6 +1,6 @@
 # frybot_ws
 
-다중 로봇 협업 스마트 레스토랑(FryBot) 시뮬레이션용 ROS 2 Humble 작업 공간입니다.
+다중 로봇 협업 스마트 레스토랑(FryBot) 시뮬레이션용 ROS 2 Jazzy (Gazebo Harmonic) 작업 공간입니다.
 사용법과 구조는 [src/frybot/README.md](src/frybot/README.md)에 있습니다.
 
 ## 받기

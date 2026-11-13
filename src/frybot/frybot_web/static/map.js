@@ -9,7 +9,8 @@ const KO={ASSIGNED:'테이블 배정',GUIDING:'안내 중',SEATED:'착석',LEFT:
  QUEUED:'조리 대기',COOKING:'조리 중',READY:'서빙 대기',SERVING:'서빙 중',DELIVERED:'전달 완료',ON_HOLD:'보류',ORDERED:'접수',COMPLETED:'전달 완료',
  AVAILABLE:'이용 가능',IN_USE:'이용 중',COLLECTING:'식기 회수 중',VACANT_CHECK:'빈자리 확인 중'};
 const ko=s=>KO[s]||s;
-const RC={pinky1:'#16a34a',pinky2:'#ea580c',pinky3:'#9333ea'};
+const RCB=['#16a34a','#ea580c','#9333ea','#0284c7','#db2777','#ca8a04','#0d9488'];
+const RC=new Proxy({},{get:(_,id)=>{const n=parseInt(String(id).replace(/\D/g,''))||1;return RCB[(n-1)%RCB.length];}});
 const GC=['#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
 function drawMap(cv,L,S){
   if(!L)return;const W=2.34,H=1.22,pad=0.08;const k=cv.width/(W+pad*2);cv.height=Math.round((H+pad*2)*k);

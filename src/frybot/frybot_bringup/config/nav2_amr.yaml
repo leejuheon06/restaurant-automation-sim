@@ -55,9 +55,12 @@ controller_server:
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 0.05
       regulated_linear_scaling_min_speed: 0.03
-      use_rotate_to_heading: true
+      # The AMR node turns the robot toward each node itself (front for forward driving, rear for reverse) before
+      # sending the goal, so the controller only drives. Reversing (guiding, yielding, backing out after a replan)
+      # follows the sign of the carrot in the robot frame; RPP does not allow it together with rotate-to-heading.
+      use_rotate_to_heading: false
       rotate_to_heading_min_angle: 0.4
-      allow_reversing: false
+      allow_reversing: true
       max_robot_pose_search_dist: 0.5
 
 local_costmap:
@@ -122,7 +125,7 @@ planner_server:
     expected_planner_frequency: 5.0
     planner_plugins: ["GridBased"]
     GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
+      plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.02
       use_astar: true
       allow_unknown: false

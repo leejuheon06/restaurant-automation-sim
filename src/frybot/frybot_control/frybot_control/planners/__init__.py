@@ -6,6 +6,10 @@ from .independent_astar import IndependentAStarPlanner
 from .cbs import CbsPlanner
 
 PLANNERS = {c.name: c for c in (SippPlanner, CbsPlanner, CooperativeAStarPlanner, IndependentAStarPlanner)}
+from . import rmf as _rmf
+if _rmf.available():          # Open-RMF back end: only when its helper has been built (see planners/rmf.py)
+    PLANNERS[_rmf.RmfPlanner.name] = _rmf.RmfPlanner
+    PLANNERS[_rmf.RmfNegotiationPlanner.name] = _rmf.RmfNegotiationPlanner
 DEFAULT_PLANNER = 'sipp'
 
 

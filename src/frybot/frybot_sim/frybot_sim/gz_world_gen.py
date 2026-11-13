@@ -15,7 +15,7 @@ def box(name, r, z0, h, rgba):
         <material><ambient>{c}</ambient><diffuse>{c}</diffuse></material></visual></link></model>'''
 
 
-def world_sdf():
+def world_sdf(fortress=False):
     lay = L.to_json()
     m = [box('wall_cook', lay['zones']['wall'], 0, 0.22, (0.15, 0.15, 0.15, 1)),
          box('wall_left', [-0.08, -0.08, -0.06, 1.08], 0, 0.22, (0.3, 0.3, 0.3, 1)),
@@ -27,13 +27,13 @@ def world_sdf():
         m.append(box(f'table_{tid}', t['table'], 0, 0.20, (0.55, 0.38, 0.28, 1)))
         for j, c in enumerate(t['chairs']):
             m.append(box(f'chair_{tid}_{j}', c, 0, 0.18, (0.95, 0.95, 0.95, 1)))
-    return f'''<?xml version="1.0"?>
+    sdf = f'''<?xml version="1.0"?>
 <sdf version="1.8"><world name="frybot_store">
   <physics name="1ms" type="ignored"><max_step_size>0.002</max_step_size><real_time_factor>1.0</real_time_factor></physics>
-  <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
-  <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
-  <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
-  <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors"><render_engine>ogre2</render_engine></plugin>
+  <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+  <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+  <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+  <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"><render_engine>ogre2</render_engine></plugin>
   <light type="directional" name="sun"><cast_shadows>false</cast_shadows><pose>0 0 10 0 0 0</pose>
     <diffuse>0.9 0.9 0.9 1</diffuse><direction>-0.3 0.2 -0.9</direction></light>
   <model name="floor"><static>true</static><link name="link">
@@ -43,6 +43,9 @@ def world_sdf():
   {''.join(m)}
 </world></sdf>
 '''
+    if fortress:                       # Fortress (ROS 2 Humble) still uses the ignition names
+        sdf = sdf.replace('gz-sim-', 'ignition-gazebo-').replace('gz::sim::systems', 'ignition::gazebo::systems')
+    return sdf
 
 
 def main():
