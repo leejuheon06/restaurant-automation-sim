@@ -13,6 +13,7 @@ import random
 import time
 from dataclasses import dataclass, field
 
+from . import device_state
 from .layout import Graph, MENU
 from .planners import make_planner, PLANNERS, PlanRequest, ReservationTable, Step, INF, DEFAULT_PLANNER
 from .schedulers import make_scheduler, SCHEDULERS, DEFAULT_SCHEDULER
@@ -964,6 +965,13 @@ class FleetCore:
             return 'STANDBY'
         return 'CHARGING' if r.charging else 'IDLE'
 
+    def _arm_job_of(self, arm):
+        """Arm job a cooking arm ('A' / 'B') is running right now, '' when it stands still."""
+        for j in self.cook_jobs:
+            if j.busy and j.pc < len(j.ops) and j.ops[j.pc][0] == 'arm' and j.ops[j.pc][1] == arm:
+                return j.ops[j.pc][2]
+        return ''
+
     def snapshot(self):
         return {
             'now': self.now,
@@ -971,6 +979,7 @@ class FleetCore:
                            'schedulers': {k: v.description for k, v in SCHEDULERS.items()},
                            'planners': {k: v.description for k, v in PLANNERS.items()}, 'standby': self.use_standby},
             'robots': [{'id': r.id, 'state': self.robot_state(r), 'node': r.node, 'heading': r.heading,
+                        'device': device_state.mobile_state(self.robot_state(r), r.online),
                         'x': r.x, 'y': r.y, 'yaw': r.yaw, 'battery': round(r.battery, 1), 'charging': r.charging,
                         'task': r.task.id if r.task else '', 'task_type': r.task.type if r.task else '',
                         'carrying': bool(r.task and r.task.carrying), 'plan_version': r.plan_version,
@@ -983,6 +992,7 @@ class FleetCore:
                       for t in list(self.tasks.values())[-40:]],
             'locks': dict(self.locks),
             'cooking': {'resources': dict(self.res_owner), 'slots': dict(self.slots),
+                        'arms': {f'cook_arm_{a.lower()}': device_state.arm_state(self._arm_job_of(a)) for a in 'AB'},
                         'jobs': [{'task': j.task.id, 'menu': j.task.menu, 'step': j.label, 'order': j.task.order_id,
                                   'retries': j.retries} for j in self.cook_jobs]},
             'metrics': {k: (round(v, 2) if isinstance(v, float) else v) for k, v in self.m.items()},

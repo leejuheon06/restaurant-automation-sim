@@ -6,6 +6,7 @@
   <maintainer email="oneteam@example.com">OneTeam</maintainer>
   <license>Apache-2.0</license>
   <exec_depend>frybot_control</exec_depend>
+  <exec_depend>frybot_mobile</exec_depend>
   <exec_depend>frybot_sim</exec_depend>
   <exec_depend>frybot_web</exec_depend>
   <exec_depend>pinky_description</exec_depend>

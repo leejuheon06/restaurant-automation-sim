@@ -4,6 +4,7 @@ async function getJSON(p){const r=await fetch(API+p);return r.json()}
 async function postJSON(p,b){const r=await fetch(p.startsWith('http')?p:API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
 const TAG={AVAILABLE:'t-ok',IDLE:'t-ok',STANDBY:'t-ok',CHARGING:'t-ok',DONE:'t-ok',COMPLETED:'t-ok',DELIVERED:'t-ok',SEATED:'t-blue',IN_USE:'t-blue',IN_PROGRESS:'t-blue',
  ASSIGNED:'t-warn',PENDING:'t-warn',COLLECTING:'t-warn',VACANT_CHECK:'t-warn',ON_HOLD:'t-bad',SUSPENDED:'t-bad',E_STOP:'t-bad',GUIDE_FAILED:'t-bad',REJECTED:'t-bad',CANCELED:'t-bad'};
+const dev=d=>d?`<span class="mute" title="${d.ko}${d.error&&d.error!=='NO_ERROR'?' · '+d.error:''}">${d.code} ${d.state}${d.error_code&&d.error_code!=='ERR_000'?' · '+d.error_code:''}</span>`:'';
 const tag=s=>`<span class="tag ${TAG[s]||'t-blue'}">${s}</span>`;
 const KO={ASSIGNED:'테이블 배정',GUIDING:'안내 중',SEATED:'착석',LEFT:'이용 종료',REJECTED:'안내 불가',GUIDE_FAILED:'동행 실패',CANCELED:'취소',
  QUEUED:'조리 대기',COOKING:'조리 중',READY:'서빙 대기',SERVING:'서빙 중',DELIVERED:'전달 완료',ON_HOLD:'보류',ORDERED:'접수',COMPLETED:'전달 완료',
@@ -36,10 +37,10 @@ function drawMap(cv,L,S){
     t.chairs.forEach((ch,j)=>rect(ch,j<free?'#fff':'#9ca3af','#888'));rect(t.table,tcol[st]||'#8b6a55');
     text(`T${id}`,(t.table[0]+t.table[2])/2,(t.table[1]+t.table[3])/2+0.0,12,'#fff');text(ko(st),(t.table[0]+t.table[2])/2,(t.table[1]+t.table[3])/2-0.04,9,'#fff')}
   const fms=S.fms||{};const slots=(fms.cooking||{}).slots||{};
-  [['FRY_PICKUP',0.76],['WOK_PICKUP',0.24]].forEach(([n,y])=>{for(let j=0;j<(slots[n]||0);j++){c.beginPath();c.arc(X(1.96),Y(y-0.05+0.05*j),5,0,7);c.fillStyle='#f59e0b';c.fill()}});
+  [['FRY_PICKUP','cook_arm_a'],['WOK_PICKUP','cook_arm_b']].forEach(([n,a])=>{const y=L.cook_arms[a].pos[1];for(let j=0;j<(slots[n]||0);j++){c.beginPath();c.arc(X(1.96),Y(y-0.05+0.05*j),5,0,7);c.fillStyle='#f59e0b';c.fill()}});
   const res=(fms.cooking||{}).resources||{};const jobs={};((fms.cooking||{}).jobs||[]).forEach(j=>jobs[j.task]=j);
   [['cook_arm_a','ARM_A'],['cook_arm_b','ARM_B']].forEach(([a,r])=>{const p=L.cook_arms[a].pos;c.beginPath();c.arc(X(p[0]),Y(p[1]),14,0,7);c.fillStyle=res[r]?'#fb923c':'#e5e7eb';c.fill();c.strokeStyle='#c2410c';c.stroke();
-    text(a.endsWith('a')?'팔A':'팔B',p[0],p[1]-0.012,10,'#7c2d12');const j=jobs[res[r]];text(j?j.step:'IDLE',p[0],p[1]-0.11,9,'#7c2d12')});
+    text(a.endsWith('a')?'팔A':'팔B',p[0],p[1]-0.012,10,'#7c2d12');const j=jobs[res[r]];const d=((fms.cooking||{}).arms||{})[a];text(d?d.state:(j?j.step:'IDLE'),p[0],p[1]-0.11,9,'#7c2d12')});
   for(const r of (fms.robots||[])){const col=RC[r.id]||'#555';
     if(r.route&&r.route.length){c.beginPath();c.moveTo(X(r.x),Y(r.y));r.route.forEach(n=>c.lineTo(X(L.nodes[n][0]),Y(L.nodes[n][1])));c.strokeStyle=col;c.lineWidth=3;c.globalAlpha=.45;c.stroke();c.globalAlpha=1}
     c.save();c.translate(X(r.x),Y(r.y));c.rotate(-r.yaw);c.fillStyle=r.state==='E_STOP'||r.state==='SUSPENDED'?'#b91c1c':col;c.fillRect(-0.06*k,-0.055*k,0.12*k,0.11*k);

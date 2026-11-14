@@ -1,9 +1,12 @@
-"""One simulated AMR (Pinky Pro + serving arm).  Components from the SW architecture:
-AMR Controller (NavigateRoute action, status), OneTeamNavigator (waypoint driving), Arm Controller (ArmJob action),
-Camera Streamer (UDP).
+"""FrybotMobile Controller: the software of one AMR (Pinky Pro + serving arm). Components from the SW architecture:
+FrybotMobile Controller (NavigateRoute action, status), FrybotNavigator client (one Nav2 goal per granted segment),
+FrybotMobile Arm Controller (ArmJob action), Camera Streamer (UDP).
   drive:=kinematic  moves the pose directly (lightweight simulation)
   drive:=nav2       every granted roadmap segment is a Nav2 NavigateToPose goal (global + local costmap, lidar)
   drive:=cmd_vel    straight-line cmd_vel/odom driving without costmaps (kept for comparison)
+  pose_source:=gz   pose from the simulator's true model pose; this node publishes map -> odom (simulation)
+  pose_source:=tf   pose from TF map -> base_frame, i.e. from AMCL (real robot); sends AMCL the initial pose
+The serving arm and the camera are still stand-ins (timed arm jobs, JSON "frames") in both cases.
 """
 import json
 import math
@@ -11,7 +14,7 @@ import threading
 import time
 
 import rclpy
-from geometry_msgs.msg import TransformStamped, Twist
+from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, Twist
 from nav_msgs.msg import Odometry
 from nav2_msgs.action import NavigateToPose
 from nav2_msgs.msg import SpeedLimit
@@ -21,11 +24,12 @@ from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
+from rclpy.time import Time
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import JointState
-from std_msgs.msg import String
+from std_msgs.msg import Float32, String
 from tf2_msgs.msg import TFMessage
-from tf2_ros import TransformBroadcaster
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener
 
 from frybot_control.layout import Graph
 from frybot_interfaces.action import ArmJob, NavigateRoute
@@ -48,6 +52,10 @@ class Amr(Node):
         self.speed, self.guide_speed = p('speed', 0.08).value, p('guide_speed', 0.05).value
         self.turn_rate = p('turn_rate', 2.5).value
         self.drive = p('drive', 'kinematic').value
+        self.pose_source = p('pose_source', 'gz').value
+        self.base_frame = p('base_frame', f'{self.rid}/base_footprint').value
+        battery_topic = p('battery_topic', '').value          # real Pinky: battery/percent (std_msgs/Float32)
+        self.real_battery = bool(battery_topic)
         self.follow_dist, self.resume_dist = p('follow_pause_dist', 0.30).value, p('follow_resume_dist', 0.22).value
         self.guest_timeout = p('guest_timeout', 20.0).value
         g = Graph()
@@ -78,8 +86,18 @@ class Amr(Node):
             self.clear_local = self.create_client(ClearEntireCostmap, f'/{self.rid}/local_costmap/clear_entirely_local_costmap',
                                                   callback_group=cb)
         self.odom, self.have_truth = (0.0, 0.0, 0.0), False
-        if self.drive in ('cmd_vel', 'nav2'):
+        if self.pose_source == 'tf':
+            self.tf_buf = Buffer()
+            self.tf_listener = TransformListener(self.tf_buf, self)
+            self.pub_init = self.create_publisher(PoseWithCovarianceStamped, f'/{self.rid}/initialpose', 1)
+            self.create_timer(0.05, self._tf_pose, callback_group=cb)
+            self.create_timer(2.0, self._initial_pose, callback_group=cb)
+        elif self.drive in ('cmd_vel', 'nav2'):
             self.create_subscription(TFMessage, '/gz/model_poses', self._gz_pose, 20, callback_group=cb)
+        if self.real_battery:
+            self.create_subscription(Float32, battery_topic, lambda m: setattr(self, 'battery', float(m.data)), 5,
+                                     callback_group=cb)
+        if self.drive in ('cmd_vel', 'nav2'):
             self.create_subscription(Odometry, f'/{self.rid}/odom', self._odom, 20, callback_group=cb)
         ActionServer(self, NavigateRoute, f'/{self.rid}/navigate_route', execute_callback=self._navigate,
                      goal_callback=lambda g_: GoalResponse.ACCEPT, cancel_callback=lambda g_: CancelResponse.ACCEPT,
@@ -87,7 +105,8 @@ class Amr(Node):
         ActionServer(self, ArmJob, f'/{self.rid}/arm_job', execute_callback=self._arm_job, callback_group=cb)
         if self.drive == 'nav2':
             self.create_timer(1.0, self._refresh_costmap, callback_group=cb)
-        self.cam = CameraStreamer(f'{self.rid}_front', port=p('ai_udp_port', 9100).value)
+        self.cam = CameraStreamer(f'{self.rid}_front', host=p('ai_host', '127.0.0.1').value,
+                                  port=p('ai_udp_port', 9100).value)
         self.create_timer(0.1, self._publish, callback_group=cb)
         self.create_timer(1.0, lambda: self.cam.send('amr', robot_id=self.rid, x=self.x, y=self.y), callback_group=cb)
         self.get_logger().info(f'{self.rid} ready at ({self.x:.2f}, {self.y:.2f}) drive={self.drive}')
@@ -106,8 +125,31 @@ class Amr(Node):
     def _odom(self, m):
         p, q = m.pose.pose.position, m.pose.pose.orientation
         self.odom = (p.x, p.y, math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z)))
-        if not self.have_truth:                    # no localisation source: dead reckoning from the start pose
+        if not self.have_truth and self.pose_source != 'tf':   # no localisation source: dead reckoning from the start
             self.x, self.y, self.yaw = self.spawn[0] + p.x, self.spawn[1] + p.y, self.odom[2]
+
+    def _tf_pose(self):
+        """Localisation on the real robot: map -> base_frame from TF (AMCL publishes map -> odom)."""
+        try:
+            t = self.tf_buf.lookup_transform('map', self.base_frame, Time()).transform
+        except Exception:                          # not localised yet
+            return
+        q = t.rotation
+        self.x, self.y = t.translation.x, t.translation.y
+        self.yaw = math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
+        self.have_truth = True
+
+    def _initial_pose(self):
+        """Until AMCL answers, tell it where the robot was put down: on its home spot, facing +x (into the store)."""
+        if self.have_truth:
+            return
+        m = PoseWithCovarianceStamped()
+        m.header.frame_id, m.header.stamp = 'map', self.get_clock().now().to_msg()
+        m.pose.pose.position.x, m.pose.pose.position.y = self.spawn
+        m.pose.pose.orientation.w = 1.0
+        m.pose.covariance[0] = m.pose.covariance[7] = 0.02 ** 2
+        m.pose.covariance[35] = 0.1 ** 2
+        self.pub_init.publish(m)
 
     def _gz_pose(self, m):
         """Localisation in Gazebo: the simulator's true model pose (stands in for AMCL). Wheel odometry alone drifts
@@ -400,7 +442,9 @@ class Amr(Node):
         now = self.get_clock().now().to_msg()
         on_charger = any(math.hypot(self.x - cx, self.y - cy) < 0.02 for cx, cy in self.chargers)
         self.charging = on_charger and self.nav_state == 'IDLE'
-        if self.charging:
+        if self.real_battery:
+            pass                                   # measured value from the robot
+        elif self.charging:
             self.battery = min(100.0, self.battery + 0.05)
         else:
             self.battery = max(0.0, self.battery - 0.0005)

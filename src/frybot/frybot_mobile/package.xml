@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>frybot_mobile</name>
+  <version>0.1.0</version>
+  <description>FrybotMobile (one AMR with its serving arm): FrybotMobile Controller (route execution, status),
+    FrybotNavigator (Nav2 parameters, behaviour tree and launch), serving-arm job server. The same package runs in
+    the simulation and on the real Pinky Pro.</description>
+  <maintainer email="oneteam@example.com">OneTeam</maintainer>
+  <license>Apache-2.0</license>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>frybot_interfaces</exec_depend>
+  <exec_depend>frybot_control</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>nav2_controller</exec_depend>
+  <exec_depend>nav2_planner</exec_depend>
+  <exec_depend>nav2_bt_navigator</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
+  <exec_depend>nav2_navfn_planner</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
+  <exec_depend>nav2_amcl</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

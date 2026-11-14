@@ -1,12 +1,18 @@
-# Nav2 parameters for one Pinky Pro in the FryBot store (tabletop scale: 2 m x 1 m map, 11 x 12 cm robot).
-# __NS__ is replaced by the robot name (pinky1 ...) when the launch file starts each stack.
+# FrybotNavigator: Nav2 parameters of one FrybotMobile (Pinky Pro) in the FryBot store
+# (tabletop scale: 2 m x 1 m map, 11 x 12 cm robot). Used unchanged in the simulation and on the real robot;
+# navigator.launch.py fills in the placeholders:
+#   __NS__   robot name (pinky1 ...), the namespace of every topic
+#   __FP__   TF frame prefix: "pinky1/" in the simulation (one shared /tf), "" on the robot (its own /pinkyN/tf)
+#   __SIM__  true with the simulator clock, false on the robot
+#   __BT__   path of segment_bt.xml
+#   __MAPTOPIC__  /map in the simulation, /pinkyN/map on the robot (its own map_server); __MAP__ = map yaml file
 # The central Task Manager decides the route and the order at shared nodes; Nav2 plans and drives each granted
 # segment on the costmaps (static map + inflation globally, lidar obstacles locally) and stops before a collision.
 bt_navigator:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: __SIM__
     global_frame: map
-    robot_base_frame: __NS__/base_footprint
+    robot_base_frame: __FP__base_footprint
     odom_topic: /__NS__/odom
     bt_loop_duration: 10
     default_server_timeout: 20
@@ -18,7 +24,7 @@ bt_navigator:
 
 controller_server:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: __SIM__
     controller_frequency: 20.0
     min_x_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
@@ -66,11 +72,11 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time: __SIM__
       update_frequency: 10.0
       publish_frequency: 2.0
-      global_frame: __NS__/odom
-      robot_base_frame: __NS__/base_footprint
+      global_frame: __FP__odom
+      robot_base_frame: __FP__base_footprint
       rolling_window: true
       width: 1
       height: 1
@@ -100,18 +106,18 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
-      use_sim_time: true
+      use_sim_time: __SIM__
       update_frequency: 1.0
       publish_frequency: 0.5
       global_frame: map
-      robot_base_frame: __NS__/base_footprint
+      robot_base_frame: __FP__base_footprint
       resolution: 0.01
       track_unknown_space: false
       footprint: "[[0.062, 0.057], [0.062, -0.057], [-0.062, -0.057], [-0.062, 0.057]]"
       plugins: ["static_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_topic: /map
+        map_topic: __MAPTOPIC__
         map_subscribe_transient_local: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -121,7 +127,7 @@ global_costmap:
 
 planner_server:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: __SIM__
     expected_planner_frequency: 5.0
     planner_plugins: ["GridBased"]
     GridBased:
@@ -129,3 +135,35 @@ planner_server:
       tolerance: 0.02
       use_astar: true
       allow_unknown: false
+
+# ---- localisation, real robot only (the simulation takes the pose from the simulator instead)
+map_server:
+  ros__parameters:
+    use_sim_time: __SIM__
+    yaml_filename: "__MAP__"
+
+amcl:
+  ros__parameters:
+    use_sim_time: __SIM__
+    base_frame_id: __FP__base_footprint
+    odom_frame_id: __FP__odom
+    global_frame_id: map
+    scan_topic: /__NS__/scan
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    laser_model_type: "likelihood_field"
+    laser_likelihood_max_dist: 0.5      # the whole map is 2 m x 1 m
+    laser_max_range: 3.0
+    laser_min_range: 0.06
+    max_beams: 90
+    min_particles: 500
+    max_particles: 2000
+    update_min_d: 0.02                  # 2 cm / 0.1 rad: the roadmap segments are only 10-30 cm long
+    update_min_a: 0.1
+    resample_interval: 1
+    transform_tolerance: 0.5
+    tf_broadcast: true
+    set_initial_pose: false             # the FrybotMobile Controller sends the initial pose (the robot's home spot)
