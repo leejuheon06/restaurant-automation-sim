@@ -13,7 +13,7 @@ from sensor_msgs.msg import JointState
 
 from frybot_interfaces.action import ArmJob
 
-from .arm_common import JOINTS, REST, CameraStreamer, arm_pose
+from frybot_mobile.arm_common import JOINTS, REST, CameraStreamer, arm_pose
 
 
 class CookArm(Node):

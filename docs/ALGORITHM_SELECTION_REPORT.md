@@ -1,5 +1,7 @@
 # 알고리즘 조합 선정 보고서
 
+> **배치 변경 (2026-11-14):** 이 문서의 수치는 Confluence 최신 맵(테이블 번호·12×12 크기·통로 32 cm·테이블 앞 정차 위치)을 반영하기 전 배치 기준입니다. 새 배치로는 기본 조합만 다시 확인했습니다([TROUBLESHOOTING.md](TROUBLESHOOTING.md)의 "Confluence 반영" 참고).
+
 > **이름 변경 (2026-11-13):** 배정 스케줄러 `min_cost`, `min_cost_eta`, `min_cost_eta_rh`는 이전에 `hungarian`, `hungarian_eta`, `hungarian_eta_rh`라고 불렀습니다. 이 스케줄러들은 배정 문제의 최적해를 구할 뿐 헝가리안 방법(Kuhn 1955)을 구현하지 않으므로 이름을 바꿨습니다. 알고리즘과 수치는 그대로이며, 원시 기록(CSV, Gazebo 로그)에는 옛 이름이 남아 있습니다.
 
 - 작성일: 2026-11-12

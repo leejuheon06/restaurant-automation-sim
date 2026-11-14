@@ -12,5 +12,6 @@ setup(
         'task_manager = frybot_control.task_manager_node:main',
         'analyze_run = frybot_control.analyze:main',
         'fleet_bench = frybot_control.offline_bench:main',
+        'export_map = frybot_control.store_map:main',
     ]},
 )

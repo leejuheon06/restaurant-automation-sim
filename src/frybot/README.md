@@ -32,7 +32,8 @@ AMR 대수는 `robots:=N`(기본 3, 최대 7)으로 정합니다. 이름은 `pin
 | `frybot_interfaces` | — | `NavigateRoute`(mode=GUIDE가 GuideGuest), `ArmJob` 액션, 서비스, 메시지 |
 | `frybot_control` | Central Control, Task Manager, DB | 식당 상태(State Diagram v4), 임무 배정, 경로 계획, 통행 허가, 조리 셀 조율, 실행 로그 |
 | `frybot_web` | Web Service | HTTP ↔ ROS 2 다리. 상태를 갖지 않음 |
-| `frybot_sim` | AMR Controller, OneTeamNavigator, Arm Controller, Camera Streamer, AI Server | Pinky Pro 3대, 서빙 팔, 조리 팔 A/B, AI 서버(UDP 입력 → HTTP 결과), 매장·손님 |
+| `frybot_mobile` | FrybotMobile Controller, FrybotNavigator, FrybotMobile Arm Controller, Camera Streamer | AMR 한 대의 소프트웨어. 구간 주행·상태 보고, Nav2 설정(`config/nav2_store.yaml`)과 런치. 시뮬레이션과 실제 Pinky에서 같은 코드를 씀([실기기 가이드](../../docs/REAL_ROBOT_GUIDE.md)) |
+| `frybot_sim` | FrybotArm Controller, AI Server (대역) | 조리 팔 A/B, AI 서버(UDP 입력 → HTTP 결과), 매장·손님, 시나리오, Gazebo 월드 |
 | `frybot_bringup` | — | 런치, RViz 설정, URDF 조합 |
 | `pinky_pro`, `mycobot_ros2` | — | 외부 저장소. `pinky_description`, `mycobot_description`(JetCobot 280 = myCobot 280 Pi)만 사용 |
 
@@ -79,7 +80,7 @@ Open-RMF 비교용 플래너 `rmf`(경로 계획), `rmf_nego`(경로 계획 + �
 - 관제(Task Manager)가 경로와 공유 구간의 통과 순서를 정하고, AMR 노드는 허가받은 구간마다 Nav2 `NavigateToPose`를 보냅니다.
 - 로봇마다 `planner_server`(NavFn, 전역 costmap = 매장 맵 + inflation), `controller_server`(Regulated Pure Pursuit, 지역 costmap = 라이다 + inflation, 충돌 예측 시 정지), `bt_navigator`(구간용 BT: 경로 계산 → 추종, 회복 동작 없음)를 네임스페이스로 띄웁니다. 설정은 `frybot_bringup/config/nav2_amr.yaml`.
 - `drive:=cmd_vel`은 costmap 없는 예전 직선 주행입니다(비교용).
-- 위치 추정은 AMCL 대신 Gazebo의 실제 모델 자세로 map→odom을 보정합니다. 바퀴 오도메트리만 쓰면 바퀴 미끄러짐으로 1 m 넘게 어긋났습니다. 실기에서는 AMCL 등으로 바꿔야 합니다.
+- 시뮬레이션의 위치 추정은 AMCL 대신 Gazebo의 실제 모델 자세로 map→odom을 보정합니다(`pose_source:=gz`). 바퀴 오도메트리만 쓰면 바퀴 미끄러짐으로 1 m 넘게 어긋났습니다. 실제 로봇은 `pose_source:=tf`로 AMCL 위치를 씁니다.
 - Gazebo 라이다가 주행 중 간헐적으로 무효값만 내보내, 지역 costmap을 1초마다 비우고 최신 스캔으로 다시 채웁니다.
 - 손님 안내는 후진 주행입니다(로봇이 손님을 바라보며 안내 속도 0.05 m/s로 후진, Nav2에서는 `speed_limit` 토픽으로 제한).
 - 통로가 로봇 한 대 폭이라 제자리 U턴 대신 후진합니다. 경로가 엇갈려 양보(`RETREAT`)할 때는 로봇 뒤쪽의 비켜 서는 곳·대기 위치를 우선 골라 `mode=YIELD`로 후진해 들어가고, 재계획된 경로가 왔던 길로 되돌아가면 처음 1~2구간을 후진합니다.

@@ -14,5 +14,6 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>frybot_interfaces</exec_depend>
   <exec_depend>frybot_control</exec_depend>
+  <exec_depend>frybot_mobile</exec_depend>
   <export><build_type>ament_python</build_type></export>
 </package>

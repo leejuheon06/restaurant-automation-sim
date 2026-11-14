@@ -23,6 +23,7 @@ from launch_ros.actions import Node
 
 from frybot_bringup.urdf_tools import pinky_gz_urdf
 from frybot_control.layout import Graph, robot_ids
+from frybot_mobile.navigator import navigator_nodes
 from frybot_sim.gz_world_gen import world_sdf
 
 
@@ -65,8 +66,6 @@ def setup(context):
                            ([f'/tf@tf2_msgs/msg/TFMessage[{gm}.Pose_V'] if nav2 else []),
                  remappings=[('/world/frybot_store/dynamic_pose/info', '/gz/model_poses')])]
     g = Graph()
-    params_src = open(os.path.join(share, 'config', 'nav2_amr.yaml')).read()
-    bt = os.path.join(share, 'config', 'segment_bt.xml')
     for i, rid in enumerate(ROBOTS):
         path = os.path.join(tmp, rid + '.urdf')
         open(path, 'w').write(pinky_gz_urdf(rid, fortress))
@@ -87,20 +86,10 @@ def setup(context):
         ]
         if not nav2:
             continue
-        pfile = os.path.join(tmp, rid + '_nav2.yaml')
-        body = params_src.replace('__NS__', rid).replace('__BT__', bt)
-        # the nodes run in the robot's namespace, so the parameter file needs the namespace as its root key
-        open(pfile, 'w').write(rid + ':\n' + ''.join('  ' + ln if ln.strip() else ln for ln in body.splitlines(True)))
-        # localisation (map -> odom) is published by the AMR node from the simulator's true pose
-        # start the three Nav2 stacks a few seconds apart: brought up together, lifecycle transitions time out
-        acts.append(TimerAction(period=15.0 + 7.0 * i, actions=[
-            Node(package='nav2_controller', executable='controller_server', namespace=rid, output='screen', parameters=[pfile]),
-            Node(package='nav2_planner', executable='planner_server', namespace=rid, output='screen', parameters=[pfile]),
-            Node(package='nav2_bt_navigator', executable='bt_navigator', namespace=rid, output='screen', parameters=[pfile]),
-            Node(package='nav2_lifecycle_manager', executable='lifecycle_manager', name='lifecycle_manager', namespace=rid,
-                 output='screen', parameters=[{'use_sim_time': True, 'autostart': True, 'bond_timeout': 0.0,
-                                               'node_names': ['controller_server', 'planner_server', 'bt_navigator']}]),
-        ]))
+        # FrybotNavigator of this robot (frybot_mobile: config/nav2_store.yaml). Localisation (map -> odom) comes from
+        # the FrybotMobile Controller, which reads the simulator's true pose.
+        # Start the Nav2 stacks a few seconds apart: brought up together, lifecycle transitions time out.
+        acts.append(TimerAction(period=15.0 + 7.0 * i, actions=navigator_nodes(rid)))
     if nav2:      # a lost lifecycle response at start-up leaves a robot without Nav2: check and restart it
         acts.append(Node(package='frybot_sim', executable='nav2_watchdog', output='screen',
                          parameters=[{'robot_ids': ROBOTS}]))

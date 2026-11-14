@@ -22,8 +22,81 @@ from frybot_control.layout import COOK_ARMS, m, robot_ids
 ARM_SCALE = 0.3
 
 
-def rviz_config(robots):
-    """RViz config with one robot + serving-arm display per AMR (the file on disk holds pinky1's as the template)."""
+def _nav2_displays(rid, show_global):
+    """RViz group with what one robot's Nav2 sees and does: costmaps, footprint, lidar scan and the planned path."""
+    def cmap(name, topic, on, alpha):
+        return f"""        - Class: rviz_default_plugins/Map
+          Name: {name}
+          Enabled: {'true' if on else 'false'}
+          Alpha: {alpha}
+          Color Scheme: costmap
+          Draw Behind: false
+          Topic:
+            Depth: 1
+            Durability Policy: Transient Local
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: {topic}
+          Update Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: {topic}_updates
+          Use Timestamp: false
+          Value: {'true' if on else 'false'}
+"""
+    return f"""rviz_common/Group
+      Name: Nav2 {rid}
+      Enabled: true
+      Displays:
+{cmap('local costmap (lidar)', f'/{rid}/local_costmap/costmap', True, 0.6)}{cmap('global costmap (map)', f'/{rid}/global_costmap/costmap', show_global, 0.35)}        - Class: rviz_default_plugins/Polygon
+          Name: footprint
+          Enabled: true
+          Alpha: 1
+          Color: 25; 25; 255
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /{rid}/local_costmap/published_footprint
+          Value: true
+        - Class: rviz_default_plugins/LaserScan
+          Name: scan
+          Enabled: true
+          Alpha: 1
+          Color: 255; 0; 0
+          Color Transformer: FlatColor
+          Size (Pixels): 3
+          Style: Points
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Best Effort
+            Value: /{rid}/scan
+          Value: true
+        - Class: rviz_default_plugins/Path
+          Name: Nav2 plan
+          Enabled: true
+          Alpha: 1
+          Color: 255; 0; 255
+          Line Style: Billboards
+          Line Width: 0.006
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /{rid}/plan
+          Value: true
+"""
+
+
+def rviz_config(robots, nav2=False):
+    """RViz config with one robot + serving-arm display per AMR (the file on disk holds pinky1's as the template).
+    With Nav2 driving, a 'Nav2 <robot>' group per AMR shows its costmaps, footprint, scan and plan."""
     src = open(os.path.join(get_package_share_directory('frybot_bringup'), 'rviz', 'frybot.rviz')).read()
     blocks = src.split('    - Class: ')
     out, base, arm = [], None, None
@@ -39,6 +112,8 @@ def rviz_config(robots):
         else:
             out.append(b)
     amr = [base.replace('pinky1', r) for r in robots] + [arm.replace('pinky1', r) for r in robots]
+    if nav2:
+        amr += [_nav2_displays(r, i == 0) for i, r in enumerate(robots)]
     i = out.index('@AMR@')
     out[i:i + 1] = amr
     path = os.path.join(tempfile.mkdtemp(prefix='frybot_rviz_'), 'frybot.rviz')
@@ -73,7 +148,7 @@ def setup(context):
     arm_small, arm_full = jetcobot_urdf(ARM_SCALE), jetcobot_urdf(1.0)
     for rid in ROBOTS:
         nodes += [
-            Node(package='frybot_sim', executable='amr', name='amr', namespace=rid, output='screen',
+            Node(package='frybot_mobile', executable='mobile_controller', name='amr', namespace=rid, output='screen',
                  parameters=[{'robot_id': rid, 'drive': drive, 'speed': speed, 'guide_speed': guide}, st]),
             Node(package='robot_state_publisher', executable='robot_state_publisher', namespace=rid,
                  parameters=[{'robot_description': pinky, 'frame_prefix': rid + '/'}, st]),
@@ -95,7 +170,7 @@ def setup(context):
                             '--child-frame-id', arm_id + '/g_base']),
         ]
     nodes.append(Node(package='rviz2', executable='rviz2', condition=IfCondition(LC('rviz')),
-                      arguments=['-d', rviz_config(ROBOTS)]))
+                      arguments=['-d', rviz_config(ROBOTS, drive == 'nav2')]))
     return nodes
 
 

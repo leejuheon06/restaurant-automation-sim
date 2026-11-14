@@ -14,7 +14,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from frybot_control import layout as L
 from frybot_interfaces.msg import RobotStatus
 
-from .arm_common import CameraStreamer
+from frybot_mobile.arm_common import CameraStreamer
 
 COL = {'table': (0.55, 0.38, 0.28, 1.0), 'chair': (0.95, 0.95, 0.95, 1.0), 'chair_used': (0.45, 0.45, 0.5, 1.0),
        'charge': (0.75, 0.85, 1.0, 0.6), 'cook': (1.0, 0.9, 0.8, 0.6), 'wall': (0.15, 0.15, 0.15, 1.0),
@@ -24,26 +24,7 @@ ROBOT_COL = {'pinky1': (0.1, 0.7, 0.3), 'pinky2': (0.9, 0.5, 0.1), 'pinky3': (0.
              'pinky5': (0.85, 0.15, 0.5), 'pinky6': (0.8, 0.55, 0.0), 'pinky7': (0.05, 0.6, 0.55)}
 
 
-MARGIN_CM = 10         # map margin around the 200 x 100 floor; outer walls stand 6-8 cm outside the floor
-                       # (chargers and standby spots touch the floor edge, Nav2 needs room in front of the robot)
-
-
-def build_grid():
-    """1 cm occupancy grid. Returns (width, height, data, origin_x, origin_y)."""
-    w, h = L.W_CM + L.WALL_CM + 2 * MARGIN_CM, L.H_CM + 2 * MARGIN_CM
-    data = [0] * (w * h)
-
-    def fill(x0, y0, x1, y1):                    # cm, floor coordinates with y up
-        for yc in range(max(0, int(y0) + MARGIN_CM), min(h, int(y1) + MARGIN_CM)):
-            for xc in range(max(0, int(x0) + MARGIN_CM), min(w, int(x1) + MARGIN_CM)):
-                data[yc * w + xc] = 100
-    for (x0, y0, x1, y1) in L.obstacle_rects_cm():
-        fill(x0, L.H_CM - y1, x1, L.H_CM - y0)
-    fill(-8, -8, -6, 108)                        # left wall
-    fill(-8, -8, 204, -6)                        # bottom wall
-    fill(-8, 106, 12, 108)                       # top wall, left of the door
-    fill(32, 106, 204, 108)                      # top wall, right of the door
-    return w, h, data, -MARGIN_CM / 100.0, -MARGIN_CM / 100.0
+from frybot_control.store_map import build_grid  # noqa: E402  (1 cm occupancy grid of the store)
 
 
 class World(Node):
