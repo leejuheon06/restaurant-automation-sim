@@ -2,18 +2,20 @@
 <package format="3">
   <name>frybot_sim</name>
   <version>0.1.0</version>
-  <description>FryBot equipment + world simulation: AMR (Pinky Pro), serving / cooking arms (JetCobot 280), AI server, guests</description>
+  <!-- [수정 2026-11-17] 조리 팔은 frybot_arm 패키지로 옮김 -->
+  <description>FryBot world simulation: AI server stand-in, store, guests, scenarios, Gazebo world</description>
   <maintainer email="oneteam@example.com">OneTeam</maintainer>
   <license>Apache-2.0</license>
+  <!-- 실행 의존: 도면(frybot_control), 카메라 대역(frybot_mobile),
+       HTTP 도우미(frybot_web) -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
   <exec_depend>frybot_interfaces</exec_depend>
   <exec_depend>frybot_control</exec_depend>
   <exec_depend>frybot_mobile</exec_depend>
+  <exec_depend>frybot_web</exec_depend>
   <export><build_type>ament_python</build_type></export>
 </package>

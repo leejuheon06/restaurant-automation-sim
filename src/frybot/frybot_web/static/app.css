@@ -1,3 +1,4 @@
+/* 첫 화면(index.html)과 손님 시뮬레이터(customer.html)의 밝은 기본 스타일 */
 :root{--bg:#f6f5f2;--card:#fff;--ink:#1f2328;--mute:#6b7280;--line:#e2e0da;--brand:#c2410c;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--blue:#1d4ed8}
 *{box-sizing:border-box}body{margin:0;font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
 header{background:#1f2328;color:#fff;padding:10px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
@@ -8,9 +9,14 @@ button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8
 button:hover{border-color:#999}button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:700}
 button.danger{color:var(--bad);border-color:#f0b4b4}button:disabled{opacity:.4;cursor:not-allowed}button.sm{padding:3px 8px;font-size:12px}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:middle}
+/* 상태 꼬리표(.tag, .t-ok 등) */
 th{color:var(--mute);font-weight:600}.tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;background:#eee}
 .t-ok{background:#dcfce7;color:var(--ok)}.t-warn{background:#fef3c7;color:var(--warn)}.t-bad{background:#fee2e2;color:var(--bad)}.t-blue{background:#dbeafe;color:var(--blue)}
-.big{font-size:44px;font-weight:800}.center{text-align:center}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* [수정 2026-11-20] 삭제: .big, .center — 쓰는 곳 없음 */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .qty{display:flex;align-items:center;gap:10px}.qty b{min-width:24px;text-align:center;font-size:18px}
 select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line)}canvas{width:100%;height:auto;display:block;background:#fff;border-radius:8px}
 #msg{min-height:24px;font-weight:700}
+
+/* [수정 2026-11-17] 옛 관리자 화면용 .admin-grid, #mapStations,
+   .map-stations 삭제. 관리자 화면은 admin.css 를 씀 */

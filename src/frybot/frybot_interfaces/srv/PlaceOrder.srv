@@ -1,7 +1,19 @@
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: PlaceOrder, /frybot/place_order -> SubmitOrder
+# /frybot/central/submit_order
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: SubmitOrder,
+# /frybot/central/submit_order -> PlaceOrder, /frybot/place_order
+# 주문 접수. web_service -> Central Control, /frybot/place_order
+# table_id: 주문한 테이블. 착석 중(IN_USE, VACANT_CHECK)이어야 함
 int32 table_id
+# menu_codes: 메뉴 코드 목록. quantities 와 같은 순서로 짝지음
 string[] menu_codes    # FRIED SEASONED FRIED_RICE
+# quantities: 메뉴별 수량. 0 이하는 빼고 보며, 최대 수량(max_qty)을
+#   넘거나 모르는 메뉴가 있으면 주문 전체를 거절
 int32[] quantities
 ---
+# accepted: 주문을 받았으면 true(음식 한 접시마다 COOK 임무 요청)
 bool accepted
+# order_id: 주문 번호 (거절이면 0)
 int64 order_id
+# message: 결과 문구(거절이면 이유)
 string message

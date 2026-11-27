@@ -1,0 +1,81 @@
+# [수정 2026-11-18] T-30: 비밀번호 없는 로봇 등록부 예시.
+# 실제 등록부는 저장소 밖에 둡니다. 이 파일을 복사해 값을 채우세요.
+#   mkdir -p ~/.config/frybot && chmod 700 ~/.config/frybot
+#   cp <이 파일> ~/.config/frybot/robots.yaml && chmod 600 ~/.config/frybot/robots.yaml
+# 쓰는 곳:
+#   ros2 launch frybot_bringup real.launch.py map_id:=test_map_v001     -> 등록된 로봇을 모두 기동
+#   ros2 run frybot_bringup robot_remote --all --check                  -> 접속·설치 상태 점검
+# 로봇 이름은 pinky1, pinky2, ... 순서여야 합니다(robots:=N 은 앞에서부터 N대).
+# SSH 키를 로봇에 등록(ssh-copy-id)했다면 password 는 비워 둡니다.
+defaults:
+  # 모든 로봇에 깔리는 기본값. 로봇 항목에 같은 키를 쓰면 그 값이 우선
+  user: pinky
+  password: ""                  # SSH 비밀번호. 키 접속이 되면 비워 둠
+  port: 22
+  workspace: ~/frybot_robot_ws   # 로봇 안의 작업 공간 (install/setup.bash 가 있는 곳)
+  # 로봇에서 먼저 source 하는 ROS 설정 파일
+  ros_setup: /opt/ros/jazzy/setup.bash
+  domain_id: auto               # auto = 관제 PC의 ROS_DOMAIN_ID 를 그대로 넘김. 숫자를 쓰면 그 값
+  launch_args: {}               # robot.launch.py 에 더 넘길 인자, 예: {speed: "0.06"}
+# 로봇 이름: 설정. host 는 필수(없으면 load_registry 가 ValueError)
+# rmw_implementation, ros_automatic_discovery_range, ros_localhost_only,
+# env(환경 변수 묶음)도 쓸 수 있음(robot_remote.setup_lines)
+robots:
+  pinky1:
+    host: 192.168.0.101         # 예시 주소
+    # [수정 2026-11-24] MT-4: 이 로봇의 바퀴 반지름·간격(m, 선택). 없으면
+    # 명목값 0.027 / 0.0961. robot_remote·real.launch.py 원격 기동이
+    # robot.launch.py 의 wheel_radius:=·wheel_separation:= 로 넘기고
+    # pinky_driver 가 속도 명령·오도메트리에 씀. 명목값에서 10% 넘게
+    # 벗어나면 로봇 런치가 멈춤. 실측 방법은 docs/COMMANDS.md
+    # [수정 2026-11-26] T-60: 예시 값을 바닥 줄자 1 m 3회 평균으로 정한
+    # pinky1 값으로(2026-11-26, 이전 예시 0.02706 / 0.0953 은 스캔 맞춤 기준)
+    # wheel_radius: 0.02743
+    # wheel_separation: 0.0966
+    # [수정 2026-11-24] 손님 추적 AI 서버(frybot_ai guest_tracker)의 카메라 회전.
+    # 없으면 guest_tracker 기본(180). none / cw / ccw / 180
+    # camera_rotate: 180
+  pinky2:
+    host: 192.168.0.102
+    # initial_pose: "0.66 -0.58 1.57"   # 지도 좌표 x y yaw(rad). 없으면 RViz 2D Pose Estimate 로 지정
+    # enabled: false                     # 잠시 빼 둘 로봇
+
+# [수정 2026-11-20] 로봇팔(JetCobot 280) 등록부 추가. 팔마다 자기 Raspberry Pi 가
+# 있고 Pinky 와 계정·작업 공간이 달라 robots 와 따로 둠.
+# [수정 2026-11-20] robot_remote(와 real.launch.py 의 원격 기동)가 이 구역을 읽음:
+# mount 에 든 로봇을 띄울 때 팔 주소를 탐색 상대에 더하고 serving_arm:=real 을
+# 넘김. 팔 Pi 에서 칠 명령은 robot_remote <팔> --arm-command --mount <로봇>.
+arm_defaults:
+  # 모든 팔에 깔리는 기본값(arms 항목이 덮어씀)
+  user: jetcobot
+  password: ""                  # SSH 비밀번호. 키 접속이 되면 비워 둠
+  port: 22
+  workspace: ~/frybot_robot_ws   # 팔 Pi 의 작업 공간 (frybot_interfaces, frybot_mobile 만 빌드)
+  ros_setup: /opt/ros/jazzy/setup.bash
+  domain_id: auto               # auto = 관제 PC의 ROS_DOMAIN_ID 를 그대로 넘김
+  python: ~/venv/jetcobot/bin/python3   # pymycobot 이 설치된 가상 환경의 Python
+  # serving_arm.launch.py 의 port 인자로 넘김(--arm-command)
+  serial_port: /dev/ttyJETCOBOT
+  # 지금 robot_remote --arm-command 는 baud 를 넘기지 않음
+  baud: 1000000
+  # [수정 2026-11-20] 예시 speed 를 기본값과 같은 10 으로(예전 20)
+  # [수정 2026-11-20] 예시 speed 를 새 기본값 70 으로(예전 10)
+  # [수정 2026-11-20] 예시 speed 를 새 기본값 60 으로(예전 70)
+  launch_args: {}               # serving_arm.launch.py 에 더 넘길 인자, 예: {speed: "60"}
+# 팔 이름: 설정. 켜진 팔은 host 가 있어야 하고 mount 의 로봇은
+# robots 에 있어야 함(robot_remote.load_arms)
+arms:
+  jetcobot1:
+    host: 192.168.0.111         # 예시 주소
+    role: serving               # serving = AMR 위의 서빙 팔
+    mount: [pinky1, pinky2, pinky3]   # 팔을 올릴 수 있는 AMR(한 번에 한 대). 문자열 하나도 됨. 액션 이름 /<로봇>/serving_arm/arm_job
+  jetcobot2:
+    host: ""                    # 주소가 정해지면 채움
+    role: ""                    # serving | cooking
+    mount: ""
+    enabled: false              # 주소를 채운 뒤 지움
+  jetcobot3:
+    host: ""
+    role: ""
+    mount: ""
+    enabled: false

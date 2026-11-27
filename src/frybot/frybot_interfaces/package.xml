@@ -5,10 +5,20 @@
   <description>FryBot messages, services and actions</description>
   <maintainer email="oneteam@example.com">OneTeam</maintainer>
   <license>Apache-2.0</license>
+
+  <!-- 빌드 도구와 인터페이스 코드 생성기 -->
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  
+  <!-- stamp 의 builtin_interfaces/Time, 액션 정의용 action_msgs -->
   <depend>builtin_interfaces</depend>
+  <depend>action_msgs</depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
+  
+  <!-- 인터페이스 패키지 묶음에 등록(rosidl 생성 대상) -->
   <member_of_group>rosidl_interface_packages</member_of_group>
-  <export><build_type>ament_cmake</build_type></export>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

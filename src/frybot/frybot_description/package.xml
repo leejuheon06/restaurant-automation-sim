@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>frybot_description</name>
+  <version>0.1.0</version>
+  <description>FryBot robot models: Pinky Pro (xacro + meshes, from pinklab-art/pinky_pro pinky_description)
+    and JetCobot 280 (= myCobot 280 Pi URDF + meshes, from elephantrobotics/mycobot_ros2 mycobot_description).
+    See README.md for the origin of every file.</description>
+  <maintainer email="oneteam@example.com">OneTeam</maintainer>
+  <license>Apache-2.0</license>
+  <license>BSD-2-Clause</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <!-- 실행 의존: xacro(Pinky xacro 변환), robot_state_publisher(모델 TF) -->
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

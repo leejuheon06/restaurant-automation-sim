@@ -1,0 +1,67 @@
+/* 입구 접수(reception.html)·테이블 주문(table.html) 태블릿 스타일 */
+/* [수정 2026-11-17] GUI 화면 구성도 초안 v0.1 (K1~K4, T1~T5) 반영: 손님용 태블릿 화면 */
+:root{--bg:#F3F5F8;--card:#FFFFFF;--ink:#1C1E24;--mute:#4B5468;--line:#D5D9E0;--line2:#E2E5EA;--brand:#C2410C;--brand2:#9A3412;
+  --soft:#FFF4ED;--ok:#15803D;--blue:#2563EB}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.45 'Noto Sans KR','Noto Sans CJK KR',system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.screen{min-height:100%;display:flex;flex-direction:column}
+/* 위쪽 막대(.tno 테이블 번호) */
+.bar{display:flex;align-items:center;gap:14px;padding:14px 24px;background:var(--card);border-bottom:1px solid var(--line)}
+.bar .tno{font-size:22px;font-weight:800;color:var(--brand)}
+.bar .sp{flex:1}.bar a,.bar .link{font-size:15px;color:var(--mute);text-decoration:none;background:none;border:0}
+/* 한 단계 화면(.stage)과 인원 버튼(.nums), 큰 버튼(.cta, .ghost) */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:28px 24px;text-align:center}
+.stage[hidden]{display:none}
+.hello{font-size:18px;color:var(--mute)}
+h1{font-size:40px;margin:0;line-height:1.25}h2{font-size:26px;margin:0}
+.sub{color:var(--mute);font-size:18px}
+.nums{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.nums button{width:132px;height:132px;border-radius:24px;border:2px solid var(--line);background:var(--card);font-size:52px;font-weight:800}
+.nums button.on{border-color:var(--brand);background:var(--soft);color:var(--brand)}
+.cta{min-width:340px;height:76px;padding:0 34px;border:0;border-radius:18px;background:var(--brand);color:#fff;font-size:24px;font-weight:800}
+.cta:disabled{background:var(--line);color:#fff;cursor:not-allowed}
+.ghost{min-width:200px;height:76px;padding:0 28px;border:2px solid var(--line);border-radius:18px;background:var(--card);font-size:22px;font-weight:700}
+/* 배정된 테이블 번호, 패널, 대기 순번·시간(.stat), 메시지 */
+.bigno{font-size:120px;font-weight:900;color:var(--brand);line-height:1}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 26px;max-width:760px;width:100%}
+.stat{display:flex;gap:40px;justify-content:center}.stat div span{display:block;font-size:15px;color:var(--mute)}
+.stat div b{font-size:34px}
+.msg{min-height:28px;font-weight:700;color:var(--brand2)}
+.note{font-size:16px;color:var(--mute)}
+canvas{display:block;width:100%;height:auto;border-radius:12px}
+/* 테이블 주문 */
+.wrap{flex:1;display:flex;flex-direction:column;gap:16px;padding:20px 24px;max-width:980px;width:100%;margin:0 auto}
+.wrap[hidden]{display:none}
+/* 메뉴 카드(.item), 수량 버튼(.qty), 아래 막대(.foot), 주문 줄(.lines) */
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.item .pic{height:110px;border-radius:12px;background:#ECEFF3;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:44px}
+.item b{font-size:22px}
+.qty{display:flex;align-items:center;justify-content:space-between}
+.qty button{width:56px;height:56px;border-radius:14px;border:2px solid var(--line);background:var(--card);font-size:28px;font-weight:700}
+.qty span{font-size:28px;font-weight:800;min-width:40px;text-align:center}
+.foot{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 18px}
+.foot .sp{flex:1}
+.lines{display:flex;flex-direction:column}
+.lines div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line2);font-size:22px}
+.lines div:last-child{border-bottom:0}
+/* 주문 진행 단계(.stepper), 주문 카드(.ord) */
+.stepper{display:flex;gap:0;align-items:center;justify-content:center;margin:6px 0}
+.stepper div{display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;font-size:16px;color:var(--mute)}
+.stepper i{width:26px;height:26px;border-radius:13px;background:var(--line);display:block}
+.stepper div.done i{background:var(--brand)}.stepper div.now i{background:var(--brand);box-shadow:0 0 0 6px #FED7AA}
+.stepper div.now{color:var(--ink);font-weight:800}
+.ord{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;text-align:left}
+.ord h3{margin:0 0 4px;font-size:20px;display:flex;align-items:center;gap:10px}
+.ord .tagc{margin-left:auto;font-size:15px;padding:3px 12px;border-radius:999px;background:var(--soft);color:var(--brand2);font-weight:700}
+/* 덮개 화면(.arrive: 음식 도착, 이용 종료 확인)과 진행 목록(.checks) */
+.arrive{position:fixed;inset:0;background:#1C1E24CC;display:flex;align-items:center;justify-content:center;padding:24px;z-index:5}
+.arrive[hidden]{display:none}
+.arrive .panel{text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center}
+.checks{list-style:none;margin:0;padding:0;text-align:left;font-size:20px;display:flex;flex-direction:column;gap:10px}
+.checks li{display:flex;gap:10px;align-items:center;color:var(--mute)}
+.checks li i{width:22px;height:22px;border-radius:11px;background:var(--line);flex-shrink:0}
+.checks li.done{color:var(--ink)}.checks li.done i{background:var(--ok)}
+.checks li.now{color:var(--ink);font-weight:800}.checks li.now i{background:var(--brand);box-shadow:0 0 0 5px #FED7AA}

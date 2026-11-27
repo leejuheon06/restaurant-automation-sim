@@ -1,5 +1,14 @@
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: EndUse, /frybot/end_use -> EndVisit,
+# /frybot/central/end_visit
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: EndVisit,
+# /frybot/central/end_visit -> EndUse, /frybot/end_use
+# 테이블 이용 종료. web_service -> Central Control, /frybot/end_use
+# table_id: 이용을 끝낼 테이블 번호
 int32 table_id
+# source: 누가 끝냈는지. 비우면 TABLET 으로 처리
 string source          # TABLET | QR | ADMIN
 ---
+# accepted: 이용 종료를 받았으면 true
 bool accepted
+# message: 결과 문구(거절이면 이유)
 string message

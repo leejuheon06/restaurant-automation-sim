@@ -1,20 +1,185 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>테이블 주문</title><link rel="stylesheet" href="/static/app.css"></head><body>
-<header><h1 id="title">FryBot · 테이블</h1><span id="st"></span><span class="sp"></span><a href="/">처음으로</a></header><main style="max-width:720px">
-<div class="card"><h2>메뉴</h2><div id="menu"></div><div class="row" style="margin-top:12px"><button class="primary" id="ob" onclick="confirmOrder()">주문 확인</button><span id="msg"></span></div>
-<div id="confirm" class="card" style="display:none;margin-top:12px;background:#fff7ed"></div></div>
-<div class="card"><h2>주문 진행 상태</h2><div id="orders" class="mute">주문 내역이 없습니다.</div></div>
-<div class="card"><button id="end" onclick="endUse()" disabled>이용 종료</button> <span class="mute">모든 음식이 전달된 뒤에 누를 수 있습니다.</span></div></main>
-<script src="/static/map.js"></script><script>
-const id=+new URLSearchParams(location.search).get('id')||1;title.textContent=`FryBot · ${id}번 테이블`;const qty={};let MENU={};
-function render(){menu.innerHTML=Object.entries(MENU).map(([k,m])=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee"><b>${m.name}</b>
-<div class="qty"><button onclick="ch('${k}',-1)">−</button><b>${qty[k]||0}</b><button onclick="ch('${k}',1)">＋</button></div></div>`).join('')}
-function ch(k,d){qty[k]=Math.max(0,Math.min(5,(qty[k]||0)+d));render();confirm.style.display='none'}
-function confirmOrder(){const it=Object.entries(qty).filter(e=>e[1]>0);if(!it.length){msg.textContent='메뉴를 선택해 주세요.';return}
- confirm.style.display='block';confirm.innerHTML=`<b>${id}번 테이블 주문 확인</b><br>`+it.map(([k,q])=>`${MENU[k].name} × ${q}`).join('<br>')+`<div class="row" style="margin-top:8px"><button class="primary" onclick="order()">주문 확정</button><button onclick="confirm.style.display='none'">수정</button></div>`}
-async function order(){const r=await postJSON('/api/order',{table_id:id,items:Object.entries(qty).map(([menu,q])=>({menu,qty:q}))});msg.textContent=r.message;msg.style.color=r.ok?'#15803d':'#b91c1c';if(r.ok){for(const k in qty)qty[k]=0;render()}confirm.style.display='none'}
-async function endUse(){const r=await postJSON('/api/end_use',{table_id:id,source:'TABLET'});msg.textContent=r.message}
-async function tick(){const s=await getJSON('/api/state');const R=s.rest||{};if(!Object.keys(MENU).length&&R.menu){MENU=R.menu;render()}
- const t=(R.tables||[]).find(t=>t.id===id)||{};st.innerHTML=tag(t.state||'?');end.disabled=!t.can_end;ob.disabled=!(t.state==='IN_USE'||t.state==='VACANT_CHECK');
- const os=(R.orders||[]).filter(o=>o.table===id&&o.visit===t.visit);
- orders.innerHTML=os.length?os.map(o=>`<div style="margin-bottom:8px"><b>주문 #${o.id}</b> ${tag(o.state)} <span class="mute">${ko(o.state)}</span><br>`+o.items.map(i=>`· ${i.name} — ${ko(i.state)}`).join('<br>')+'</div>').join(''):'주문 내역이 없습니다.'}
-setInterval(tick,1000);tick()</script></body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>테이블 주문</title><link rel="stylesheet" href="/static/customer.css"></head><body>
+<!-- [수정 2026-11-17] GUI 화면 구성도 초안 v0.1 반영: T1 메뉴 선택 → T2 주문 확인 → T3 진행 상태 →
+     T4 음식 도착 안내 → T5 이용 종료. 화면은 테이블 ID(?id=N)에 고정되고 번호를 항상 표시 -->
+<div class="screen">
+ <div class="bar"><span class="tno" id="tno"></span><span id="tstate" class="sub" style="font-size:15px"></span><span class="sp"></span>
+  <button class="link" id="toStatus" type="button" hidden>주문 내역</button><a href="/">처음으로</a></div>
+
+ <!-- 이용 중이 아닐 때(빈 테이블, 안내 중, 정리 중, 사용 중지)의 안내 -->
+ <div class="stage" id="idle" hidden><h1 id="idleTitle"></h1><div class="sub" id="idleSub"></div></div>
+
+ <!-- T1: 메뉴 선택(메뉴별 수량 0~5) -->
+ <div class="wrap" id="t1" hidden>
+  <h2>메뉴를 골라 주세요</h2>
+  <div class="menu" id="menu"></div>
+  <div class="foot"><span>담은 메뉴 <b id="cartCount">0</b>개</span><span class="sp"></span><span class="msg" id="msg" role="status"></span>
+   <button class="cta" id="toConfirm" disabled style="min-width:220px;height:64px">주문 확인</button></div>
+ </div>
+
+ <!-- T2: 주문 확인 -->
+ <div class="wrap" id="t2" hidden>
+  <h2>이대로 주문할까요?</h2>
+  <div class="panel" style="max-width:none"><div class="lines" id="lines"></div></div>
+  <div class="foot"><span>테이블 <b id="confirmTable"></b></span><span class="sp"></span>
+   <button class="ghost" id="edit" style="height:64px">수정</button><button class="cta" id="order" style="min-width:220px;height:64px">주문하기</button></div>
+ </div>
+
+ <!-- T3: 주문 진행 상태, 추가 주문, 이용 종료 -->
+ <div class="wrap" id="t3" hidden>
+  <div id="orders"></div>
+  <div class="foot"><span class="note" id="endNote"></span><span class="sp"></span>
+   <button class="ghost" id="more" style="height:64px">추가 주문</button><button class="ghost" id="end" style="height:64px" disabled>이용 종료</button></div>
+ </div>
+</div>
+
+<!-- T4: 음식 도착 알림(서빙 로봇이 전달 중일 때 덮개로 띄움) -->
+<div class="arrive" id="t4" hidden><div class="panel">
+ <div class="sub">음식 도착</div><h1 id="arriveTitle"></h1>
+ <div class="note">로봇팔이 음식을 테이블로 옮기고 있어요.<br>옮기는 동안 손을 넣지 말아 주세요.</div>
+ <ul class="checks" id="checks"></ul>
+</div></div>
+
+<!-- T5: 이용 종료 확인 -->
+<div class="arrive" id="t5" hidden><div class="panel">
+ <h1>이용을 마칠까요?</h1>
+ <div class="note">종료하면 이 테이블은 정리 후 다음 손님에게 배정돼요. 추가 주문은 할 수 없어요.</div>
+ <div class="foot" style="border:0;padding:0;justify-content:center"><button class="ghost" id="keep">계속 이용</button><button class="cta" id="endYes" style="min-width:200px">이용 종료</button></div>
+</div></div>
+<script src="/static/map.js"></script><script src="/static/ui.js"></script><script>
+// 화면 상태. id: 이 태블릿의 테이블 번호(?id=N, 없으면 1)
+const $id = id => document.getElementById(id);
+const id = +new URLSearchParams(location.search).get('id') || 1;
+// qty: 메뉴 코드 → 담은 수량
+const qty = {};
+// MENU: 식당 상태의 메뉴, view: 보이는 화면, wanted: 손님이 고른 화면,
+// visit: 지금 테이블의 방문 id, arriving·arriveUntil: 도착 알림 표시
+let MENU = {}, view = '', wanted = '', visit = null, arriveUntil = 0, arriving = false;
+$id('tno').textContent = 'T' + id + ' 테이블';
+$id('confirmTable').textContent = 'T' + id;
+// 메뉴 그림, 음식 상태 → 손님용 문구, 주문 상태 → 진행 단계 번호
+const ICON = {FRIED: '🍗', SEASONED: '🍗', FRIED_RICE: '🍚'};
+const ITEM_KO = {ORDERED: '주문 접수', QUEUED: '조리 순서를 기다리는 중', COOKING: '로봇팔이 조리 중', READY: '서빙 준비 완료',
+                 LOADED: '서빙 로봇에 실었어요',  // [수정 2026-11-18] W2: v4 LOADED
+                 SERVING: '서빙 로봇이 가는 중', DELIVERED: '전달 완료', ON_HOLD: '잠시 지연되고 있어요'};
+const ORDER_STEP = {ORDERED: 0, COOKING: 1, SERVING: 2, COMPLETED: 3};
+// 본문 화면 하나만 보이게 함(T4·T5 덮개는 따로)
+function show(name) {
+  view = name;
+  ['idle', 't1', 't2', 't3'].forEach(v => { $id(v).hidden = v !== name; });
+}
+// 수량이 0보다 큰 [메뉴 코드, 수량] 목록
+const cart = () => Object.entries(qty).filter(e => e[1] > 0);
+// 메뉴 카드와 담은 수 다시 그리기
+function renderMenu() {
+  $id('menu').innerHTML = Object.entries(MENU).map(([k, m]) => '<div class="item"><div class="pic">' + (ICON[k] || '🍽') + '</div><b>' + esc(m.name) +
+    '</b><div class="qty"><button type="button" data-menu="' + k + '" data-d="-1">−</button><span>' + (qty[k] || 0) +
+    '</span><button type="button" data-menu="' + k + '" data-d="1">+</button></div></div>').join('');
+  const n = cart().reduce((s, e) => s + e[1], 0);
+  $id('cartCount').textContent = n;
+  $id('toConfirm').disabled = !n;
+}
+// −/+ 버튼: 메뉴별 수량을 0~5 안에서 바꿈
+$id('menu').addEventListener('click', e => {
+  const b = e.target.closest('[data-menu]');
+  if (!b) return;
+  qty[b.dataset.menu] = Math.max(0, Math.min(5, (qty[b.dataset.menu] || 0) + (+b.dataset.d)));
+  $id('msg').textContent = '';
+  renderMenu();
+});
+// 주문 확인(T2)으로
+$id('toConfirm').addEventListener('click', () => {
+  $id('lines').innerHTML = cart().map(([k, q]) => '<div><span>' + esc(MENU[k].name) + '</span><b>' + q + '개</b></div>').join('');
+  wanted = 't2'; show('t2');
+});
+$id('edit').addEventListener('click', () => { wanted = 't1'; show('t1'); });
+// [수정 2026-11-25] I/F 정의서 v0.2 경로: /api/order -> /api/orders
+// 주문하기: POST /api/orders. 성공하면 장바구니를 비우고 T3
+$id('order').addEventListener('click', async () => {
+  const button = $id('order');
+  button.disabled = true;
+  try {
+    const r = await postJSON('/api/orders', {table_id: id, items: cart().map(([menu, q]) => ({menu, qty: q}))});
+    if (r.ok) { for (const k in qty) qty[k] = 0; renderMenu(); wanted = 't3'; show('t3'); }
+    else { $id('msg').textContent = r.message || '주문하지 못했어요.'; wanted = 't1'; show('t1'); }
+  } catch (error) { $id('msg').textContent = '주문 서버에 연결할 수 없어요.'; wanted = 't1'; show('t1'); }
+  finally { button.disabled = false; }
+});
+// 추가 주문, 주문 내역, 이용 종료 확인 열기·닫기
+$id('more').addEventListener('click', () => { wanted = 't1'; show('t1'); });
+$id('toStatus').addEventListener('click', () => { wanted = 't3'; show('t3'); });
+$id('end').addEventListener('click', () => { $id('t5').hidden = false; });
+$id('keep').addEventListener('click', () => { $id('t5').hidden = true; });
+// 이용 종료: POST /api/end_use (source TABLET)
+$id('endYes').addEventListener('click', async () => {
+  $id('t5').hidden = true;
+  try {
+    const r = await postJSON('/api/end_use', {table_id: id, source: 'TABLET'});
+    $id('endNote').textContent = r.message || '';
+  } catch (error) { $id('endNote').textContent = '서버에 연결할 수 없어요.'; }
+});
+// 음식 도착 알림음(0.25초, 880 Hz)
+function beep() {
+  try {
+    const audio = new (window.AudioContext || window.webkitAudioContext)(), osc = audio.createOscillator(), gain = audio.createGain();
+    osc.frequency.value = 880; gain.gain.value = 0.08; osc.connect(gain); gain.connect(audio.destination);
+    osc.start(); osc.stop(audio.currentTime + 0.25);
+  } catch (error) { /* 소리를 낼 수 없는 기기 */ }
+}
+// 이 테이블의 SERVE 임무 로봇이 UNLOADING 이면 T4 를 띄우고,
+// 끝난 뒤 4초 더 보여 줌
+function renderArrival(S) {
+  const F = S.fms || {};
+  const task = (F.tasks || []).find(t => t.type === 'SERVE' && t.table === id && t.state === 'IN_PROGRESS' &&
+    (F.robots || []).some(r => r.id === t.robot && r.state === 'UNLOADING'));
+  if (task) {
+    if (!arriving) { arriving = true; beep(); }
+    $id('arriveTitle').textContent = iGa((MENU[task.menu] || {}).name || '음식') + ' 도착했어요';
+    arriveUntil = Date.now() + 4000;
+  } else if (arriving && Date.now() > arriveUntil) {
+    arriving = false;
+  }
+  $id('t4').hidden = !arriving;
+  if (arriving) {
+    $id('checks').innerHTML = '<li class="done"><i></i>서빙 로봇 도착 · 정차 확인</li><li class="' + (task ? 'now' : 'done') +
+      '"><i></i>테이블로 옮기는 중</li><li class="' + (task ? '' : 'done') + '"><i></i>전달 완료</li>';
+  }
+}
+// 1초마다 /api/state 를 읽어 테이블 상태에 맞는 화면을 고름.
+// 방문이 바뀌면 장바구니와 선택을 비움
+async function tick() {
+  let S;
+  try { S = await getJSON('/api/state'); } catch (error) { return; }
+  const R = S.rest || {};
+  if (!Object.keys(MENU).length && R.menu) { MENU = R.menu; renderMenu(); }
+  const t = (R.tables || []).find(x => x.id === id);
+  if (!t) return;
+  $id('tstate').textContent = TABLE_KO[t.state] || t.state;
+  const inUse = t.state === 'IN_USE' || t.state === 'VACANT_CHECK';
+  if (t.visit !== visit) { visit = t.visit; wanted = ''; for (const k in qty) qty[k] = 0; renderMenu(); $id('endNote').textContent = ''; }
+  const orders = (R.orders || []).filter(o => o.table === id && o.visit === t.visit);
+  $id('toStatus').hidden = !(inUse && orders.length && view !== 't3');
+  if (!inUse) {
+    $id('t5').hidden = true;
+    $id('idleTitle').textContent = {AVAILABLE: '어서 오세요', ASSIGNED: '손님이 오고 계세요', COLLECTING: '테이블을 정리하고 있어요', CLOSED: '지금은 이용할 수 없는 테이블이에요'}[t.state] || '';
+    $id('idleSub').textContent = {AVAILABLE: '입구에서 접수하면 안내 로봇이 이 테이블로 모셔 와요.', ASSIGNED: '착석하면 여기에서 주문할 수 있어요.',
+      COLLECTING: '이용해 주셔서 감사합니다. 식기를 회수하고 있어요.'}[t.state] || '';
+    show('idle');
+  } else {
+    const next = wanted || (orders.length ? 't3' : 't1');
+    if (view !== next) show(next);
+    $id('orders').innerHTML = orders.length ? orders.slice().reverse().map(o => {
+      const now = ORDER_STEP[o.state];
+      return '<div class="ord" style="margin-bottom:14px"><h3>주문 #' + o.id + '<span class="tagc">' + ko(o.state) + '</span></h3><div class="stepper">' +
+        ['접수', '조리 중', '서빙', '완료'].map((label, i) => '<div class="' + (now === undefined ? '' : i < now || now === 3 ? 'done' : i === now ? 'now' : '') +
+          '"><i></i>' + label + '</div>').join('') + '</div><div class="lines">' + o.items.map(i => '<div><span>' + esc(i.name) + '</span><span class="sub">' +
+          (ITEM_KO[i.state] || ko(i.state)) + '</span></div>').join('') + '</div></div>';
+    }).join('') : '<div class="panel">주문 내역이 없습니다.</div>';
+    $id('end').disabled = !t.can_end;
+    if (!$id('endNote').textContent || t.can_end) $id('endNote').textContent = t.can_end ? '' : '모든 음식이 전달된 뒤에 이용을 마칠 수 있어요.';
+  }
+  renderArrival(S);
+}
+// 1초마다 갱신
+setInterval(tick, 1000); tick();
+</script></body></html>

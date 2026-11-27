@@ -1,11 +1,42 @@
+# 팔 작업 하나. 관제 -> 서빙 팔(/<로봇>/arm_job) 또는 Master Controller
+#   (/frybot_arm/arm_job) -> 조리 팔(/<arm_id>/arm_job)
+# task_id: 이 작업이 속한 임무 번호
 string task_id
+# arm_id: 대상 팔. 서빙 팔은 로봇 이름, 조리 팔은 cook_arm_a | cook_arm_b
+#   (Master Controller 가 이 값으로 팔을 고름)
 string arm_id
-string job             # LOAD UNLOAD COLLECT_DISHES RETURN_DISHES LOAD_BASKET DROP_IN_FRYER LIFT_DRAIN PLATE PLACE_HANDOFF TO_WOK ADD_SAUCE ADD_INGREDIENTS STIR_FRY
+# [수정 2026-11-20] HOME 추가: 서빙 팔 실물 구동부(serving_arm_driver)만 받음.
+# 팔을 rest 자세로 보냄. 관제는 아직 보내지 않음
+# [수정 2026-11-26] 작업 이름 통일(사용자 결정, 위 11-20 의 HOME 뜻이 바뀜):
+#   HOME = 0도 home 자세 [0,0,0,0,0,0](충전소 대기, LOAD·UNLOAD 시작 전),
+#   REST = 주행용 접은 자세(rest). 둘 다 serving_arm_driver 만 받고, 관제는
+#   보내지 않음. mobile_controller(serving_arm:=real)가 주행 전 REST, 자기
+#   충전소 도착 1초 뒤 HOME 을 보냄
+string job             # HOME REST LOAD UNLOAD COLLECT_DISHES RETURN_DISHES LOAD_BASKET DROP_IN_FRYER LIFT_DRAIN PLATE PLACE_HANDOFF TO_WOK ADD_SAUCE ADD_INGREDIENTS STIR_FRY
+# duration: 관제가 계획한 작업 시간(초). 대역(mobile_controller,
+#   arm_controller)은 이 시간(최소 0.2초) 동안 진행함.
+#   serving_arm_driver 는 쓰지 않음
 float32 duration
+# params_json: one JSON object. Keys in use:
+#   serving arm (AMR): {"table_id": int, "menu": str}
+#   cooking arms     : {"cook_task_id": str, "menu": str, "fry_time": float seconds (DROP_IN_FRYER only)}
+# Unknown keys must be ignored.
 string params_json
 ---
+# success: 작업을 끝까지 했으면 true
 bool success
+# [수정 2026-11-20] 실제로 나오는 값으로 맞춤(주석만)
+#   OK
+#   CANCELED     관제가 목표를 취소함(ESTOP·PAUSE 의 cancel_arm 포함)
+#   E_STOP       생존 신호의 비상 정지 목록에 들어 멈춤(서빙 팔)
+#   ARM_OFFLINE  팔 구동부를 찾지 못함·응답 없음·작업 중 끊김
+#   REJECTED     팔 구동부(또는 Master Controller)가 목표를 받지 않음
+#   NO_POSE      작업 자세가 정해지지 않음(serving_arm_driver)
+#   ARM_TIMEOUT  제시간에 자세에 닿지 못함(serving_arm_driver)
 string reason
 ---
+# phase: 진행 중인 단계 이름(지금은 job 이름 그대로)
 string phase
+# progress: 진행률 0..1. 대역은 경과 시간 / duration,
+#   serving_arm_driver 는 지난 자세 수 / 전체 자세 수
 float32 progress

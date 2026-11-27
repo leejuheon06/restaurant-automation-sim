@@ -1,6 +1,16 @@
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: CheckIn, /frybot/check_in -> RegisterVisit
+# /frybot/central/register_visit
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: RegisterVisit,
+# /frybot/central/register_visit -> CheckIn, /frybot/check_in
+# 입장 접수. web_service -> Central Control, /frybot/check_in
+# party_size: 인원. 1 미만이거나 맞는 빈 테이블이 없으면 거절
 int32 party_size
 ---
+# accepted: 테이블을 배정했으면 true(그러면 안내 GUIDE 임무를 요청함)
 bool accepted
+# visit_id: 방문 번호. 거절해도 새 번호를 매김(방문 기록 REJECTED)
 int64 visit_id
+# table_id: 배정한 테이블 번호 (거절이면 0)
 int32 table_id
+# message: 손님에게 보일 안내 문구
 string message

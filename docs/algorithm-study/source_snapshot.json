@@ -1,0 +1,1123 @@
+{
+  "date": "2026-11-19",
+  "git_head": "4ab5d33",
+  "worktree": "dirty; existing changes retained",
+  "files": [
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/fleet_core.py",
+      "sha256": "1a1c61101ae7e2eddb29856074719ea8b82fd06fffd51426069d5757f1edf659",
+      "symbols": [
+        {
+          "line": 34,
+          "symbol": "class FleetIO:"
+        },
+        {
+          "line": 37,
+          "symbol": "def send_route(self, robot_id, task_id, plan_version, mode, visit_id, steps): ..."
+        },
+        {
+          "line": 38,
+          "symbol": "def grant(self, robot_id, task_id, plan_version, index): ..."
+        },
+        {
+          "line": 39,
+          "symbol": "def cancel_route(self, robot_id): ..."
+        },
+        {
+          "line": 40,
+          "symbol": "def cancel_arm(self, arm_id): ..."
+        },
+        {
+          "line": 41,
+          "symbol": "def arm_job(self, arm_id, task_id, job, duration, params): ..."
+        },
+        {
+          "line": 42,
+          "symbol": "def task_event(self, ev: dict): ..."
+        },
+        {
+          "line": 43,
+          "symbol": "def log(self, event, **fields): ..."
+        },
+        {
+          "line": 47,
+          "symbol": "class Task:"
+        },
+        {
+          "line": 73,
+          "symbol": "class Robot:"
+        },
+        {
+          "line": 142,
+          "symbol": "class CookJob:"
+        },
+        {
+          "line": 143,
+          "symbol": "def __init__(self, task, ops):"
+        },
+        {
+          "line": 153,
+          "symbol": "def _cook_state(job: CookJob) -> str:"
+        },
+        {
+          "line": 174,
+          "symbol": "class FleetCore:"
+        },
+        {
+          "line": 175,
+          "symbol": "def __init__(self, io: FleetIO, robot_ids=('pinky1', 'pinky2', 'pinky3'), scheduler=DEFAULT_SCHEDULER,"
+        },
+        {
+          "line": 253,
+          "symbol": "def set_scheduler(self, name):"
+        },
+        {
+          "line": 258,
+          "symbol": "def set_planner(self, name):"
+        },
+        {
+          "line": 266,
+          "symbol": "def submit_task(self, type, visit_id=0, order_id=0, item_id=0, table_id=0, menu='', priority=0):"
+        },
+        {
+          "line": 282,
+          "symbol": "def _program(self, t):"
+        },
+        {
+          "line": 297,
+          "symbol": "def tick(self, now):"
+        },
+        {
+          "line": 343,
+          "symbol": "def _available(self, r):"
+        },
+        {
+          "line": 348,
+          "symbol": "def _fault(self, r: Robot) -> str:"
+        },
+        {
+          "line": 363,
+          "symbol": "def _movable(self, r: Robot) -> bool:"
+        },
+        {
+          "line": 371,
+          "symbol": "def _cost_fn(self):"
+        },
+        {
+          "line": 376,
+          "symbol": "def static(r, t):"
+        },
+        {
+          "line": 385,
+          "symbol": "def eta(r, t):"
+        },
+        {
+          "line": 397,
+          "symbol": "def _assign(self, t, r):"
+        },
+        {
+          "line": 405,
+          "symbol": "def _schedule(self):"
+        },
+        {
+          "line": 453,
+          "symbol": "def _run_phase(self, r):"
+        },
+        {
+          "line": 499,
+          "symbol": "def _table_side(self, r, table):"
+        },
+        {
+          "line": 504,
+          "symbol": "def cost(n):"
+        },
+        {
+          "line": 510,
+          "symbol": "def _park_goal(self, r, force_home=False):"
+        },
+        {
+          "line": 535,
+          "symbol": "def _auto_home(self, r: Robot) -> None:"
+        },
+        {
+          "line": 577,
+          "symbol": "def _go_home(self, r, force_home=False):"
+        },
+        {
+          "line": 587,
+          "symbol": "def _event(self, t, state, reason=''):"
+        },
+        {
+          "line": 594,
+          "symbol": "def _table(self, me, optimistic=False, exclude=()):"
+        },
+        {
+          "line": 624,
+          "symbol": "def _hold_estimate(self, o, at_goal=False):"
+        },
+        {
+          "line": 645,
+          "symbol": "def _start_move(self, r, goal, mode, replan=False, blocked=frozenset(), allow_flip=True):"
+        },
+        {
+          "line": 741,
+          "symbol": "def _user_of(self, r: Robot, nodes) -> str:"
+        },
+        {
+          "line": 764,
+          "symbol": "def _log_plan_notes(self, r: Robot, steps: list, start: str, goal: str,"
+        },
+        {
+          "line": 824,
+          "symbol": "def _rejoin(self, r, avoid=()):"
+        },
+        {
+          "line": 842,
+          "symbol": "def free(nodes):"
+        },
+        {
+          "line": 866,
+          "symbol": "def _shortest_path(self, a, b):"
+        },
+        {
+          "line": 873,
+          "symbol": "def _long_way(self, steps, start, goal):"
+        },
+        {
+          "line": 879,
+          "symbol": "def _make_way(self, r, start, goal):"
+        },
+        {
+          "line": 908,
+          "symbol": "def _clear_exit(self, o: Robot, r: Robot, region: set) -> bool:"
+        },
+        {
+          "line": 919,
+          "symbol": "def idle(q: Robot) -> bool:"
+        },
+        {
+          "line": 958,
+          "symbol": "def _in_the_way(self, r, path):"
+        },
+        {
+          "line": 974,
+          "symbol": "def _yield_instead(self, r, req, steps, goal, mode):"
+        },
+        {
+          "line": 1015,
+          "symbol": "def _stay_region(self, o):"
+        },
+        {
+          "line": 1020,
+          "symbol": "def _reachable(self, src, dst, closed):"
+        },
+        {
+          "line": 1032,
+          "symbol": "def _adopt(self, r, steps, goal, mode, replan=False):"
+        },
+        {
+          "line": 1060,
+          "symbol": "def _request(self, o, goal, mode):"
+        },
+        {
+          "line": 1071,
+          "symbol": "def _plan_joint(self, r, req, goal, mode):"
+        },
+        {
+          "line": 1092,
+          "symbol": "def _stop_route(self, r):"
+        },
+        {
+          "line": 1097,
+          "symbol": "def _drive(self, r, dt):"
+        },
+        {
+          "line": 1141,
+          "symbol": "def _blocker(self, node, rid):"
+        },
+        {
+          "line": 1151,
+          "symbol": "def _resolve_stall(self, r, owner):"
+        },
+        {
+          "line": 1178,
+          "symbol": "def _yield_done(self, r):"
+        },
+        {
+          "line": 1212,
+          "symbol": "def _rank(self, r):"
+        },
+        {
+          "line": 1216,
+          "symbol": "def _retreat(self, r, o, goal=None, mode=None, strict=False, clear=(), stay=False, back=False):"
+        },
+        {
+          "line": 1249,
+          "symbol": "def depth(n):"
+        },
+        {
+          "line": 1265,
+          "symbol": "def behind(n):"
+        },
+        {
+          "line": 1321,
+          "symbol": "def on_robot_status(self, rid, x, y, yaw, battery, charging, state, error=''):"
+        },
+        {
+          "line": 1346,
+          "symbol": "def _claim_vertex(self, robot, node):"
+        },
+        {
+          "line": 1353,
+          "symbol": "def on_route_progress(self, rid, plan_version, reached, state=''):"
+        },
+        {
+          "line": 1382,
+          "symbol": "def on_route_result(self, rid, plan_version, success, reason, reached):"
+        },
+        {
+          "line": 1413,
+          "symbol": "def _arrived(self, r):"
+        },
+        {
+          "line": 1427,
+          "symbol": "def on_arm_result(self, arm_id, task_id, success, reason=''):"
+        },
+        {
+          "line": 1452,
+          "symbol": "def on_arm_status(self, arm_id: str, state: str, job: str = '',"
+        },
+        {
+          "line": 1472,
+          "symbol": "def _arm_report(self, arm_id: str) -> dict | None:"
+        },
+        {
+          "line": 1477,
+          "symbol": "def _cook_arm_device(self, arm_id: str, letter: str) -> dict:"
+        },
+        {
+          "line": 1497,
+          "symbol": "def _serving_arm(self, r: Robot) -> dict:"
+        },
+        {
+          "line": 1506,
+          "symbol": "def _note_faults(self, r: Robot) -> None:"
+        },
+        {
+          "line": 1524,
+          "symbol": "def _unavailable_reason(self, r: Robot) -> str:"
+        },
+        {
+          "line": 1544,
+          "symbol": "def on_doneness(self, task_id, decision, stamp):"
+        },
+        {
+          "line": 1549,
+          "symbol": "def _plan_fail_watch(self, r: Robot, goal: str) -> None:"
+        },
+        {
+          "line": 1576,
+          "symbol": "def _suspend(self, t, reason):"
+        },
+        {
+          "line": 1582,
+          "symbol": "def _move_to_vertex(self, robot_id, destination):"
+        },
+        {
+          "line": 1646,
+          "symbol": "def _heading_near(self, destination: str, robot_id: str) -> str:"
+        },
+        {
+          "line": 1674,
+          "symbol": "def _send_home(self, target: str) -> tuple:"
+        },
+        {
+          "line": 1719,
+          "symbol": "def command(self, cmd, target, arg=''):"
+        },
+        {
+          "line": 1824,
+          "symbol": "def _recipe(self, menu):"
+        },
+        {
+          "line": 1842,
+          "symbol": "def _cook_tick(self):"
+        },
+        {
+          "line": 1915,
+          "symbol": "def _cook_release(self, j, names):"
+        },
+        {
+          "line": 1921,
+          "symbol": "def robot_state(self, r):"
+        },
+        {
+          "line": 1945,
+          "symbol": "def active_grants(self):"
+        },
+        {
+          "line": 1951,
+          "symbol": "def estopped(self):"
+        },
+        {
+          "line": 1954,
+          "symbol": "def _off_node(self, r):"
+        },
+        {
+          "line": 1958,
+          "symbol": "def _arm_job_of(self, arm):"
+        },
+        {
+          "line": 1965,
+          "symbol": "def snapshot(self):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_bringup/launch/sim.launch.py",
+      "sha256": "944bbba4e9d8f82bed21ab72b09650fc5afbc1afaa971e056b78bbfdc35ebe9e",
+      "symbols": [
+        {
+          "line": 34,
+          "symbol": "def _nav2_displays(rid, show_global):"
+        },
+        {
+          "line": 36,
+          "symbol": "def cmap(name, topic, on, alpha):"
+        },
+        {
+          "line": 107,
+          "symbol": "def _global_costmap_display(rid, on):"
+        },
+        {
+          "line": 145,
+          "symbol": "def rviz_config(robots, nav2=False, store=True, focus=None, costmaps=False):"
+        },
+        {
+          "line": 193,
+          "symbol": "def measured_nodes(map_id, robots, g, st):"
+        },
+        {
+          "line": 274,
+          "symbol": "def setup(context):"
+        },
+        {
+          "line": 354,
+          "symbol": "def generate_launch_description():"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_bringup/launch/real.launch.py",
+      "sha256": "ea9dca981511e05618ed10603760f2681e0a47ff1145ff491ce2eeb0570578a7",
+      "symbols": [
+        {
+          "line": 55,
+          "symbol": "def setup(context):"
+        },
+        {
+          "line": 130,
+          "symbol": "def start_views(event, context):"
+        },
+        {
+          "line": 139,
+          "symbol": "def generate_launch_description():"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/__init__.py",
+      "sha256": "1739ada2896af536f8f14f7e27ea2a52a04f5026fe6ff40cf632bc6c4c476e94",
+      "symbols": [
+        {
+          "line": 16,
+          "symbol": "def make_planner(name):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/sipp.py",
+      "sha256": "166829188eda2254cec11b598a0bb56887f97e60a1d20ea94856e86912658965",
+      "symbols": [
+        {
+          "line": 10,
+          "symbol": "class SippPlanner(PathPlanner):"
+        },
+        {
+          "line": 15,
+          "symbol": "def plan(self, graph, req, table):"
+        },
+        {
+          "line": 24,
+          "symbol": "def intervals(n):"
+        },
+        {
+          "line": 61,
+          "symbol": "def _path(parent, g, key, req):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/base.py",
+      "sha256": "d74b44d011d94a8e99d73a1173af685fbec328159a8321e82379ef55afb2bbe2",
+      "symbols": [
+        {
+          "line": 14,
+          "symbol": "class Step:"
+        },
+        {
+          "line": 21,
+          "symbol": "class PlanRequest:"
+        },
+        {
+          "line": 34,
+          "symbol": "def segment_time(self, dist: float) -> float:"
+        },
+        {
+          "line": 39,
+          "symbol": "class ReservationTable:"
+        },
+        {
+          "line": 40,
+          "symbol": "def __init__(self, pad=0.4, conflict=None):"
+        },
+        {
+          "line": 46,
+          "symbol": "def add(self, node, t0, t1, owner):"
+        },
+        {
+          "line": 50,
+          "symbol": "def add_raw(self, node, t0, t1, owner):"
+        },
+        {
+          "line": 53,
+          "symbol": "def copy(self):"
+        },
+        {
+          "line": 59,
+          "symbol": "def add_plan(self, owner, steps, last_hold=INF):"
+        },
+        {
+          "line": 66,
+          "symbol": "def safe_intervals(self, node, t_from=0.0):"
+        },
+        {
+          "line": 80,
+          "symbol": "def is_free(self, node, a, b):"
+        },
+        {
+          "line": 86,
+          "symbol": "def first_block_after(self, node, t):"
+        },
+        {
+          "line": 93,
+          "symbol": "class PathPlanner:"
+        },
+        {
+          "line": 99,
+          "symbol": "def plan(self, graph, req: PlanRequest, table: ReservationTable):"
+        },
+        {
+          "line": 104,
+          "symbol": "def start_interval_end(table, node, t0, grace=3.0):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/layout.py",
+      "sha256": "97d9b9e08b5e5125385da09b5b1fbfcdcf93abe3f5e6f91d7e9c69f3d4b5d183",
+      "symbols": [
+        {
+          "line": 16,
+          "symbol": "def m(x_cm, y_cm):"
+        },
+        {
+          "line": 46,
+          "symbol": "def robot_ids(n):"
+        },
+        {
+          "line": 54,
+          "symbol": "def robot_index(rid):"
+        },
+        {
+          "line": 73,
+          "symbol": "def _wall_table(x, top):"
+        },
+        {
+          "line": 80,
+          "symbol": "def _mid_table(x, sx):"
+        },
+        {
+          "line": 124,
+          "symbol": "def _nid(x, y):"
+        },
+        {
+          "line": 128,
+          "symbol": "def docks():"
+        },
+        {
+          "line": 148,
+          "symbol": "def build_roadmap():"
+        },
+        {
+          "line": 152,
+          "symbol": "def line(points):"
+        },
+        {
+          "line": 190,
+          "symbol": "class Graph:"
+        },
+        {
+          "line": 191,
+          "symbol": "def __init__(self, map_id=None):"
+        },
+        {
+          "line": 226,
+          "symbol": "def home_of(self, rid):"
+        },
+        {
+          "line": 238,
+          "symbol": "def resolve(self, name):"
+        },
+        {
+          "line": 241,
+          "symbol": "def pos(self, n):"
+        },
+        {
+          "line": 244,
+          "symbol": "def dist(self, a, b):"
+        },
+        {
+          "line": 247,
+          "symbol": "def sp_from(self, src):"
+        },
+        {
+          "line": 266,
+          "symbol": "def shortest_dist(self, a, b):"
+        },
+        {
+          "line": 269,
+          "symbol": "def nearest_node(self, x, y):"
+        },
+        {
+          "line": 273,
+          "symbol": "def obstacle_rects_cm():"
+        },
+        {
+          "line": 280,
+          "symbol": "def to_json():"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/cbs.py",
+      "sha256": "8e7337ec9376843d607ccd312ea845674460a68eaa3d508fda5701e4df4af198",
+      "symbols": [
+        {
+          "line": 17,
+          "symbol": "class CbsPlanner(PathPlanner):"
+        },
+        {
+          "line": 23,
+          "symbol": "def __init__(self, max_nodes=120, time_limit=0.25):"
+        },
+        {
+          "line": 27,
+          "symbol": "def plan(self, graph, req, table):                       # single-robot query: same as prioritized SIPP"
+        },
+        {
+          "line": 30,
+          "symbol": "def _low(self, graph, req, static, cons):"
+        },
+        {
+          "line": 40,
+          "symbol": "def _conflict(graph, plans, holds):"
+        },
+        {
+          "line": 57,
+          "symbol": "def plan_joint(self, graph, reqs, static):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/cooperative_astar.py",
+      "sha256": "e5548a2f4250db8cbf7594977c78a66977b040b57adf2a4ff08d95da73101723",
+      "symbols": [
+        {
+          "line": 7,
+          "symbol": "class CooperativeAStarPlanner(PathPlanner):"
+        },
+        {
+          "line": 12,
+          "symbol": "def __init__(self, dt=0.5, horizon=600):"
+        },
+        {
+          "line": 15,
+          "symbol": "def plan(self, graph, req, table):"
+        },
+        {
+          "line": 22,
+          "symbol": "def free(n, a, b):"
+        },
+        {
+          "line": 58,
+          "symbol": "def _path(parent, key, t0, dt, req):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/independent_astar.py",
+      "sha256": "1ac314d0d2ab82b09313645f9848e907c16ac3ff9f9b4cc32f37f08f69b8d946",
+      "symbols": [
+        {
+          "line": 11,
+          "symbol": "class IndependentAStarPlanner(PathPlanner):"
+        },
+        {
+          "line": 16,
+          "symbol": "def plan(self, graph, req, table):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_mobile/frybot_mobile/navigator.py",
+      "sha256": "63f8307e3c4e88c5dbc128a8c7ffc899ad54e6082919abfc6b02a6159a43ca4a",
+      "symbols": [
+        {
+          "line": 13,
+          "symbol": "def params_file(rid, real, map_yaml='', measured=False):"
+        },
+        {
+          "line": 32,
+          "symbol": "def navigator_nodes(rid, real, map_yaml='', measured=False, initial_pose=()):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/schedulers/__init__.py",
+      "sha256": "4746c55675a53ff2b255ed4d4457deba49d50dcf40dc7f8052d2a72328a6cdd5",
+      "symbols": [
+        {
+          "line": 10,
+          "symbol": "class Scheduler:"
+        },
+        {
+          "line": 16,
+          "symbol": "def assign(self, tasks, robots, cost, now):"
+        },
+        {
+          "line": 21,
+          "symbol": "class FifoNearestScheduler(Scheduler):"
+        },
+        {
+          "line": 25,
+          "symbol": "def assign(self, tasks, robots, cost, now):"
+        },
+        {
+          "line": 36,
+          "symbol": "class PriorityGreedyScheduler(Scheduler):"
+        },
+        {
+          "line": 41,
+          "symbol": "def assign(self, tasks, robots, cost, now):"
+        },
+        {
+          "line": 52,
+          "symbol": "class MinCostScheduler(Scheduler):"
+        },
+        {
+          "line": 69,
+          "symbol": "def assign(self, tasks, robots, cost, now):"
+        },
+        {
+          "line": 92,
+          "symbol": "class MinCostEtaScheduler(MinCostScheduler):"
+        },
+        {
+          "line": 100,
+          "symbol": "class MinCostEtaRollingScheduler(MinCostEtaScheduler):"
+        },
+        {
+          "line": 121,
+          "symbol": "def make_scheduler(name):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_mobile/config/nav2_store.yaml",
+      "sha256": "316300454ea7958fe2962255bbf72dd1a7cb6e427e3f83811b557eff936276ed",
+      "symbols": []
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_mobile/frybot_mobile/mobile_controller.py",
+      "sha256": "4a8232f129153c5c4e0810c0ba5dea6e02dfd607b6854609e34ae3746af7fcfa",
+      "symbols": [
+        {
+          "line": 64,
+          "symbol": "def wrap(a):"
+        },
+        {
+          "line": 69,
+          "symbol": "class MobileController(Node):"
+        },
+        {
+          "line": 75,
+          "symbol": "def create_publisher(self, msg_type, topic: str, qos_profile, **kwargs):"
+        },
+        {
+          "line": 93,
+          "symbol": "def create_subscription(self, msg_type, topic: str, callback,"
+        },
+        {
+          "line": 113,
+          "symbol": "def __init__(self):"
+        },
+        {
+          "line": 267,
+          "symbol": "def _grant(self, m):"
+        },
+        {
+          "line": 273,
+          "symbol": "def _heartbeat(self, m):"
+        },
+        {
+          "line": 286,
+          "symbol": "def _fms_alive(self):"
+        },
+        {
+          "line": 289,
+          "symbol": "def _scan(self, m):"
+        },
+        {
+          "line": 304,
+          "symbol": "def _guest_track(self, m: GuestTrack) -> None:"
+        },
+        {
+          "line": 312,
+          "symbol": "def _guest_away(self, visit_id: int, limit: float) -> bool:"
+        },
+        {
+          "line": 340,
+          "symbol": "def _battery(self, m: Float32) -> None:"
+        },
+        {
+          "line": 350,
+          "symbol": "def _charging_from_battery(self) -> bool:"
+        },
+        {
+          "line": 372,
+          "symbol": "def _publish_arm(self) -> None:"
+        },
+        {
+          "line": 383,
+          "symbol": "def _odom(self, m):"
+        },
+        {
+          "line": 389,
+          "symbol": "def _tf_pose(self):"
+        },
+        {
+          "line": 412,
+          "symbol": "def _loc_lost(self) -> bool:"
+        },
+        {
+          "line": 423,
+          "symbol": "def _initial_pose(self):"
+        },
+        {
+          "line": 439,
+          "symbol": "def _accepted(self, gh):"
+        },
+        {
+          "line": 444,
+          "symbol": "def _navigate(self, gh):"
+        },
+        {
+          "line": 608,
+          "symbol": "def _fb(self, gh, pv, reached, state):"
+        },
+        {
+          "line": 611,
+          "symbol": "def _step_toward(self, tx, ty, reverse, dt, v=None):"
+        },
+        {
+          "line": 642,
+          "symbol": "def _rear_blocked(self):"
+        },
+        {
+          "line": 649,
+          "symbol": "def _stop(self):"
+        },
+        {
+          "line": 662,
+          "symbol": "def _detected(self, m):"
+        },
+        {
+          "line": 672,
+          "symbol": "def _dock_segment(self, key, d, reverse, dt, prev):"
+        },
+        {
+          "line": 766,
+          "symbol": "def _creep(self, tx, ty, k):"
+        },
+        {
+          "line": 784,
+          "symbol": "def _rotate(self, err, tol, dt, w_min):"
+        },
+        {
+          "line": 800,
+          "symbol": "def _dock_accepted(self, fut, fk):"
+        },
+        {
+          "line": 812,
+          "symbol": "def _dock_result(self, fut, fk):"
+        },
+        {
+          "line": 818,
+          "symbol": "def _dock_cancel(self):"
+        },
+        {
+          "line": 829,
+          "symbol": "def _set_speed_limit(self, v):"
+        },
+        {
+          "line": 838,
+          "symbol": "def _nav2_segment(self, key, tx, ty, reverse=False):"
+        },
+        {
+          "line": 928,
+          "symbol": "def _refresh_costmap(self):"
+        },
+        {
+          "line": 933,
+          "symbol": "def _nav2_accepted(self, fut, key):"
+        },
+        {
+          "line": 945,
+          "symbol": "def _nav2_result(self, fut, key):"
+        },
+        {
+          "line": 955,
+          "symbol": "def _nav2_cancel(self):"
+        },
+        {
+          "line": 966,
+          "symbol": "def _arm_job(self, gh):"
+        },
+        {
+          "line": 989,
+          "symbol": "def _publish(self):"
+        },
+        {
+          "line": 1026,
+          "symbol": "def main():"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_mobile/frybot_mobile/aruco_dock_detector.py",
+      "sha256": "deb9750409bc355bc0b93ed2502b4d42145d7fe271975031384e4debfa157df1",
+      "symbols": [
+        {
+          "line": 42,
+          "symbol": "def quat_matrix(q):"
+        },
+        {
+          "line": 49,
+          "symbol": "def yaw_of(q):"
+        },
+        {
+          "line": 53,
+          "symbol": "class ArucoDockDetector(Node):"
+        },
+        {
+          "line": 54,
+          "symbol": "def __init__(self):"
+        },
+        {
+          "line": 87,
+          "symbol": "def _info(self, m):"
+        },
+        {
+          "line": 91,
+          "symbol": "def _target(self, m):"
+        },
+        {
+          "line": 105,
+          "symbol": "def _camera_tf(self):"
+        },
+        {
+          "line": 119,
+          "symbol": "def _odom(self, m):"
+        },
+        {
+          "line": 129,
+          "symbol": "def _resolve(self):"
+        },
+        {
+          "line": 153,
+          "symbol": "def _image(self, m):"
+        },
+        {
+          "line": 201,
+          "symbol": "def _repeat(self, t, stamp):"
+        },
+        {
+          "line": 212,
+          "symbol": "def main():"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/planners/rmf.py",
+      "sha256": "38e3a5bda0a36f142e341da0d5e01d568f8dfeea9411670b475698a946f2ec60",
+      "symbols": [
+        {
+          "line": 10,
+          "symbol": "class only translates: our roadmap -> RMF graph, the other robots' remaining routes -> schedule itineraries, the"
+        },
+        {
+          "line": 33,
+          "symbol": "def available():"
+        },
+        {
+          "line": 37,
+          "symbol": "class RmfServer:"
+        },
+        {
+          "line": 40,
+          "symbol": "def __init__(self, graph, safe_dist=0.155):"
+        },
+        {
+          "line": 52,
+          "symbol": "def alive(self):"
+        },
+        {
+          "line": 55,
+          "symbol": "def send(self, lines):"
+        },
+        {
+          "line": 59,
+          "symbol": "def line(self):"
+        },
+        {
+          "line": 62,
+          "symbol": "def close(self):"
+        },
+        {
+          "line": 68,
+          "symbol": "def obstacles(self, table, base):"
+        },
+        {
+          "line": 88,
+          "symbol": "def read_route(self, count, base, req):"
+        },
+        {
+          "line": 119,
+          "symbol": "def _between(graph, a, b, ta, tb):"
+        },
+        {
+          "line": 140,
+          "symbol": "class RmfPlanner(PathPlanner):"
+        },
+        {
+          "line": 145,
+          "symbol": "def __init__(self):"
+        },
+        {
+          "line": 148,
+          "symbol": "def _srv(self, graph):"
+        },
+        {
+          "line": 153,
+          "symbol": "def __del__(self):"
+        },
+        {
+          "line": 157,
+          "symbol": "def plan(self, graph, req, table):"
+        },
+        {
+          "line": 169,
+          "symbol": "class RmfNegotiationPlanner(RmfPlanner):"
+        },
+        {
+          "line": 178,
+          "symbol": "def plan_joint(self, graph, reqs, static):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/frybot_control/schedulers/rmf_task.py",
+      "sha256": "c8c43219e2220d0e3ca8702e715096b3f887fe55ea74b4f08da6260f095fbe38",
+      "symbols": [
+        {
+          "line": 17,
+          "symbol": "class RmfTaskScheduler(MinCostScheduler):"
+        },
+        {
+          "line": 24,
+          "symbol": "def __init__(self):"
+        },
+        {
+          "line": 27,
+          "symbol": "def __del__(self):"
+        },
+        {
+          "line": 31,
+          "symbol": "def _remaining(self, r):"
+        },
+        {
+          "line": 48,
+          "symbol": "def assign(self, tasks, robots, cost, now):"
+        }
+      ]
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_control/rmf_bridge/rmf_plan_server.cpp",
+      "sha256": "44e920c3445d2c9ab036cc5cffc64c217a3c0415d2341497b3b4374519183fdd",
+      "symbols": []
+    },
+    {
+      "path": "/home/lee/frybot_ws/src/frybot/frybot_sim/frybot_sim/ai_server.py",
+      "sha256": "94704ced6b40e958e36f682e5d5a35fedccbb92f28d4ed6f2b2c4afa416e8de7",
+      "symbols": [
+        {
+          "line": 13,
+          "symbol": "class InferenceModel:"
+        },
+        {
+          "line": 17,
+          "symbol": "def doneness(self, golden_ratio):"
+        },
+        {
+          "line": 21,
+          "symbol": "def seat_qr(self, table):"
+        },
+        {
+          "line": 25,
+          "symbol": "def guest(self, distance: float) -> tuple[bool, float]:"
+        },
+        {
+          "line": 30,
+          "symbol": "class AiInterface:"
+        },
+        {
+          "line": 31,
+          "symbol": "def __init__(self, udp_port, central_url):"
+        },
+        {
+          "line": 40,
+          "symbol": "def post(self, result):"
+        },
+        {
+          "line": 48,
+          "symbol": "def run(self):"
+        },
+        {
+          "line": 74,
+          "symbol": "def main():"
+        }
+      ]
+    }
+  ]
+}

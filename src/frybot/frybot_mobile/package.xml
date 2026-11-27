@@ -7,9 +7,15 @@
     the simulation and on the real Pinky Pro.</description>
   <maintainer email="oneteam@example.com">OneTeam</maintainer>
   <license>Apache-2.0</license>
+  <!-- 실행 의존성: ROS 클라이언트, FryBot 인터페이스 -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>frybot_interfaces</exec_depend>
+  <!-- [수정 2026-11-20] 서빙 팔 전달(mobile_controller)이 GoalStatus 를 씀 -->
+  <exec_depend>action_msgs</exec_depend>
+  <!-- 지도·도크 정보(layout, map_catalog)를 가져다 씀 -->
   <exec_depend>frybot_control</exec_depend>
+  <!-- Nav2 메시지와 로봇마다 띄우는 Nav2 노드(제어기, 플래너, BT,
+       수명 관리, RPP·NavFn 플러그인, 지도, AMCL, 도킹 서버) -->
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
@@ -19,6 +25,21 @@
   <exec_depend>nav2_navfn_planner</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_amcl</exec_depend>
+  <exec_depend>opennav_docking</exec_depend>
+  <!-- aruco_dock_detector 의 영상 처리·행렬 계산 -->
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <!-- TF 읽기(검출기의 카메라 장착 위치 등) -->
   <exec_depend>tf2_ros</exec_depend>
+  <!-- [수정 2026-11-17] pinky_bringup 대신 내장한 Pinky 드라이버와 로봇 모델.
+       로봇에만 필요한 것(이 파일에 적지 않음, 로봇에 이미 설치됨):
+       sllidar_ros2, tf_transformations, dynamixel_sdk, pinkylib -->
+  <!-- [수정 2026-11-20] serving_arm_driver 는 서빙 팔의 Pi 에서만 돌고 pymycobot 이
+       필요함(그 Pi 의 가상 환경 ~/venv/jetcobot 에 설치돼 있어 여기에 적지 않음) -->
+  <exec_depend>frybot_description</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <!-- 빌드 방식: ament_python(setup.py) -->
   <export><build_type>ament_python</build_type></export>
 </package>

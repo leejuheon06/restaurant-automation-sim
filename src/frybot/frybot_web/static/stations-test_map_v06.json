@@ -1,0 +1,12 @@
+[
+ { "node": "D1_STOP", "role": "pickup", "label": "음식 픽업 (도킹, 조리대)"},
+ { "node": "D1_IN", "role": "dock", "label": "도킹 접근"},
+ { "node": "B5", "role": "entrance", "label": "손님 안내 시작 (입구)"},
+ { "node": "B2", "role": "table", "label": "T1·T3 정지"},
+ { "node": "A2", "role": "table", "label": "T2·T3 정지"},
+ { "node": "A4", "role": "table", "label": "T4·T6 정지"},
+ { "node": "B4", "role": "table", "label": "T4·T5 정지"},
+ { "node": "H1", "role": "waiting", "label": "충전소 1 (pinky1)"},
+ { "node": "H2", "role": "waiting", "label": "충전소 2 (pinky2)"},
+ { "node": "H3", "role": "waiting", "label": "충전소 3 (pinky3)"}
+]

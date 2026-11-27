@@ -11,3 +11,10 @@ src/mycobot_ros2/
 회의안건_*.pdf
 # Gazebo 검증 실행의 콘솔 로그 원본 (용량이 커서 제외, 이벤트·시나리오 로그는 포함)
 docs/gz_validation/*.launch.log
+# Claude Code 개인 규칙
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/ruff.toml
+.claude/hooks/
+# [수정 2026-11-18] T-30: 비밀번호가 든 로봇 등록부(실제 파일은 ~/.config/frybot/robots.yaml)
+src/frybot/frybot_bringup/config/robots.yaml

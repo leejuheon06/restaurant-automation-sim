@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <!-- [수정 2026-11-24] 새 패키지: AI 서버(실제 추론). 아키텍처의 AI Server -->
+  <name>frybot_ai</name>
+  <version>0.1.0</version>
+  <description>FryBot AI server: YOLO guest tracking from AMR cameras (GUEST_TRACK)</description>
+  <maintainer email="oneteam@example.com">OneTeam</maintainer>
+  <license>Apache-2.0</license>
+  <!-- ROS 없이 도는 프로그램. ultralytics(torch)는 가상 환경 ~/venv/yolo 에
+       설치하고 그 Python 으로 실행한다(launch/guest_tracker.launch.py) -->
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <!-- [수정 2026-11-24] 런치가 로봇 등록부(robots.yaml)를 읽음 -->
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>
