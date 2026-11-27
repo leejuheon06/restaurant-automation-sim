@@ -1,6 +1,21 @@
-string command         # ESTOP RESUME REASSIGN CANCEL_TASK RETRY_TASK SET_SCHEDULER SET_PLANNER SET_TABLE CANCEL_VISIT
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: AdminCommand, /frybot/admin -> RequestAdminOperation,
+# /frybot/central/request_admin_operation. FleetCommand -> ControlTask
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: RequestAdminOperation,
+# /frybot/central/request_admin_operation -> AdminCommand, /frybot/admin.
+# ControlTask -> FleetCommand
+# Operator command to the Central Control (/frybot/admin).
+# Fleet commands (see FleetCommand.srv) are passed on to the Task Manager;
+# SET_TABLE (target = table id, arg = AVAILABLE | CLOSED) and END_USE (target = table id) are handled here.
+# Failure: ok = false and message says why (unknown command / target, or not allowed in the current state).
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: ControlTask -> FleetCommand
+# command: 명령 이름(위 FleetCommand 명령, SET_TABLE, END_USE)
+string command
+# target: 명령 대상(로봇 이름, 임무 id, 테이블 번호 등. 명령마다 다름)
 string target
+# arg: 명령에 붙는 값(명령마다 다름, 없으면 '')
 string arg
 ---
+# ok: 처리했으면 true
 bool ok
+# message: 결과 문구(실패면 이유)
 string message

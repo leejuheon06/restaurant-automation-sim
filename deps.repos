@@ -1,3 +1,6 @@
+# [수정 2026-11-17] frybot 빌드·실행에는 더 이상 필요 없음: 쓰는 파일은
+# src/frybot/frybot_description, frybot_mobile 에 복사해 둠.
+# 원본을 참고하거나 사본을 갱신할 때만 받음 (vcs import < deps.repos)
 repositories:
   src/pinky_pro:
     type: git

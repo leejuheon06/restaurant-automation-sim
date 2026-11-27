@@ -1,6 +1,10 @@
 # FrybotNavigator: Nav2 parameters of one FrybotMobile (Pinky Pro) in the FryBot store
-# (tabletop scale: 2 m x 1 m map, 11 x 12 cm robot). Used unchanged in the simulation and on the real robot;
-# navigator.launch.py fills in the placeholders:
+# (tabletop scale: 2 m x 1 m map, 11 x 12 cm robot). Shared by the simulation and the real robot.
+# [수정 2026-11-18] P1(R2-1): "그대로 씀"이 아님. navigator.py 가 실측 지도에서
+# FollowPath.use_rotate_to_heading=true, allow_reversing=false 로 덮어쓰고, 초기
+# 자세를 주면 amcl 의 set_initial_pose·initial_pose.* 를 덮어씀. 전역 inflation
+# 은 __GLOBAL_INFLATION__(실측 지도 0.07, 그 밖 0.08)으로 채움.
+# navigator.py fills in the placeholders:
 #   __NS__   robot name (pinky1 ...), the namespace of every topic
 #   __FP__   TF frame prefix: "pinky1/" in the simulation (one shared /tf), "" on the robot (its own /pinkyN/tf)
 #   __SIM__  true with the simulator clock, false on the robot
@@ -10,39 +14,120 @@
 # segment on the costmaps (static map + inflation globally, lidar obstacles locally) and stops before a collision.
 bt_navigator:
   ros__parameters:
+    # 시뮬 시계 사용 여부(__SIM__ 치환: 시뮬 true, 실기기 false)
     use_sim_time: __SIM__
+    # 전역 프레임(지도)
     global_frame: map
+    # 로봇 기준 프레임
     robot_base_frame: __FP__base_footprint
+    # 오도메트리 토픽(로봇 네임스페이스 아래)
     odom_topic: /__NS__/odom
+    # BT 한 번 실행(틱) 주기(ms)
     bt_loop_duration: 10
-    default_server_timeout: 20
+    # default_server_timeout: BT 노드가 액션 서버 응답을 기다리는 시간(ms)
+    # [수정 2026-11-20] T-43: 20 -> 200 (ms). Pinky 에서 planner_server 의 목표
+    # 수락 응답이 20 ms 를 넘겨 2026-11-20 실기기 시험에서 구간 실패 9회
+    default_server_timeout: 200
+    # NavigateToPose 목표에 쓸 BT 파일(segment_bt.xml)
     default_nav_to_pose_bt_xml: __BT__
+    # NavigateThroughPoses 용 BT. navigators 에 없어 쓰이지 않는 것으로 보임(확인 필요)
     default_nav_through_poses_bt_xml: __BT__
+    # 띄울 내비게이터 목록(NavigateToPose 하나)
     navigators: ["navigate_to_pose"]
     navigate_to_pose:
+      # NavigateToPose 내비게이터 플러그인
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
 
 controller_server:
   ros__parameters:
+    # 시뮬 시계 사용 여부
     use_sim_time: __SIM__
+    # 제어 주기(Hz)
     controller_frequency: 20.0
+    # 이보다 작은 오도메트리 선속도(m/s)는 0 으로 봄
     min_x_velocity_threshold: 0.001
+    # 이보다 작은 오도메트리 각속도(rad/s)는 0 으로 봄
     min_theta_velocity_threshold: 0.001
+    # 제어기가 유효 명령을 못 내도 이 시간(s)까지는 실패로 보지 않음
     failure_tolerance: 0.5
+    # 오도메트리 토픽
     odom_topic: /__NS__/odom
+    # 진행 감시 플러그인 ID. Jazzy 에서 이 단수형 키가 읽히는지 확인 필요
     progress_checker_plugin: "progress_checker"
+    # 도착 판정 플러그인 목록
     goal_checker_plugins: ["goal_checker"]
-    controller_plugins: ["FollowPath"]
+    # controller_plugins: 쓸 제어기 ID 목록(BT 의 ControllerSelector 가 고름)
+    # [수정 2026-11-17] UR-03: 후진 전용 제어기 FollowPathReverse 추가 (이전 값: ["FollowPath"])
+    controller_plugins: ["FollowPath", "FollowPathReverse"]
     progress_checker:
+      # 단순 진행 감시: 아래 시간 안에 아래 거리만큼 못 움직이면 제어 실패
       plugin: "nav2_controller::SimpleProgressChecker"
+      # 진행으로 볼 최소 이동 거리(m)
       required_movement_radius: 0.02
+      # 그 이동에 허용하는 시간(s)
       movement_time_allowance: 8.0
     goal_checker:
+      # 단순 도착 판정
       plugin: "nav2_controller::SimpleGoalChecker"
+      # 위치 허용 오차를 한 번 만족하면 이후 위치는 다시 보지 않음
       stateful: true
+      # 도착 위치 허용 오차(m)
       xy_goal_tolerance: 0.015
+      # 도착 방향 허용 오차(rad). 2pi 보다 커서 방향은 보지 않음
       yaw_goal_tolerance: 6.3
     FollowPath:
+      # 전진 제어기: Regulated Pure Pursuit
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      # 목표 선속도(m/s). speed_limit 토픽으로 더 낮출 수 있음
+      desired_linear_vel: 0.08
+      # 전방 주시 거리(m). 속도 비례 주시가 꺼져 있어 이 값을 씀
+      lookahead_dist: 0.06
+      # 속도 비례 주시일 때 최소 주시 거리(m). 지금은 쓰이지 않음
+      min_lookahead_dist: 0.04
+      # 속도 비례 주시일 때 최대 주시 거리(m). 지금은 쓰이지 않음
+      max_lookahead_dist: 0.10
+      # 속도 비례 주시 시간(s, 거리 = 속도 x 시간). 지금은 쓰이지 않음
+      lookahead_time: 1.0
+      # false: 속도와 무관하게 lookahead_dist 고정
+      use_velocity_scaled_lookahead_dist: false
+      # 제자리 방향 맞춤 각속도(rad/s)
+      rotate_to_heading_angular_vel: 1.5
+      # 최대 각가속도(rad/s^2)
+      max_angular_accel: 6.0
+      # TF 허용 지연(s)
+      transform_tolerance: 0.3
+      # 목표 근처 감속 때 최저 선속도(m/s)
+      min_approach_linear_velocity: 0.02
+      # 목표까지 이 거리(m)부터 감속
+      approach_velocity_scaling_dist: 0.05
+      # 경로 앞 충돌 예측 시 멈춤
+      use_collision_detection: true
+      # 충돌을 내다보는 시간(s, 당근점까지)
+      max_allowed_time_to_collision_up_to_carrot: 0.3
+      # 곡률이 크면 선속도를 줄임
+      use_regulated_linear_velocity_scaling: true
+      # 장애물 근처(비용) 감속은 끔
+      use_cost_regulated_linear_velocity_scaling: false
+      # 이 곡률 반경(m)보다 작은 곡선에서 감속
+      regulated_linear_scaling_min_radius: 0.05
+      # 곡률 감속 때 최저 선속도(m/s)
+      regulated_linear_scaling_min_speed: 0.03
+      # use_rotate_to_heading: 경로 방향과 차이가 크면 먼저 제자리 회전
+      # The AMR node turns the robot toward each node itself (front for forward driving, rear for reverse) before
+      # sending the goal, so the controller only drives. Reversing (guiding, yielding, backing out after a replan)
+      # follows the sign of the carrot in the robot frame; RPP does not allow it together with rotate-to-heading.
+      use_rotate_to_heading: false
+      # 제자리 회전을 시작하는 방향 차이(rad)
+      rotate_to_heading_min_angle: 0.4
+      # 당근점이 로봇 뒤에 있으면 후진
+      allow_reversing: true
+      # 경로에서 로봇 위치를 찾는 최대 거리(m)
+      max_robot_pose_search_dist: 0.5
+    # FollowPathReverse: 각 값의 뜻은 위 FollowPath 와 같음
+    # [수정 2026-11-17] UR-03: 후진 전용 제어기. 실측 지도에서는 navigator.py 가 FollowPath 를 전진 전용
+    # (use_rotate_to_heading: true, allow_reversing: false)으로 덮어쓰므로, 손님 안내 구간(후진)은 이 제어기로
+    # 주행한다. AMR 노드가 구간마다 controller_selector 토픽으로 고른다. 값은 위 FollowPath 와 같다.
+    FollowPathReverse:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.08
       lookahead_dist: 0.06
@@ -61,109 +146,278 @@ controller_server:
       use_cost_regulated_linear_velocity_scaling: false
       regulated_linear_scaling_min_radius: 0.05
       regulated_linear_scaling_min_speed: 0.03
-      # The AMR node turns the robot toward each node itself (front for forward driving, rear for reverse) before
-      # sending the goal, so the controller only drives. Reversing (guiding, yielding, backing out after a replan)
-      # follows the sign of the carrot in the robot frame; RPP does not allow it together with rotate-to-heading.
       use_rotate_to_heading: false
       rotate_to_heading_min_angle: 0.4
       allow_reversing: true
       max_robot_pose_search_dist: 0.5
 
+# 지역 costmap: 로봇 둘레 1 m x 1 m 창, 라이다 장애물 + inflation
 local_costmap:
   local_costmap:
     ros__parameters:
+      # 시뮬 시계 사용 여부
       use_sim_time: __SIM__
+      # costmap 갱신 주기(Hz)
       update_frequency: 10.0
+      # costmap 발행 주기(Hz)
       publish_frequency: 2.0
+      # 기준 프레임(오도메트리)
       global_frame: __FP__odom
+      # 로봇 기준 프레임
       robot_base_frame: __FP__base_footprint
+      # 로봇을 따라 움직이는 창
       rolling_window: true
+      initial_transform_timeout: 900.0   # wait this long for odom -> base before giving up (default 60 s)
+      # 창 너비(m)
       width: 1
+      # 창 높이(m)
       height: 1
+      # 칸 크기(m)
       resolution: 0.01
+      # 로봇 외곽 꼭짓점(m, base 기준): 12.4 x 11.4 cm
       footprint: "[[0.062, 0.057], [0.062, -0.057], [-0.062, -0.057], [-0.062, 0.057]]"
+      # 레이어 순서
       plugins: ["obstacle_layer", "inflation_layer"]
       obstacle_layer:
+        # 라이다 장애물 레이어
         plugin: "nav2_costmap_2d::ObstacleLayer"
+        # 레이어 사용
         enabled: true
+        # 관측 소스 이름 목록
         observation_sources: scan
         scan:
+          # 라이다 토픽
           topic: /__NS__/scan
+          # 관측 데이터 형식
           data_type: "LaserScan"
+          # 장애물로 표시
           marking: true
+          # 광선 추적으로 빈 칸 지움
           clearing: true
+          # 이 높이(m) 넘는 점은 무시
           max_obstacle_height: 2.0
+          # 장애물로 표시할 최대 거리(m)
           obstacle_max_range: 0.6
           obstacle_min_range: 0.06      # the lidar clamps to 0.05 m: ignore clamped returns
+          # 지우기 광선 최대 거리(m)
           raytrace_max_range: 0.8
+          # 지우기 광선 최소 거리(m)
           raytrace_min_range: 0.0
       inflation_layer:
+        # 장애물 둘레 비용 레이어
         plugin: "nav2_costmap_2d::InflationLayer"
+        # 비용을 퍼뜨리는 반경(m)
         inflation_radius: 0.07
+        # 반경 안 비용이 줄어드는 정도(클수록 빨리 줄어듦)
         cost_scaling_factor: 40.0
+      # 매번 costmap 전체를 발행
       always_send_full_costmap: true
 
+# 전역 costmap: 정적 지도 + inflation(map 프레임)
 global_costmap:
   global_costmap:
     ros__parameters:
+      # 시뮬 시계 사용 여부
       use_sim_time: __SIM__
+      # costmap 갱신 주기(Hz)
       update_frequency: 1.0
+      # costmap 발행 주기(Hz)
       publish_frequency: 0.5
+      # 기준 프레임(지도)
       global_frame: map
+      # 로봇 기준 프레임
       robot_base_frame: __FP__base_footprint
+      # 칸 크기(m). R2-2: static_layer 가 지도 해상도로 덮어씀(확인 필요)
       resolution: 0.01
+      # false: 모르는 칸을 빈 칸으로 봄
       track_unknown_space: false
+      # Without an initial pose AMCL publishes no map -> odom. The default (60 s) made the whole Nav2 bring-up
+      # abort when the pose was set later than that; wait up to 15 min instead.
+      initial_transform_timeout: 900.0
+      # 로봇 외곽 꼭짓점(m, 지역 costmap 과 같음)
       footprint: "[[0.062, 0.057], [0.062, -0.057], [-0.062, -0.057], [-0.062, 0.057]]"
+      # 레이어 순서
       plugins: ["static_layer", "inflation_layer"]
       static_layer:
+        # 정적 지도 레이어
         plugin: "nav2_costmap_2d::StaticLayer"
+        # 지도 토픽(__MAPTOPIC__ 치환)
         map_topic: __MAPTOPIC__
+        # 래치(transient_local)된 지도를 구독
         map_subscribe_transient_local: true
       inflation_layer:
+        # 장애물 둘레 비용 레이어
         plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 0.08
+        # 비용 반경(m). 값은 navigator.py 가 채움(머리말 참고)
+        inflation_radius: __GLOBAL_INFLATION__
+        # 반경 안 비용이 줄어드는 정도
         cost_scaling_factor: 30.0
+      # 매번 costmap 전체를 발행
       always_send_full_costmap: true
 
+# 전역 경로 계획 서버
 planner_server:
   ros__parameters:
+    # 시뮬 시계 사용 여부
     use_sim_time: __SIM__
+    # 기대 계획 주기(Hz). 못 맞추면 경고만 냄
     expected_planner_frequency: 5.0
+    # 플래너 ID 목록(BT 의 planner_id="GridBased")
     planner_plugins: ["GridBased"]
     GridBased:
+      # NavFn 격자 플래너
       plugin: "nav2_navfn_planner::NavfnPlanner"
+      # 목표 칸이 막혀 있을 때 허용하는 거리(m)
       tolerance: 0.02
+      # A* 사용(false 면 다익스트라)
       use_astar: true
+      # 모르는 칸을 지나는 경로 금지
       allow_unknown: false
+
+# ---- precise docking (opennav_docking): chargers, pick-up spots and dish return on their ArUco wall marker, table
+# stops on the map pose. The FrybotMobile Controller calls dock_robot from the roadmap node just before the dock
+# (the robot is already there, so the server never navigates to a staging pose itself) and passes the dock pose with
+# the goal; frybot_control.layout.docks() is the list of docks.
+docking_server:
+  ros__parameters:
+    # 시뮬 시계 사용 여부
+    use_sim_time: __SIM__
+    # 도킹 제어 주기(Hz)
+    controller_frequency: 20.0
+    initial_perception_timeout: 4.0     # s to find the marker before the attempt fails
+    # 도킹 접근 단계 제한 시간(s)
+    dock_approach_timeout: 20.0
+    # 충전 확인 대기(s). 충전 도크에만 적용돼 지금(비충전 도크)은 쓰이지 않음
+    wait_charge_timeout: 2.0
+    max_retries: 0                      # a retry backs up to the staging pose; the controller falls back to Nav2 instead
+    # 로봇 기준 프레임
+    base_frame: __FP__base_footprint
+    # 도킹 계산 기준 프레임(오도메트리)
+    fixed_frame: __FP__odom
+    dock_backwards: false               # the camera looks forward: always dock nose first
+    # [수정 2026-11-26] 값은 그대로 false(가상 매장의 마커 도크). 실측 지도는
+    # navigator.py 가 이 노드에만 true 로 덮어씀(모든 도크 후진, 사용자 결정
+    # 방안 다). 이전에는 실측 지도도 false(D1_STOP 전진 도킹)
+    # staging 자세에서 이 거리(m) 안이면 staging 자세로 가는 이동을 건너뜀
+    dock_prestaging_tolerance: 0.2
+    # 도크 종류 목록
+    dock_plugins: ["marker_dock", "pose_dock"]
+    marker_dock:                        # dock pose = what the ArUco detector publishes on detected_dock_pose
+      # 충전하지 않는 단순 도크 플러그인
+      plugin: "opennav_docking::SimpleNonChargingDock"
+      # true: 검출기 자세(detected_dock_pose)를 씀
+      use_external_detection_pose: true
+      external_detection_timeout: 1.0   # the detector repeats the last pose (odometry frame) while the marker is hidden
+      # the detector already publishes the pose the robot must reach: no offset from the detection
+      external_detection_translation_x: 0.0
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: 0.0
+      external_detection_rotation_pitch: 0.0
+      external_detection_rotation_yaw: 0.0
+      # 검출 자세 평활 필터 계수(0~1, 방향은 확인 필요)
+      filter_coef: 0.3
+      # Docked when the base is this close to the dock pose (m). The FrybotMobile Controller also ends the approach
+      # when the robot is level with the dock pose (it may be a few mm to the side and never get this close).
+      docking_threshold: 0.006
+      staging_x_offset: -0.16           # the roadmap node before a dock is about this far in front of it
+      # staging 자세 방향 오프셋(rad)
+      staging_yaw_offset: 0.0
+    pose_dock:                          # no marker (table stops): the dock pose from the map is used as it is
+      # 충전하지 않는 단순 도크 플러그인
+      plugin: "opennav_docking::SimpleNonChargingDock"
+      # false: 지도에 등록된 도크 자세를 그대로 씀
+      use_external_detection_pose: false
+      # 도착 판정 거리(m)
+      docking_threshold: 0.006
+      # staging 자세 위치: 도크 앞 5 cm(m)
+      staging_x_offset: -0.05
+      # staging 자세 방향 오프셋(rad)
+      staging_yaw_offset: 0.0
+    # 도킹 접근 제어기(그래프 기반 제어 법칙)
+    controller:
+      # The server aims 0.25 m behind the dock pose, and the approach is only 5-16 cm long: with the default gains
+      # (3, 2) two thirds of a sideways offset at the start were still there at the dock. Higher gains pull the robot
+      # onto the dock's centre line within a few cm.
+      k_phi: 8.0
+      k_delta: 4.0
+      # 최저 선속도(m/s)
+      v_linear_min: 0.02
+      # 최고 선속도(m/s)
+      v_linear_max: 0.05
+      # 최고 각속도(rad/s)
+      v_angular_max: 1.0
+      # 목표 이 거리(m) 안에서 감속
+      slowdown_radius: 0.10
+      # Collision check of the approach on the local costmap, except close to the dock: a dock is right in front of a
+      # wall, a counter or a table, which the costmap marks as an obstacle. The distance is measured from the
+      # controller's target, which the server puts 0.25 m BEHIND the dock pose, so 0.33 = the last 8 cm before the
+      # dock are not checked (the server's default 0.30 = last 5 cm).
+      use_collision_detection: true
+      dock_collision_threshold: 0.33
+      # 충돌 검사에 쓸 costmap 토픽
+      costmap_topic: "local_costmap/costmap_raw"
+      # 충돌 검사에 쓸 로봇 외곽 토픽
+      footprint_topic: "local_costmap/published_footprint"
+      # TF 허용 지연(s)
+      transform_tolerance: 0.3
+      # 충돌 검사로 궤적을 내다보는 시간(s)
+      projection_time: 2.0
+      # 궤적 예측 시간 간격(s)
+      simulation_time_step: 0.1
 
 # ---- localisation, real robot only (the simulation takes the pose from the simulator instead)
 map_server:
   ros__parameters:
+    # 시뮬 시계 사용 여부
     use_sim_time: __SIM__
+    # 지도 yaml 경로(__MAP__ 치환)
     yaml_filename: "__MAP__"
 
+# AMCL 위치 추정(실기기)
 amcl:
   ros__parameters:
+    # 시뮬 시계 사용 여부
     use_sim_time: __SIM__
+    # 로봇 기준 프레임
     base_frame_id: __FP__base_footprint
+    # 오도메트리 프레임
     odom_frame_id: __FP__odom
+    # 전역 프레임(지도)
     global_frame_id: map
+    # 라이다 토픽
     scan_topic: /__NS__/scan
+    # 차동 구동 운동 모델
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    # 회전 -> 회전 추정 잡음
     alpha1: 0.2
+    # 이동 -> 회전 추정 잡음
     alpha2: 0.2
+    # 이동 -> 이동 추정 잡음
     alpha3: 0.2
+    # 회전 -> 이동 추정 잡음
     alpha4: 0.2
+    # 라이다 측정 모델(likelihood field)
     laser_model_type: "likelihood_field"
     laser_likelihood_max_dist: 0.5      # the whole map is 2 m x 1 m
+    # 쓸 라이다 최대 거리(m)
     laser_max_range: 3.0
+    # 쓸 라이다 최소 거리(m)
     laser_min_range: 0.06
+    # 갱신에 쓰는 빔 수
     max_beams: 90
+    # 최소 입자 수
     min_particles: 500
+    # 최대 입자 수
     max_particles: 2000
     update_min_d: 0.02                  # 2 cm / 0.1 rad: the roadmap segments are only 10-30 cm long
     update_min_a: 0.1
+    # 필터 갱신 몇 번마다 재표본
     resample_interval: 1
+    # map -> odom TF 허용 지연(s)
     transform_tolerance: 0.5
+    # map -> odom TF 발행
     tf_broadcast: true
-    set_initial_pose: false             # the FrybotMobile Controller sends the initial pose (the robot's home spot)
+    # set_initial_pose: true 면 initial_pose.* 로 시작 자세를 넣음
+    # [수정 2026-11-18] P1(R2-1): 가상 매장 도면에서만 제어기가 홈 자세를 보냄.
+    # 실측 지도는 robot.launch.py 의 initial_pose:= 나 RViz 2D Pose Estimate
+    set_initial_pose: false

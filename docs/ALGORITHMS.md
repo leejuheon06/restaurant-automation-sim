@@ -5,7 +5,7 @@
 FryBot Task Manager에 들어 있는 임무 배정(스케줄러) 6종과 경로 계획(플래너) 6종을 정리한 문서입니다. 각 알고리즘의 원리, 출처, 이 프로젝트에서의 구현 방식, 장단점, 시험 결과를 담았습니다.
 
 - 작성일: 2026-11-12
-- 시험 결과의 근거와 전체 표: [ALGORITHM_SELECTION_REPORT.md](ALGORITHM_SELECTION_REPORT.md)
+- 시험 결과의 근거와 전체 표: `ALGORITHM_SELECTION_REPORT.md` (작업 공간의 `archive/algorithm_comparison_2026-11.tar.gz`에 보관)
 - 코드 위치: `src/frybot/frybot_control/frybot_control/schedulers/`, `.../planners/`
 
 ## 1. 한눈에 보기
@@ -166,7 +166,7 @@ FryBot Task Manager에 들어 있는 임무 배정(스케줄러) 6종과 경로 
 - **선정: `min_cost_eta_rh` + `sipp`.** 통로가 로봇 한 대 폭이라 "시간까지 계획해 마주치지 않게 하는" 플래너가 필요하고, 로봇 3대에 임무가 몇 건씩이라 최소 비용 배정이 즉시 풀립니다. 연속 시간인 `sipp`가 격자 방식보다 빠르고, 계획 시간이 가장 짧습니다.
 - **`ccbs`는 가장 빠른 대안**이지만 간격 위반 원인을 먼저 고쳐야 합니다.
 - **Open-RMF 구성요소**는 오프라인에서 `rmf_task` + `rmf`가 가장 빨랐지만 Gazebo에서는 주행 편차에 묻혀 확인되지 않았고, 계획 시간과 외부 의존성 때문에 채택하지 않았습니다.
-- 자세한 수치와 시험 조건은 [ALGORITHM_SELECTION_REPORT.md](ALGORITHM_SELECTION_REPORT.md)에 있습니다.
+- 자세한 수치와 시험 조건은 `ALGORITHM_SELECTION_REPORT.md`(`archive/algorithm_comparison_2026-11.tar.gz`에 보관)에 있습니다.
 
 ## 6. 참고 문헌
 

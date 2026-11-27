@@ -1,10 +1,134 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>입구 접수</title><link rel="stylesheet" href="/static/app.css"></head><body>
-<header><h1>FryBot · 입구 접수</h1><span class="sp"></span><a href="/">처음으로</a></header><main style="max-width:720px">
-<div class="card center"><h2>어서 오세요! 몇 분이신가요?</h2><div class="row" style="justify-content:center" id="btns"></div>
-<p id="msg"></p><div class="big" id="tbl"></div></div>
-<div class="card"><h2>테이블 현황</h2><div id="tables" class="row"></div></div></main>
-<script src="/static/map.js"></script><script>
-for(let n=1;n<=6;n++)btns.innerHTML+=`<button class="primary" style="font-size:22px;width:74px;height:74px" onclick="go(${n})">${n}명</button>`;
-async function go(n){const r=await postJSON('/api/checkin',{party_size:n});msg.textContent=r.message;msg.style.color=r.ok?'#15803d':'#b91c1c';tbl.textContent=r.ok?`${r.table_id}번 테이블`:'';}
-async function tick(){const s=await getJSON('/api/state');tables.innerHTML=((s.rest||{}).tables||[]).map(t=>`<div>T${t.id} (${t.seats}인) ${tag(t.state)}</div>`).join('')}
-setInterval(tick,1000);tick()</script></body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>입구 접수</title><link rel="stylesheet" href="/static/customer.css"></head><body>
+<!-- [수정 2026-11-17] GUI 화면 구성도 초안 v0.1 반영: K1 인원 선택 → K2 테이블 배정 결과 →
+     K3 안내 로봇 대기 → K4 안내 시작. 한 화면에 질문 하나, 큰 버튼 -->
+<div class="screen">
+ <div class="bar"><b>FryBot 레스토랑</b><span class="sp"></span><a href="/">처음으로</a></div>
+
+ <!-- K1: 인원 선택(1~4명) -->
+ <div class="stage" id="k1">
+  <div class="hello">어서 오세요 · FryBot 레스토랑</div>
+  <h1>몇 분이신가요?</h1>
+  <div class="nums" id="nums"></div>
+  <div class="note">5명 이상은 직원을 불러 주세요</div>
+  <button class="cta" id="find" disabled>인원을 골라 주세요</button>
+  <div class="msg" id="msg" role="status"></div>
+ </div>
+
+ <!-- K2: 배정된 테이블과 매장 지도(가상 매장만), 안내 로봇 호출 중 -->
+ <div class="stage" id="k2" hidden>
+  <h2>자리를 찾았어요</h2>
+  <div class="bigno" data-table></div>
+  <div class="sub" data-seats></div>
+  <div class="panel" id="mapPanel"><canvas id="cv" width="900"></canvas></div>
+  <h2 id="coming">안내 로봇을 부르고 있어요</h2>
+ </div>
+
+ <!-- K3: 안내 로봇이 모두 바쁨. 대기 순번과 기다린 시간 -->
+ <div class="stage" id="k3" hidden>
+  <div class="sub"><b data-table></b> 테이블은 맡아 두었어요</div>
+  <h1>안내 로봇이 모두<br>다른 손님을 모시고 있어요</h1>
+  <div class="panel stat"><div><span>대기 순번</span><b id="order"></b></div><div><span>기다린 시간</span><b id="waited"></b></div></div>
+  <div class="note">로봇이 도착하면 이 화면으로 알려 드려요</div>
+ </div>
+
+ <!-- K4: 로봇 도착, 안내 시작(10초 뒤 첫 화면으로) -->
+ <div class="stage" id="k4" hidden>
+  <h2>로봇이 도착했어요</h2>
+  <h1>로봇을 따라 <span style="color:var(--brand)" data-table></span> 테이블로 가세요</h1>
+  <div class="panel note">로봇과 1~2m 거리를 지켜 주세요. 로봇이 손님을 바라보며 천천히 뒤로 움직입니다.</div>
+  <div class="note" id="back"></div>
+ </div>
+
+ <!-- 안내 실패·접수 취소·거절 -->
+ <div class="stage" id="kfail" hidden>
+  <h1>안내를 계속할 수 없어요</h1>
+  <div class="sub" id="failMsg">직원을 불러 주세요.</div>
+  <button class="ghost" id="restart">처음으로</button>
+ </div>
+</div>
+<script src="/static/map.js"></script><script src="/static/ui.js"></script><script>
+const $id = id => document.getElementById(id);
+// 접수 상태. L: 가상 매장 도면(/api/layout), builtinMap: 가상 매장
+// 실행인지(실측 지도 실행이면 지도를 그리지 않음)
+let party = 0, visitId = 0, tableId = 0, step = 'k1', L = null, builtinMap = true, backAt = 0;
+// 단계 화면 하나만 보이게 함
+function show(name) {
+  step = name;
+  ['k1', 'k2', 'k3', 'k4', 'kfail'].forEach(id => { $id(id).hidden = id !== name; });
+}
+// 첫 화면(K1)으로 되돌림
+function reset() {
+  party = 0; visitId = 0; tableId = 0; backAt = 0;
+  $id('msg').textContent = '';
+  renderNums();
+  show('k1');
+}
+// 인원 버튼(1~4)과 자리 찾기 버튼
+function renderNums() {
+  $id('nums').innerHTML = [1, 2, 3, 4].map(n => '<button type="button" data-n="' + n + '" class="' + (n === party ? 'on' : '') + '">' + n + '</button>').join('');
+  const find = $id('find');
+  find.disabled = !party;
+  find.textContent = party ? party + '명으로 자리 찾기' : '인원을 골라 주세요';
+}
+$id('nums').addEventListener('click', e => {
+  const b = e.target.closest('[data-n]');
+  if (b) { party = +b.dataset.n; $id('msg').textContent = ''; renderNums(); }
+});
+// [수정 2026-11-25] I/F 정의서 v0.2 경로: /api/checkin -> /api/visits
+// 자리 찾기: POST /api/visits. 성공하면 배정 테이블을 보이고 K2
+$id('find').addEventListener('click', async () => {
+  const find = $id('find');
+  find.disabled = true;
+  try {
+    const r = await postJSON('/api/visits', {party_size: party});
+    if (!r.ok) { $id('msg').textContent = r.message || '지금은 자리를 찾을 수 없어요. 직원을 불러 주세요.'; find.disabled = false; return; }
+    visitId = r.visit_id; tableId = r.table_id;
+    document.querySelectorAll('[data-table]').forEach(el => { el.textContent = 'T' + tableId; });
+    const seats = L && L.tables[tableId] ? L.tables[tableId].seats + '인석' : '';
+    document.querySelectorAll('[data-seats]').forEach(el => { el.textContent = '테이블 · ' + seats; });
+    $id('coming').textContent = '안내 로봇을 부르고 있어요';
+    show('k2');
+  } catch (error) {
+    $id('msg').textContent = '접수 서버에 연결할 수 없어요. 직원을 불러 주세요.';
+    find.disabled = false;
+  }
+});
+$id('restart').addEventListener('click', reset);
+// 1초마다 /api/state 에서 이 방문의 상태를 보고 단계를 고름.
+// ASSIGNED+로봇 없음 → K3, ASSIGNED → K2, GUIDING → K4,
+// SEATED·LEFT → 처음, 그 밖(GUIDE_FAILED 등) → 실패 화면
+async function tick() {
+  if (!visitId) return;
+  let S;
+  try { S = await getJSON('/api/state'); } catch (error) { return; }
+  const R = S.rest || {}, v = (R.visits || []).find(x => x.id === visitId);
+  if (!v) return;
+  if (v.state === 'ASSIGNED' && !v.robot) {
+    const waiting = (R.visits || []).filter(x => x.state === 'ASSIGNED' && !x.robot && x.created <= v.created);
+    $id('order').textContent = waiting.length + '번째';
+    $id('waited').textContent = mmss((R.now || v.created) - v.created);
+    show('k3');
+  } else if (v.state === 'ASSIGNED') {
+    $id('coming').textContent = '안내 로봇 ' + amrLabel(v.robot) + '이 오고 있어요';
+    show('k2');
+    $id('mapPanel').hidden = !builtinMap;
+    if (builtinMap) drawStore($id('cv'), L, S, {theme: 'light', highlightTable: tableId, showNodes: false});
+  } else if (v.state === 'GUIDING') {
+    if (step !== 'k4') { backAt = Date.now() + 10000; show('k4'); }
+    const left = Math.ceil((backAt - Date.now()) / 1000);
+    $id('back').textContent = left + '초 뒤 첫 화면으로 돌아가요';
+    if (left <= 0) reset();
+  } else if (v.state === 'SEATED' || v.state === 'LEFT') {
+    reset();
+  } else {
+    $id('failMsg').textContent = ({GUIDE_FAILED: '안내 중 문제가 생겼어요. 직원을 불러 주세요.', CANCELED: '접수가 취소되었어요. 직원을 불러 주세요.',
+      REJECTED: '지금은 안내할 수 없어요. 직원을 불러 주세요.'})[v.state] || '직원을 불러 주세요.';
+    show('kfail');
+  }
+}
+// 도면과 지도 목록을 한 번 읽음(maps.active 가 비면 가상 매장)
+Promise.all([getJSON('/api/layout'), getJSON('/api/maps')]).then(([layout, maps]) => { L = layout; builtinMap = !maps.active; }).catch(() => {});
+renderNums();
+setInterval(tick, 1000);
+</script></body></html>

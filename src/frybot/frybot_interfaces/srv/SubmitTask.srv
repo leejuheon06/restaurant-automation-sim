@@ -1,11 +1,23 @@
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: /fms/submit_task -> /frybot/tasks/submit
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: /frybot/tasks/submit ->
+# /fms/submit_task
+# 임무 접수. Central Control -> Task Manager, /fms/submit_task
 string task_type       # GUIDE SERVE COLLECT COOK
+# visit_id, order_id, item_id, table_id: 임무가 속한 방문·주문·음식·
+#   테이블 번호 (해당 없으면 0)
 int64 visit_id
 int64 order_id
 int64 item_id
 int32 table_id
+# menu: 메뉴 코드. COOK 은 조리 순서를, SERVE 는 음식 받는 곳을 정함
 string menu
+# priority: 클수록 먼저 배정. 0 이면 종류별 기본값(GUIDE·SERVE 3,
+#   그 밖 1, fleet_core.PRIORITY)
 int32 priority
 ---
+# accepted: 임무를 받았으면 true
 bool accepted
+# task_id: 붙인 임무 번호 (거절이면 '')
 string task_id
+# message: 거절 사유(관제 예외 문구). 받았으면 ''
 string message

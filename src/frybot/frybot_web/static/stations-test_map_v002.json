@@ -1,0 +1,14 @@
+[
+  {"node": "A1", "role": "entrance", "label": "손님 만남"},
+  {"node": "A4", "role": "table", "label": "T1 안내·서빙·식기 수거"},
+  {"node": "A7", "role": "table", "label": "T2 안내·서빙·식기 수거"},
+  {"node": "A6", "role": "pickup", "label": "음식 픽업"},
+  {"node": "B7", "role": "dish_return", "label": "회수 식기 반납"},
+  {"node": "W1", "role": "waiting", "label": "대기 위치 1"},
+  {"node": "W2", "role": "waiting", "label": "대기 위치 2"},
+  {"node": "W3", "role": "waiting", "label": "대기 위치 3"},
+  {"node": "D1_IN", "role": "dock", "label": "도킹 1 접근 후보"},
+  {"node": "D1_STOP", "role": "dock", "label": "도킹 1 정차 후보"},
+  {"node": "D2_IN", "role": "dock", "label": "도킹 2 접근 후보"},
+  {"node": "D2_STOP", "role": "dock", "label": "도킹 2 정차 후보"}
+]

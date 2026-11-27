@@ -1,6 +1,21 @@
-string command         # ESTOP RESUME REASSIGN CANCEL_TASK RETRY_TASK SET_SCHEDULER SET_PLANNER
+# [수정 2026-11-25] I/F 정의서 v0.2 이름: FleetCommand, /fms/command -> ControlTask,
+# /frybot/tasks/control
+# [수정 2026-11-26] I/F v0.3 최종 판 이름: ControlTask, /frybot/tasks/control
+# -> FleetCommand, /fms/command
+# Command to the Task Manager, /fms/command (target / arg):
+#   PAUSE (robot): 일시 중단. 그 자리에 세우고 임무를 SUSPENDED(사유 PAUSED)로 둠. RESUME 으로 이어서 수행
+#   ESTOP (robot / note)   RESUME (robot)   RETRY_TASK | REASSIGN | CANCEL_TASK (task id)
+#   SET_SCHEDULER | SET_PLANNER (name)   SET_STANDBY (on | off)   MOVE_TO_VERTEX (robot / roadmap node)
+#   GO_HOME (robot, or ALL = every connected robot): idle robots drive to their home node; busy or stopped ones are skipped
+# Failure: ok = false and message says why.
+# command: 명령 이름(위 목록)
+string command
+# target: 명령 대상(로봇 이름, 임무 id, 테이블 번호 등. 명령마다 다름)
 string target
+# arg: 명령에 붙는 값(명령마다 다름, 없으면 '')
 string arg
 ---
+# ok: 처리했으면 true
 bool ok
+# message: 결과 문구(실패면 이유)
 string message

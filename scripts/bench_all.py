@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run every scheduler x planner pair N times per scenario (offline fleet simulation) and keep every single run.
 
-  source install/setup.bash && python3 scripts/bench_all.py --runs 3 --robots 3 --out docs/bench_raw.csv
+  source install/setup.bash && python3 scripts/bench_all.py --runs 3 --robots 3 --out bench_raw.csv
 """
 import argparse
 import csv

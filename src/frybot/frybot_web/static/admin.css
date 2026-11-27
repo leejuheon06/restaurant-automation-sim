@@ -1,0 +1,105 @@
+/* 관리자 화면(admin.html) 스타일. 색 변수는 :root, 다크 테마 */
+/* [수정 2026-11-17] GUI 화면 구성도 초안 v0.1 (A1~A3) 반영: 관리자 관제 다크 테마 */
+:root{--bg:#0F1218;--card:#171B24;--card2:#1B2233;--line:#2A3142;--line2:#3A4560;--ink:#E7EAF0;--ink2:#C9CFDA;
+  --mute:#A3ACBD;--ok:#3DD68C;--ok2:#5BE3A0;--blue:#8AB8FF;--primary:#2F6FEB;--warn:#F5B942;--bad:#FF7A66}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 'Noto Sans KR','Noto Sans CJK KR',system-ui,sans-serif}
+button,select,input{font:inherit;color:inherit}
+/* 위쪽 고정 막대: 이름, 탭(알람 수 .cnt), 연결 상태 알약(.pill, .dot) */
+.top{display:flex;align-items:center;gap:14px;height:56px;padding:0 18px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--bg);z-index:5}
+.brand{font-weight:800;font-size:16px}.brand span{color:var(--mute);font-weight:500;margin-left:6px}
+.tabs{display:flex;gap:4px;margin-left:10px}
+.tabs button{background:none;border:0;border-radius:8px;padding:8px 14px;color:var(--mute);cursor:pointer}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{background:var(--card2);color:#fff;font-weight:700}
+.tabs .cnt{margin-left:6px;padding:0 7px;border-radius:999px;background:#3B1512;color:#FF8A78;font-size:11px;font-weight:700}
+.sp{flex:1}.mute{color:var(--mute)}.small{font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;
+  font-size:12px;color:var(--mute);white-space:nowrap}
+.pill b{color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:4px;background:var(--mute);display:inline-block;flex-shrink:0}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+.top a{color:var(--mute);font-size:12px;text-decoration:none}
+/* 명령 결과 알림(오른쪽 위) */
+#toast{position:fixed;right:18px;top:66px;z-index:9;padding:10px 14px;border-radius:8px;background:var(--card2);
+  border:1px solid var(--line2);display:none;max-width:420px}
+#toast.ok{border-color:var(--ok)}#toast.bad{border-color:var(--bad)}
+/* 본문, 상단 요약 줄(.summary), 3단 배치(.cols: 목록 · 지도 · 상세) */
+main{padding:14px 18px 30px}
+section[hidden]{display:none}
+.summary{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;padding:10px 14px;margin-bottom:12px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:13px}
+.summary .grp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.summary .grp>b{margin-right:2px}
+.summary .c{color:var(--mute)}.summary .c i{font-style:normal;margin-right:3px}
+.cols{display:grid;grid-template-columns:270px minmax(0,1fr) 320px;gap:12px;align-items:start}
+@media(max-width:1150px){.cols{grid-template-columns:minmax(0,1fr)}}
+/* 카드와 상태 배지(.b-ok 등) */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;min-width:0}
+.card>h2{display:flex;align-items:center;gap:8px;margin:0;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)}
+.card>h2 .mute{font-weight:400;font-size:12px}
+.card .body{padding:12px 16px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;white-space:nowrap}
+.b-ok{background:#123524;color:var(--ok2)}.b-blue{background:#16264A;color:var(--blue)}
+.b-warn{background:#3A2E12;color:var(--warn)}.b-bad{background:#3B1512;color:#FF8A78}.b-mute{background:var(--line);color:var(--ink)}
+/* 장치(로봇·팔) 목록 한 줄, 배터리 막대(.bar) */
+.dev{display:flex;flex-direction:column;gap:7px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.dev:last-child{border-bottom:0}.dev:hover{background:#191E2A}
+.dev.sel{background:var(--card2);box-shadow:inset 3px 0 0 var(--ok)}
+.dev .r1{display:flex;align-items:center;gap:8px}.dev .r1 b{font-size:14px}
+.dev .task{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex:1}
+.bar i{display:block;height:6px;background:var(--ok2)}.bar i.low{background:var(--warn)}.bar i.crit{background:var(--bad)}
+.hint{padding:10px 16px;font-size:12px;color:var(--mute);border-top:1px solid var(--line)}
+/* 지도 도구(표시 토글 .tog, 선택 상자), 지도 캔버스와 실측 지도 노드 목록 */
+.maptools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;font-weight:400;font-size:12px}
+.tog{border:1px solid var(--line2);background:var(--card2);border-radius:7px;padding:4px 10px;cursor:pointer;color:var(--mute)}
+.tog.on{color:#fff;border-color:var(--primary);background:#1A2A4D}
+select{background:var(--card2);border:1px solid var(--line2);border-radius:7px;padding:5px 8px}
+canvas{display:block;width:100%;height:auto;border-radius:8px}
+canvas.measured{background:#fff}
+.map-stations{display:flex;flex-wrap:wrap;gap:6px 8px;list-style:none;margin:8px 0 0;padding:0;font-size:12px}
+.map-stations li{padding:3px 8px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#1C1E24}
+/* 표, 버튼, 키-값 목록(.kv), 임무 단계(.steps), 알람 목록(.alarm) */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--mute);font-weight:500;font-size:12px}tr:last-child td{border-bottom:0}
+tr.pick{cursor:pointer}tr.pick:hover td{background:#191E2A}tr.sel td{background:var(--card2)}
+.btn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:#1E2330;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--mute)}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.btn.danger{border-color:#7A2E24;color:#FF8A78}.btn.danger:hover{background:#3B1512}
+.btn.sm{height:26px;padding:0 9px;font-size:12px}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:0}
+.kv dt{font-size:11px;color:var(--mute)}.kv dd{margin:2px 0 0;font-size:14px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.steps li{display:flex;align-items:center;gap:10px;color:var(--ink2)}
+.steps li i{width:12px;height:12px;border-radius:6px;background:var(--line);flex-shrink:0}
+.steps li.done{color:var(--mute)}.steps li.done i{background:var(--ok)}
+.steps li.now{color:#fff;font-weight:700}.steps li.now i{background:var(--ok);box-shadow:0 0 0 4px #3DD68C44}
+.steps li span{margin-left:auto;font-size:12px;color:var(--mute);font-weight:400}
+.alarm{display:flex;flex-direction:column;gap:5px;padding:11px 16px;border-bottom:1px solid var(--line)}
+.alarm:last-child{border-bottom:0}.alarm.pick{cursor:pointer}.alarm.pick:hover{background:#191E2A}
+.alarm.sel{background:var(--card2);box-shadow:inset 3px 0 0 var(--bad)}
+.alarm .r1{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mute)}.alarm .r1 b{color:var(--ink)}
+.empty{padding:18px 16px;color:var(--mute);font-size:13px}
+/* 테이블 카드 격자(.tgrid, .tcard), 2단 배치(.two) */
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:900px){.tgrid{grid-template-columns:minmax(0,1fr)}}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.tcard.wait{border-style:dashed;border-color:var(--mute)}
+.tcard .r1{display:flex;align-items:center;gap:8px}.tcard .r1 b{font-size:18px}.tcard .r1 .badge{margin-left:auto}
+.tcard .l2{font-size:12px;color:var(--mute);min-height:18px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+@media(max-width:1000px){.two{grid-template-columns:minmax(0,1fr)}}
+/* 주문 진행 칩(.s0~.s4 단계, .s-hold 보류), 필터, 상세 제목, 안내 글 */
+.flow{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mute);margin-left:auto;font-weight:400}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;margin:2px 4px 2px 0}
+.s0{background:#1E2330;color:var(--ink2)}.s1{background:#123524;color:var(--ok2)}.s2{background:#3A2E12;color:var(--warn)}
+.s3{background:#16264A;color:var(--blue)}.s4{background:#1E2330;color:var(--mute)}.s-hold{background:#3B1512;color:#FF8A78}
+.filters{display:flex;gap:6px;margin-left:auto}
+.detail-title{font-size:16px;font-weight:700;margin:6px 0 12px}
+.note{padding:10px 12px;border:1px dashed var(--line2);border-radius:8px;font-size:12px;color:var(--mute)}
+label.row{display:flex;gap:8px;align-items:center}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}

@@ -1,9 +1,11 @@
 # FryBot 트러블슈팅 기록
 
+> 2026-11-19: 11월 16~18일 실행 폴더(`runs/run_2026111[6-8]_*` 등)는 `archive/runs_2026-11-16_18/`로 옮겼습니다. 이 문서의 실행 이름은 그 폴더 아래에 있습니다.
+
 발생한 문제마다 **증상 → 원인 → 수정 → 검증**을 기록합니다. 새 문제가 생기면 맨 아래에 같은 형식으로 추가합니다.
 
 - 환경: Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic(gz sim 8), Nav2 Jazzy
-- 마지막 갱신: 2026-11-13
+- 마지막 갱신: 2026-11-27
 
 | # | 문제 | 상태 |
 |---|---|---|
@@ -21,20 +23,77 @@
 | T-12 | 스케줄러 이름 `hungarian`이 실제 풀이 방식과 다름 | 해결(이름 변경) |
 | T-13 | 유선 랜이 끊기자 시뮬레이션 전체가 멈춤 | 원인 확인(코드 문제 아님) |
 | T-14 | 노멀 시나리오에서 안내 임무가 끝나지 않고 멈춤 | 해결 |
+| T-15 | 테이블 앞 정차 위치에서 Nav2가 주행을 거부함 | 부분 해결 |
+| T-16 | 정지 자세가 벽과 나란하지 않음 → 아루코 마커 정밀 도킹 추가 | 해결 |
+| T-17 | 마커 추가 후 Gazebo 화면과 RViz가 뜨지 않음 | 해결(화면 확인 대기) |
+| T-18 | `frybot_sim`의 의존성 누락, README의 옛 Nav2 설정 경로 | 해결 |
+| T-19 | 실기기에서 노드를 벗어난 로봇이 그대로 멈춤 | 해결(실기기 확인 대기) |
+| T-20 | 동선이 겹치면 양보 없이 크게 우회 | 해결(실기기 확인 대기) |
+| T-21 | 로봇마다 접속해 따로 실행해야 함, 코드 리뷰 0순위 R0-1~7 | 해결(실기기 확인 대기) |
+| T-22 | 양보 후진 중 경로가 취소되면 정지 명령이 나가지 않음 (R1-1) | 해결(실기기 확인 대기) |
+| T-23 | 실기기에서 양보처럼 움직였는데 로그에 양보가 없음, 시뮬 시간 모델이 실기기와 다름 | 원인 확인, 기록 추가. 계획 시간 모델에 구간 지연 추가(2026-11-18, 모의 확인, 실기기 확인 대기) |
+| T-24 | 로봇 3대가 서로 길을 막거나 계획을 무효화해 임무가 끝나지 않음 (R5-6~8) | 해결(모의 확인, 실기기 확인 대기) |
+| T-25 | 실측 지도를 경량 시뮬로 띄우면 로봇이 계속 오프라인 | 해결(경량 시뮬 확인) |
+| T-26 | 실측 지도에서 길을 비켜 준 로봇이 원래 노드로 돌아가지 않음 | 해결(모의 확인, 실기기 확인 대기) |
+| T-27 | 로봇이 연결됐는데 관리자 화면 지도에 나오지 않음(페이지를 새로 고치면 나옴) | 수정(원인 추정, 실기기 확인 대기) |
+| T-28 | UR 대조에서 나온 누락: 실기기 동행 확인·후진 안내 없음, 사용 재개한 테이블이 DB에 남지 않음, 관리자 화면 기능 부족 | 해결(시뮬 확인, 실기기 확인 대기) |
+| T-29 | 사람 안전·정지 묶음: 속도 명령이 끊겨도 모터가 돎, 시뮬이 실기기와 같은 도메인, 끊긴 로봇에 계속 허가, 굳은 위치 보고, 오류 로봇에 임무 배정, 관리자 API 무방비 (A1~A3, B3, B4, D4, D6, G2, G4) | 해결(시뮬·모의 확인, 실기기 확인 대기) |
+| T-30 | SSH 비밀번호가 든 로봇 등록부가 패키지 안에 있음, 등록부가 없으면 아무 안내 없이 로봇을 띄우지 않음 (R7-2) | 해결(접속 확인: pinky1·pinky3, pinky2는 꺼져 있어 미확인) |
+| T-31 | 같은 입력에도 관제 판단이 실행마다 다름(집합 순서, 전역 난수) (R5-9) | 해결(모의 확인, 실기기 확인 대기) |
+| T-32 | 이동 명령을 끝낸 로봇이 막다른 자리에 서 있는데 뒤 로봇이 그리로 들어와 둘 다 멈춤 (R5-10) | 해결(모의·경량 시뮬 확인, 실기기 확인 대기) |
+| T-33 | 계획 실패가 끝없이 반복돼도 임무 보류·알림이 없음 (R5-11) | 해결(모의·경량 시뮬 확인, 실기기 확인 대기) |
+| T-34 | 런치 없이 띄운 노드가 시뮬 기본값으로 뜸(관리자 API 개방, 3대·대기 위치, 지도 없으면 가상 매장) (실기기 정리 P1) | 해결(단독 실행·시뮬 확인, 실기기 확인 대기) |
+| T-35 | 로봇에서 단독 실행한 제어기·도킹 검출기의 TF 프레임 기본값이 시뮬 이름(`pinky1/base_footprint`) (P1) | 해결(시뮬 확인, 실기기 확인 대기) |
+| T-36 | 실기기 제어기가 가짜 바퀴 관절값을 내고 시뮬 토픽(`/sim/world_state`)을 구독 (R1-4, P3) | 해결(시뮬 확인, 실기기 확인 대기) |
+| T-37 | 11-17 드라이버 사본의 모터·라이다 포트가 우리 로봇과 달라 실기기에서 드라이버가 뜨지 않음 | 해결(실기기 확인 중) |
+| T-39 | 충전대가 없는 실측 지도에서 서 있는 로봇이 `CHARGING`을 보고해 이동 명령이 거절됨 | 해결(실기기 확인 중) |
+| T-38 | 실기기 기동이 로봇 대수에 따라 크게 느려짐(2대 약 145초, 3대는 SSH까지 끊김) | 수정(오프라인 확인, 실기기 확인 필요) |
+| T-40 | 세 대를 RViz와 함께 띄우면 관제와 로봇의 연결이 2~3분 걸림 | 미해결(늦게 띄우기는 실기기 기준 미달, 기본 꺼짐) |
+| T-41 | 서 있는 로봇의 `mobile_controller`가 CPU를 코어 절반 넘게 씀(Pinky의 여유 부족) | 해결(pinky1·pinky2 실기기 확인, pinky3 배포 전) |
+| T-42 | 막다른 노드(D1_STOP)에서 뒤쪽 노드로 나갈 때 후진하지 않고 벽 앞에서 제자리 회전하다 NAV2_FAILED | 해결(2차 수정, 실기기 s5 에서 D1_STOP 탈출 1초 확인) |
+| T-43 | Nav2 구간 시작 직후 `compute_path_to_pose` 수락 응답 시간 초과(20 ms)로 구간 실패 | 해결(실기기 s3 이후 시간 초과 0건) |
+| T-44 | 도크 진입 구간 Nav2 실패 뒤 결과 없이 멈춤(무진행 감시 없음), 대기 위치 안 회전, 도크 앞 방향 오차 | 수정(실기기 s5: 막다른 곳 출발 확인. Nav2 실패·무진행 처리는 실기기에서 아직 일어나지 않아 미확인) |
+| T-45 | 실측 지도에서 임무를 마친 로봇이 그 자리에 남음(홈 복귀 없음) | 해결(실기기 06_full 에서 RETURN_HOME -> HOME 25초) |
+| T-46 | 도킹 중 벽에 닿음(v04 D1_STOP 앞 여유 1.3 cm, 위치 추정 오차) | 수정(앞 라이다 정지, 단위 확인, 실기기 확인 필요) |
+| T-47 | 팔 없는 로봇에도 서빙이 배정됨 | 수정(PC·시뮬 확인, 실기기 확인 필요) |
+| T-48 | 노드에서 벗어나 서 있는 로봇 옆 노드를 허가해 두 로봇이 11 cm 까지 가까워짐 | 수정(PC·시뮬 확인, 실기기 확인 필요) |
+| T-49 | 잘못 준 초기 자세를 AMCL 이 고치지 못함 -> 기동 때 스캔으로 자동 위치 추정 | 수정(실기기 08: 맞는 자세를 3.5초에 찾았으나 모호 판정 -> T-50) |
+| T-50 | 주행 중 AMCL 이 25도 틀어진 뒤 회복 못 하고 갇힘, 첫 기동 자동 위치 추정 모호 | 수정(홈 근처 우선·서 있을 때 감시·보정, PC·가짜 스캔 확인, 실기기 확인 필요) |
+| T-51 | 사람이 로봇을 홈으로 옮기면 저장 자세가 어긋나 홈 근처 우선이 걸리지 않음 | 수정(PC 확인, 실기기 확인 필요) |
+| T-52 | 6 cm 미만 벗어난 로봇 옆 노드가 열림, 이동 명령 거절 이유 불명, 감시 동작을 로그로 알 수 없음 | 수정(PC·시뮬 확인, Nav2 실패 원인은 로그 보강 뒤 판단, 실기기 확인 필요) |
+| T-53 | 관리자 화면 '남은 거리'가 누적 주행 거리를 보여 줌 | 수정(PC·시뮬 확인) |
+| T-54 | analyze_run 의 '알고리즘 변경' 줄에 변경이 없을 때 '-' 가 나오지 않음 | 수정(PC 확인) |
+| T-55 | 대칭 자리에 놓고 켜면 저장 자세·홈 우선이 틀린 자세를 넣고 다시 저장함 | 수정(천장 카메라 후보 판정, PC·녹화 프레임·가짜 통합 확인, 카메라가 없으면 한계 그대로, 실기기 확인 필요) |
+| T-56 | Nav2 구간 실패 뒤 위치 점검 예외로 경로 결과가 사라져 임무가 IN_PROGRESS 로 남음(R16-50) | 수정(PC 단위·가짜 통합 확인, 실기기 확인 필요) |
+| T-57 | 세 대를 함께 띄우면 로봇이 천장 카메라 서비스를 3초 안에 찾지 못해 카메라 판정이 한 번도 안 됨 | 수정(대기 상한을 노드 생성 뒤 35 s 로, 응답 없으면 재요청. PC 확인, 실기기 홈·임의 자리에서 카메라 문의 모두 응답, 가장 늦은 응답 노드 생성 뒤 32.1 s). 탐색 지연(20~28 s) 자체는 미수정 |
+| T-58 | 세 대가 같은 바퀴 명목값(0.027·0.0961 m)을 써 오도메트리가 로봇마다 어긋남(pinky3 직진 2.4% 짧음, 회전 ±1%) | 수정(로봇별 wheel_radius·wheel_separation, 등록부 → robot_remote → robot.launch.py → pinky_driver. PC 단위·전달 확인, 로봇 배포·런치 구성 확인, 실제 등록부에 세 대 값 입력(2026-11-24). 실기기 기동 로그·주행 확인 필요) |
+| T-59 | 로봇 스택을 끄면 바퀴 모터 토크가 켜진 채 남음(두 번째 SIGINT 가 terminate 를 끊음, 통신 도중 KeyboardInterrupt 로 포트가 '사용 중'으로 남아 쓰기가 조용히 실패) | 수정(pinky_driver 종료 신호 처리, terminate 결과 검사·재시도. 실기기 --stop 10회·Ctrl-C 3회·단독 11회 토크 0, 2026-11-25. SIGKILL 은 남음) |
+| T-60 | T-58 바퀴 값(스캔 맞춤 기준)이 줄자와 어긋남(확정값÷T-58 값: pinky1 +1.4 %, pinky2 +1.9 %, pinky3 −0.9 %) | 수정(등록부 바퀴 값을 줄자 기준으로: 0.02743·0.0966, 0.02735·0.0977, 0.02737·0.0983. 실기기 1 m × 3회 줄자÷odom 0.9990·1.0015·1.0011, 360도 회전 1±0.003 통과, 2026-11-26. 코드 변경 없음) |
+| T-61 | 30분 왕복(T3)에서 pinky3 위치 추정이 B 통로 방향으로 0.2~0.4 m 밀려 벽 앞에서 NAV2_FAILED → SUSPENDED 1건, 같은 현상 1건 더(자동 회복) | 미해결(원인 추정: 매장 배치를 바꾼 뒤 지도 test_map_v05 를 다시 만들지 않음. 확정에는 지도 갱신 뒤 같은 왕복 재시험 필요) |
+| T-62 | 스택 종료 때 pinky_driver 가 종료 코드 1('process has died', RCLError publisher's context is invalid)로 끝남(T-59 남은 것) | 수정(종료 중 RCLError 만 정상 종료로 받음. 단위 2건, 실기기 바퀴 안 도는 기동·--stop 세 대 × 5 = 15회 모두 'finished cleanly'·토크 0, 2026-11-26) |
+| T-63 | 2차 연동 R2.5: H3 바닥의 서빙 팔 앞(A5)에서 Nav2 가 막혀 NAV2_FAILED 를 돌려준 뒤, 관제의 다음 경로가 장애물 3 cm 앞 그 자리에서 제자리 회전(모서리 반경 약 8.1 cm) | 수정(NAV2_FAILED 직전 진행 방향 띠가 20 cm 안이면 반대쪽으로 5 cm 물러남, 단위 7건. 같은 날 A5·C3·B5 를 5 cm 왼쪽으로. 경량 시뮬은 Nav2 를 거치지 않아 재현 못 함, 실기기 재실험 확인 필요) |
+| T-64 | 후진 도킹(v06)에서 도킹 서버가 D1_STOP 은 180° 돌아 도크 반대로 후진(20 cm 앞 테이블에서 뒤 라이다 정지), H2 는 제자리 회전 20 s 뒤 시간 초과(3/3) | 수정(후진 도킹이면 도킹 서버에 넘기는 도크 자세 방향을 +180°. opennav_docking 1.3.13 소스 대조로 원인 확정, PC 에서 실제 docking_server + 가짜 로봇으로 D1·H2 각 2회 성공 확인. 실기기 확인 필요) |
 
 ## 구성 변경 이력
 
 | 날짜 | 변경 |
 |---|---|
 | 2026-11-12 | 손님 안내 후진 주행, 양보 시 후진으로 비켜 서기 |
+| 2026-11-18 | State Diagram v4(V0.04)에 맞춤: 음식 상태 `LOADED` 추가, 서빙 임무 이벤트 `SERVING`(적재 뒤 테이블행 첫 구간 통과 시) 추가, 조리 작업 스냅샷에 v4 상태 `state`(`WAIT_ARM`·`PROCESS`·`HANDOFF`·`DONE`·`CANCELED`) 추가. 방문·테이블은 v4에 정의가 없어 그대로(작업 지시서 W2) |
+| 2026-11-18 | 로봇 등록부를 `~/.config/frybot/robots.yaml`로 옮기고 패키지에는 `robots.example.yaml`만 둠 (T-30) |
+| 2026-11-18 | 모의 로봇을 `frybot_control/mock_fleet.py`로 합침(`fleet_bench`, `replay_run` 공용). `fleet_bench`에 실행 시간 모델·흔들림·계획 속도·기준선 비교·통과 판정·실측 지도 이동 명령(`moves`) 추가. 기존 모델에서 수치는 그대로(작업 지시서 W3) |
+| 2026-11-17 | 손님 추적 토픽 `/frybot/guest_track`, 팔 상태 토픽 `/fleet/arm_status`, 관리자 명령 `PAUSE` 추가 (T-28) |
 | 2026-11-12 | 가운데 4인석(3·4번) 시계 방향 90° 회전 |
 | 2026-11-12 | 기본 조합 `min_cost_eta_rh` + `sipp`로 변경 |
 | 2026-11-12 | AMR 대수 `robots:=N`(1~7)로 확장 가능, 조리 팔은 고정 |
 | 2026-11-12 | Open-RMF 비교용 플래너 `rmf`, `rmf_nego`와 스케줄러 `rmf_task` 추가(도우미 빌드 시에만 등록, 기본값 영향 없음) |
 | 2026-11-12 | 노드 2개 추가((50,37), (52,62)), 테이블별 안내 지점과 서빙·회수 지점 분리. 3번: 안내 (86,24)·(86,76), 서빙 (70,24)·(70,76). 4번: 안내 (134,24)·(134,76), 서빙 (118,24)·(118,76) |
 | 2026-11-13 | 배정 스케줄러 이름 변경: `hungarian` → `min_cost`, `hungarian_eta` → `min_cost_eta`, `hungarian_eta_rh` → `min_cost_eta_rh`(옛 이름은 별칭으로 계속 사용 가능). 풀이 방식은 로봇 규모로 결정(T-12) |
+| 2026-11-17 | 웹 화면을 GUI 화면 구성도 초안 v0.1에 맞춤: 관리자 다크 테마와 탭(통합 관제, 테이블·주문, 알람·이력, 설정), 키오스크 K1~K4, 테이블 주문 T1~T5. `/api/events` 추가. 기존 관제 기능(지도 선택, 노드 이동, 알고리즘 교체, 비상 정지)은 유지. 설계에 있으나 데이터가 없어 빠진 것: 로그인, Replay, 3D 지도, 카메라 영상, 일시 중단, 도착 예정 시각, 직원 호출, 가격 |
+| 2026-11-17 | 외부 저장소 의존 제거: 로봇 모델을 `frybot_description`으로, Pinky 드라이버를 `frybot_mobile`(`pinky_driver`, `pinky_battery`)로 복사. `pinky_pro`, `mycobot_ros2` 없이 빌드·실행. 로봇 쪽은 실기기 확인 대기(`drivers:=pinky_pro`로 되돌림) |
 | 2026-11-14 | Confluence 최신 설계 반영(System Architecture v17 맵 구성도·경로 그림, 기기별 상태 흐름 V0.07). 아래 "Confluence 반영 (2026-11-14)" 참고 |
 | 2026-11-14 | 로봇 탑재용 패키지 `frybot_mobile` 신설. AMR 제어기(`frybot_sim/amr_node.py` → `frybot_mobile/mobile_controller.py`)와 Nav2 설정(`frybot_bringup/config/nav2_amr.yaml` → `frybot_mobile/config/nav2_store.yaml`)을 옮김. 실기기용 `robot.launch.py`, `real.launch.py`, `export_map` 추가([REAL_ROBOT_GUIDE.md](REAL_ROBOT_GUIDE.md)). `pinky_pro`는 외부 저장소라 수정하지 않음 |
+| 2026-11-14 | 정밀 도킹 추가: Nav2 도킹 서버(`opennav_docking`)와 아루코 마커 인식 노드(`frybot_mobile/aruco_dock_detector.py`). 충전소·음식 수령·퇴식구는 벽면 마커 기준, 테이블 정차 위치는 지도 좌표 기준으로 도킹. Gazebo 월드에 마커 6개 표시. T-16 참고 |
 
 ### Confluence 반영 (2026-11-14)
 
@@ -145,6 +204,7 @@
 - **증상:** Gazebo 로그에 `Failed to load system plugin [gz-sim-lamp-control-system]`.
 - **원인:** Pinky의 램프 효과 플러그인(`pinky_gz_sim`)을 빌드하지 않음(`frybot_bringup`이 의존하지 않음).
 - **조치:** 주행·센서와 무관해 그대로 둠. 필요하면 `colcon build --packages-select pinky_gz_sim`.
+- **후속(2026-11-17):** 로봇 모델을 `frybot_description`으로 옮기면서 이 플러그인 참조를 xacro에서 지움. 메시지는 더 나오지 않고 Gazebo의 램프 효과는 없음.
 
 ## T-10 목적지 노드 위에서 임무를 받은 로봇이 영원히 대기
 
@@ -174,6 +234,7 @@
 - **증상:** (2026-11-12) Gazebo에서 노멀 시나리오를 돌리던 중 시작 85초쯤부터 로봇 3대가 통행 허가를 받고도 8분 넘게 움직이지 않음. 런치 로그에 `Exception sending a multicast message:Network is unreachable`가 약 5만 9천 번.
 - **원인:** PC의 유선 랜(enp3s0) 링크가 14:58:39에 끊겼다가 15:06:35에 복구됨(시스템 로그 `Link is Down` / `Link is Up`). Gazebo 통신과 ROS 통신이 그 인터페이스 주소에 묶여 있어, 한 PC 안에서만 도는 시뮬레이션인데도 통신이 끊김. 코드 문제 아님.
 - **조치:** 런치 인자 `net:=local`을 추가함(`GZ_IP=127.0.0.1`, `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`로 통신을 PC 내부에 고정). **검증하지 못해 기본값은 `net:=lan`(이전 동작)으로 둠.** `net:=local`로 한 번 띄웠을 때 Nav2가 3대 중 1대만 활성화됐는데 원인은 확인하지 않음.
+- **추가(2026-11-18, T-29):** 원인을 확인함. LOCALHOST 탐색으로 Gazebo(프로세스 52개)를 띄우면 노드가 33개만 서로 보여 `map → base_footprint` TF가 이어지지 않음. 기본값을 시뮬 전용 도메인(`net:=sim`)으로 바꿈. Gazebo 통신은 계속 `GZ_IP=127.0.0.1`로 묶지만, ROS 통신은 다시 LAN 인터페이스를 쓰므로 랜이 끊겼을 때의 동작은 예전 `net:=lan`과 같을 것으로 봄(확인 필요).
 - **대처:** 실행 중 랜이 끊기면 `scripts/stop_all.sh`로 전부 종료한 뒤 다시 실행.
 
 ## T-14 노멀 시나리오에서 안내 임무가 끝나지 않고 멈춤
@@ -203,3 +264,2136 @@
 - **원인:** 정차 위치를 좌석 구역에서 8 cm에 두었는데, 길이 12 cm 로봇이 머리부터 들어가면 앞머리와 테이블 사이가 2 cm가 됨. Nav2 컨트롤러의 충돌 검사가 이 접근을 매번 막았고, AMR 노드가 3회 실패 뒤 코스트맵 없이 직접 몰았음. (150,50)도 3번 테이블 좌석 구역에서 9 cm라 같은 문제.
 - **수정:** `layout.py`의 `STOP_GAP`을 8 → 11 cm, 오른쪽 세로줄 `GAP_R`을 150 → 153으로 변경.
 - **검증:** 수정 전 헤드리스 `rush` 1회: 직접 주행 35회. 수정 후 화면 켠 `rush` 1회: 8회, 테이블 정차 위치에서는 1회. 남은 전환은 비켜 서는 곳 (114,6)과 대기 위치에서 발생하며 아직 고치지 않음. `frybot_mobile`로 옮긴 뒤 헤드리스 `rush` 1회: 20개 임무 완료, 478초, 직접 주행 3회(대기 위치 2회, 비켜 서는 곳 1회), 주문→전달 평균 164.1초(수정 전 헤드리스 191.5초).
+
+## T-16 정지 자세가 벽과 나란하지 않음 → 아루코 마커 정밀 도킹 추가
+
+- **증상:** 충전소·수령 지점·테이블 앞에 섰을 때 방향이 정해지지 않음. 위치도 목표에서 최대 1.5 cm 벗어남.
+- **원인:** Nav2 구간 주행은 위치 1.5 cm만 확인하고 방향은 검사하지 않음(`yaw_goal_tolerance: 6.3`). RPP는 후진 허용(`allow_reversing`)과 도착 후 회전(`use_rotate_to_heading`)을 함께 쓸 수 없어 파라미터만으로는 해결되지 않음.
+- **수정:**
+  - `frybot_control/layout.py`: `docks()`에 도킹 지점 14곳 정의. 충전소 3·수령 2·퇴식구 1은 벽면 아루코 마커(DICT_4X4_50, 4 cm, 중심 높이 5 cm, ID 1·2·3·11·12·13), 테이블 정차 위치 8곳은 마커 없이 지도 좌표.
+  - `frybot_sim/gz_world_gen.py`: 마커를 흰 판 + 검은 칸 상자로 월드에 배치(텍스처 파일을 쓰지 않아 좌우가 뒤집힐 일이 없음). `urdf_tools.py`: 시뮬레이션 카메라를 640×360, 10 Hz, 근접 한계 2 cm로 조정.
+  - `frybot_mobile/aruco_dock_detector.py`(신규): 전방 카메라에서 목표 마커를 찾아 로봇이 서야 할 자세를 `detected_dock_pose`로 발행. 마커가 화면에서 사라져도 4초간 마지막 값을 유지.
+  - `frybot_mobile/config/nav2_store.yaml`: `docking_server` 추가(`marker_dock`, `pose_dock`). 도크 근처 코스트맵 무시는 `controller.dock_collision_threshold: 0.33`(도착 전 마지막 8 cm).
+  - `frybot_mobile/mobile_controller.py`: 경로의 마지막 노드가 도킹 지점이면 바로 앞 노드에서 도킹 방향으로 회전 → 도킹 서버 호출 → 방향 보정. 도킹 지점이 정면이 아니거나(옆에서 진입) 도킹이 실패하면 Nav2 구간 주행 후 방향만 보정.
+- **구현 중 만난 문제와 해결:**
+  - 도킹 서버는 목표를 도크 25 cm 뒤에 두고 `docking_threshold` 안에 들어와야 멈춤. 옆으로 몇 mm 벗어나면 그대로 지나쳐 벽으로 감 → 컨트롤러가 도크와 나란해진 시점(남은 거리 6 mm)에 접근을 끝냄.
+  - 접근 거리가 5~16 cm로 짧아 기본 게인(`k_phi 3`, `k_delta 2`)으로는 좌우 오차가 2/3 남음 → `k_phi 8`, `k_delta 4`.
+  - Nav2가 노드 1.5 cm 앞에서 멈춰 도킹 시작 시 좌우 오차가 됨 → 도킹 전에 2 cm/s로 노드까지 직진 보정.
+  - 제자리 회전 중 마커 방향이 4.6° 틀림(영상과 오도메트리 시각 차 0.1초) → 영상 시각의 오도메트리 자세로 계산.
+  - 인식 노드가 대기 중에도 CPU 60%를 써서 3대 실행 시 Nav2 기동과 도킹이 실패 → TF 수신과 시뮬레이터 시계 구독을 없애고 도킹 중에만 영상·오도메트리 구독(약 3%).
+- **검증(Gazebo 헤드리스):** 1대로 6종 지점, 3대 동시로 6회 도킹. 모두 정지 오차 7 mm 이내, 방향 오차 1.2° 이내, 직접 주행 전환 0회. 마커 인식 위치 오차 ±3 mm. 옆에서 진입한 경우(수령 지점 사이 이동)도 2 mm, 1° 이내.
+- **확인하지 않은 것:** 주문 시나리오 전체(`rush` 등) 실행, 화면을 켠 Gazebo에서의 마커 모습, 실제 카메라에서의 인식. 실기기에서는 카메라 보정값과 영상 토픽이 필요([REAL_ROBOT_GUIDE.md](REAL_ROBOT_GUIDE.md) 참고).
+
+## T-17 마커 추가 후 Gazebo 화면과 RViz가 뜨지 않음
+
+- **증상:** `gazebo.launch.py` 실행 시 Gazebo 창과 RViz가 나오지 않음. 로그에 `rviz2: Could not load the Qt platform plugin "xcb" in ".../site-packages/cv2/qt/plugins"` 후 `process has died`, 이어서 `gz-1: process has finished cleanly`.
+- **원인:** T-16에서 `gz_world_gen.py`가 마커 무늬를 만들려고 `cv2`를 불러옴. pip로 설치된 OpenCV는 불러오는 순간 `QT_QPA_PLATFORM_PLUGIN_PATH`를 자기 Qt 플러그인 폴더로 바꾸는데, 이 모듈이 런치 프로세스 안에서 실행되므로 RViz와 Gazebo 화면이 그 환경 변수를 물려받아 Qt 초기화에 실패함. 헤드리스(`gui:=false rviz:=false`)로만 검증해 놓쳤음.
+- **수정:** `gz_world_gen.py`의 `marker_bits()`가 OpenCV를 별도 자식 프로세스에서 실행해 무늬만 받아 옴. 런치 프로세스는 `cv2`를 불러오지 않음.
+- **검증:** 런치 모듈을 불러온 뒤 `cv2`가 로드되지 않았고 `QT_QPA_PLATFORM_PLUGIN_PATH`가 설정되지 않음을 확인. 마커 6개 생성 확인. 화면을 켠 실행은 사용자 확인 대기.
+
+## T-18 `frybot_sim`의 의존성 누락, README의 옛 Nav2 설정 경로
+
+- **증상:** 패키지 구조 점검 중 발견. (1) `frybot_sim/customer_ui_node.py`가 `from frybot_web.httpd import serve`를 쓰는데 `frybot_sim/package.xml`에 `frybot_web`이 없음. `colcon build --packages-up-to frybot_sim`처럼 일부만 빌드하면 `customer_ui` 실행 시 `ModuleNotFoundError`. 지금까지는 `frybot_bringup`이 `frybot_web`을 함께 빌드해 드러나지 않음. (2) `src/frybot/README.md`의 "Gazebo + Nav2 구조"가 Nav2 설정 파일을 `frybot_bringup/config/nav2_amr.yaml`로 안내하는데, 이 파일은 2026-11-14 `frybot_mobile` 분리 때 옮겨져 없음.
+- **원인:** (1) 손님 시뮬레이터가 웹 서비스의 HTTP 도우미를 재사용하면서 의존성 선언을 빠뜨림. (2) 패키지 분리 때 README 한 곳을 갱신하지 않음.
+- **수정:** `frybot_sim/package.xml`에 `<exec_depend>frybot_web</exec_depend>` 추가. README 경로를 `frybot_mobile/config/nav2_store.yaml`(행동 트리는 `segment_bt.xml`)로 수정.
+
+## T-19 실기기에서 노드를 벗어난 로봇이 그대로 멈춤
+
+- **증상:** (2026-11-16, `test_map_v001`, 2대) 구간 중간에서 `NAV2_FAILED`가 난 뒤 재시도해도 0.6초 만에 다시 실패하고, 이동 명령은 "노드에서 6cm 이내" 조건으로 거절됨.
+- **원인:** 제어기의 Nav2 실패 표시가 지워지지 않아 이후 모든 경로가 즉시 실패. 관제는 노드 밖 로봇의 출발을 허용하지 않았고, 보류된 임무가 있으면 새 명령도 받지 않음.
+- **수정:** 실패 표시 초기화와 구간 재시도, 가장 가까운 빈 노드로의 자동 복귀(`REJOIN`), 주행 실패 자동 재계획(`ROUTE_RETRY`). 상세는 [CHANGES_2026-11-16.md](CHANGES_2026-11-16.md) 1장.
+- **검증:** 관제 코어 모의 실행. 실기기 미확인.
+
+## T-20 동선이 겹치면 양보 없이 크게 우회
+
+- **증상:** 한 로봇이 다른 로봇을 피해 반대편 통로로 돌아감. 서 있는 로봇은 비켜 주지 않음.
+- **원인:** 도착 시각만 최소화하는 계획, 일 없는 로봇을 고정 장애물로 취급, 실측 지도에서 후진 미사용.
+- **수정:** 우회가 길 때 서 있는 로봇 비켜 주기 → 최단 경로에서 대기 → 옆 노드로 비켜 서기 순으로 양보. 실기기 `YIELD` 구간은 라이다로 뒤를 확인하며 후진. 상세는 [CHANGES_2026-11-16.md](CHANGES_2026-11-16.md) 2장.
+- **검증:** 모의 실행에서 우회 2.14 m → 1.30 m 등. `fleet_bench` 회귀 72회 완료 수 동일. 실기기 미확인.
+
+## T-21 로봇마다 접속해 따로 실행해야 함, 코드 리뷰 0순위 R0-1~7
+
+- **수정:** `real.launch.py` 하나로 등록된 로봇(`frybot_bringup/config/robots.yaml`)을 SSH로 함께 기동. 생존 신호·비상 정지 채널(`FleetHeartbeat`), 허가 재발행, 겹치지 않는 경로 번호, 상태 보고의 오류 필드 등 R0-1~7 반영. 상세는 [CHANGES_2026-11-16.md](CHANGES_2026-11-16.md) 3~4장.
+- **검증:** 경량 시뮬레이션에서 관제 강제 종료 시 로봇이 2초 안에 `WAIT_FMS`로 정지, 비상 정지 채널 동작, SSH 접속 3대 확인. 로봇 배포와 실기동은 미실행.
+
+## T-22 양보 후진 중 경로가 취소되면 정지 명령이 나가지 않음 (R1-1)
+
+- **증상:** (2026-11-17 코드 리뷰 1순위에서 발견, 실제 발생은 미확인) 실측 지도에서 양보 후진 중인 로봇의 경로가 취소되거나 새 경로로 바뀌면 로봇이 마지막 속도로 계속 후진할 수 있음.
+- **원인:** `mobile_controller.py`의 `_stop()`이 `drive=nav2`일 때 Nav2 목표만 취소함. 양보 후진과 도킹 creep은 Nav2를 거치지 않고 `cmd_vel`을 직접 내는데, 멈출 때 0 속도를 보내지 않음. `pinky_bringup`의 `twist_callback`에는 명령 시간 초과가 없어 마지막 속도가 유지됨. 비상 정지와 `WAIT_FMS`는 0 속도를 따로 보내 해당 없음.
+- **수정:** `_stop()`이 `drive != kinematic`이면 항상 0 속도를 한 번 발행.
+- **검증:** `frybot_mobile` 빌드. 실기기 미확인(로봇 배포 전).
+
+## T-23 실기기에서 양보처럼 움직였는데 로그에 양보가 없음
+
+- **증상:** (2026-11-16 실기기, `archive/runs_2026-11-16_18/run_20261116_175751`, pinky1·pinky3, 이동 명령 28건) 동선이 겹치는 명령을 주면 한 대가 기다렸다 지나가는 것처럼 보였지만 로그에 `YIELD_WAIT`, `RETREAT`가 0건.
+- **원인:**
+  1. 양보 기능은 실행되지 않았음. 양보는 우회가 최단 거리의 1.4배를 넘고 0.4 m 이상 길 때만 시도하는데(`fleet_core._long_way`), 그날 명령 중 이 조건에 든 것이 없었음. 예: 646초에 C2에 서 있는 pinky3 때문에 pinky1(B4→A7)이 우회했는데 최단 1.03 m, 우회 1.27 m, 기준 1.43 m.
+  2. 양보처럼 보인 것은 기본 교통 계층임. SIPP가 상대 예약을 피해 대기가 든 계획을 세우고, 실행 중에는 상대의 락에 막혀 서 있다가(`ZONE_REQUEST`) 3초 뒤 정체 재계획(`REPLAN`)을 거쳐 통과. 계획에 든 대기는 지표(`planned_wait`)만 올리고 이벤트를 남기지 않았음.
+  3. 계획의 시간 모델이 실기기와 다름. 실제 구간 147개를 맞추면 구간 시간 = 2.27초 + 거리 ÷ 0.135 m/s. 계획은 거리 ÷ 0.072 m/s에 지연 0초. 실제 소요는 계획 ETA의 1.76배(중앙값). 그래서 시간 예약이 실행과 어긋나 겹칠 때마다 락 대기와 재계획으로 넘어감. 충돌 방지는 락이 하므로 안전 문제는 아님.
+- **수정:**
+  - `fleet_core.py`: 채택한 계획에 1초 넘는 대기가 있으면 `PLAN_WAIT`(어느 노드에서 몇 초, 누구 때문), 다른 로봇 때문에 우회하면서 양보하지 않으면 `YIELD_SKIP`(이유와 우회·최단·기준 거리)을 기록. 기록만 추가했고 계획과 양보 판단은 그대로.
+  - `frybot_control/replay_run.py`(신규, `ros2 run frybot_control replay_run <실행 폴더>`): 실제 로그의 이동 명령을 같은 관제 코어와 모의 로봇으로 다시 실행해 비교. `--find-yield --map-id <지도>`는 양보가 일어나는 명령 조합을 찾음.
+  - `analyze.py`: 요약에 양보 관련 건수 추가.
+- **검증:**
+  - 재현 결과(같은 명령 28건):
+
+    | | 실제 | 기존 시뮬 모델(지연 0, 0.08 m/s) | 실측 모델(2.27초 + 거리 ÷ 0.135) |
+    |---|---|---|---|
+    | 소요 시간(실제 대비 중앙값) | 1.00 | 0.53 | 1.01 |
+    | `ZONE_REQUEST` | 9 | 1 | 11 |
+    | `REPLAN` | 10(4건은 Nav2 실패 재시도) | 1 | 7 |
+    | 경로가 실제와 같은 명령 | - | 22/24 | 21/24 |
+
+    기존 시뮬 모델은 로봇이 실제의 약 2배 속도로 끝나 겹침 자체가 거의 생기지 않음. 실측 모델에서는 실제와 같은 종류의 대기·재계획이 나옴.
+  - `fleet_bench --scenario rush` 20개 조합이 수정 전후 동일(`plan_ms` 제외).
+  - `test_map_v001`에서 양보가 일어나는 조합 확인(모의): 비켜 주기, 대기 양보. [REAL_ROBOT_GUIDE.md](REAL_ROBOT_GUIDE.md) "양보 시험" 참고.
+- **확인하지 않은 것 / 남은 일:** 실기기에서 양보 세 종류가 실제로 실행되는지. 계획 시간 모델을 실측값으로 바꾸는 것과 양보 기준값 조정은 하지 않음(주행 순서가 달라지는 변경). 실측 지도에서 서 있는 로봇이 길을 막는 조합의 41%는 기준 미만이라 비켜 주지 않고 우회함. 실측 모델은 실행 1건으로 맞춘 값임.
+- **추가(2026-11-18, 작업 지시서 2 W6, R5-4):** 계획 시간 모델에 구간 지연을 넣음.
+  - **수정:**
+    - `planners/base.py`의 `PlanRequest.overhead`(기본 0.0). 구간 시간 = 지연 + 거리 ÷ 속도.
+    - `sipp.py`, `cooperative_astar.py`가 이 식을 씀. `independent_astar`는 시각을 계획하지 않아 그대로.
+    - `fleet_core.py`의 `plan_overhead`를 배정 비용(최단 경로 구간 수 × 지연), 계획 요청, 구간 중간 출발 시각, 물러날 때의 시간에 반영.
+    - `task_manager` 파라미터와 런치 인자 `plan_overhead`(sim·gazebo·real, 기본 0.0).
+    - `fleet_bench --plan-overhead`, `replay_run --plan-overhead --plan-speed`.
+  - **검증:** (모의만)
+    - 지연 0.0에서 fleet_bench rush·bottleneck 평균과 replay_run 출력이 수정 전과 같음.
+    - pytest 7건 통과(`frybot_control/test/test_plan_overhead.py`).
+    - 실측 실행 모델에서 보정값(0.135 m/s, 2.27초)을 쓰면 계획 ETA 대비 실제 소요가 1.6배에서 1.00~1.10으로 내려가고, 점유 대기가 줄어듦.
+    - 전체 소요는 거의 같고, 30초 정지는 계획 대기·양보 대기로 옮겨 가 줄지 않음.
+    - 기존 실행 모델에 보정값을 쓰면 전체 소요가 10~35% 늘어, 경량 시뮬 기본값은 0.0으로 둠.
+    - 수치는 `docs/IMPROVEMENT_PLAN_2026-11-18.md` 9.6, 원본은 `archive/mock_compare_2026-11/w6/`.
+  - **확인하지 않은 것:** 보정한 계획으로 실기기 주행(실기기 확인 필요). 11-16 로그 재생에서는 REPLAN·ZONE_REQUEST가 실제보다 적게 나옴. 실제 로그가 보정 전 계획으로 달린 기록이라 이 비교로는 검증되지 않음.
+
+## T-24 로봇 3대가 서로 길을 막거나 계획을 무효화해 임무가 끝나지 않음
+
+- **증상:** (2026-11-17 모의, `test_map_v002`, 로봇 3대, 실측 시간 모델) 홈에서 무작위 목적지 3곳으로 동시에 이동시키면 900건 중 4건이 400초 안에 끝나지 않음.
+  - 조합 `pinky1→B5, pinky2→B7, pinky3→W3`: pinky3이 1초마다 `PLAN_FAIL`만 반복.
+  - 조합 `pinky1→B2, pinky2→A3, pinky3→A5`: pinky2와 pinky3이 1초마다 번갈아 `REPLAN`/`PLAN_FAIL`(한 건에서 재계획 258회), 둘 다 움직이지 않음.
+- **원인:** 지도나 노드 좌표가 아니라 `fleet_core.py`의 양보·재계획 로직.
+  1. `_make_way`는 이동 로봇의 최단 경로 위에 선 유휴 로봇만 비키게 하고, 비킬 자리를 그 경로 밖에서만 찾음. 유휴 로봇(`B5`)의 출구(`B6`, `W3`)가 모두 경로 위이고 그 너머(`B7`)에 다른 유휴 로봇이 서 있으면 후보가 없어 포기. 경로 밖의 유휴 로봇은 비키라는 요청을 받지 않음.
+  2. `_resolve_stall`은 상대가 이미 나에게 양보해 물러나는 중인지 보지 않음. 상대가 노드를 비우기 0.6초 전에 나도 물러났고, 둘 다 "상대가 지나갈 때까지" 30초를 기다림(`_yield_done`).
+  3. `_start_move`의 우선순위 뒤집기(`_table(optimistic=True)`)에 순위 규칙이나 재시도 간격이 없음. 마주 본 두 로봇이 1초마다 서로 뒤집어 상대 경로를 취소시킴. 한 구간을 출발하는 데 2.27초가 걸려 아무도 출발하지 못함.
+- **수정:** (`fleet_core.py`)
+  - `_clear_exit`(신규): 비킬 자리가 없는 유휴 로봇의 가장 가까운 출구를 찾고, 그 길을 막고 선 다른 유휴 로봇부터 비키게 함. `_make_way`에서 `_retreat`가 실패하면 호출.
+  - `_resolve_stall`: 상대가 나에게 양보 중(`yield_to == r.id`)이고 아직 물러나는 경로가 남아 있으면 물러나지 않고 기다림.
+  - `_start_move`: 우선순위를 뒤집으면 뒤집힌 로봇은 `FLIP_HOLD`(8초) 동안 되뒤집지 못함(`Robot.no_flip_until`).
+- **검증:**
+  - 3대 모의 무작위 이동(씨앗 7, 11, 23, 각 300건): 완료 896/900 → 900/900. 평균 소요 47.4초 → 47.5초. `REPLAN` 합계 1,747 → 923.
+  - 위 두 조합 모두 완료(120초 이내).
+  - 2대 양보 시험 `replay_run --find-yield --map-id test_map_v002 --limit 150`: 수정 전과 동일.
+  - `fleet_bench --scenario rush`(20개 조합): 모두 완료, `min_sep` 0.16 유지. 순서가 달라져 16개 조합의 수치가 바뀜. 기본 조합(`min_cost_eta_rh` + `sipp`) 5회 평균은 rush `makespan` 378.4 → 374.3초, bottleneck 425.9 → 423.8초, `plan_fail`은 0.4 → 2.0, 0.6 → 4.8(되뒤집기가 막힌 로봇이 1초 뒤 다시 계획).
+- **확인하지 않은 것 / 남은 일:** 실기기 3대 주행. 로봇 4대 이상에서 유휴 로봇이 세 겹 이상 막는 경우(연쇄는 한 단계만 처리). 마주 본 두 로봇이 서로 30초씩 기다리는 경우가 남아 최대 소요는 약 220초 그대로.
+
+## T-25 실측 지도를 경량 시뮬로 띄우면 로봇이 계속 오프라인
+
+- **증상:** (2026-11-17) `FRYBOT_MAP_ID=test_map_v001 ros2 launch frybot_bringup sim.launch.py`로 띄우면 로봇 노드는 "ready"를 찍지만 관제에는 3대 모두 `online: false`로 남고 이동 명령을 받지 못함.
+- **원인:** `mobile_controller.py`의 `_publish`는 실측 지도에서 위치 추정값을 받기 전(`have_truth`가 거짓)에는 상태를 보내지 않음. 실기기가 AMCL 자세를 받기 전에 홈 좌표를 보고하지 않게 하려는 조건인데, 경량 시뮬(`drive=kinematic`)에는 위치 추정원이 없어 `have_truth`가 끝내 참이 되지 않음.
+- **수정:** (`mobile_controller.py` `__init__`) `drive == 'kinematic'`이고 실측 지도이면 `have_truth`를 참으로 시작. 경량 시뮬은 자세를 직접 움직이므로 그 값이 참값임. 실기기(`drive=nav2`)와 Gazebo는 이 분기를 타지 않음.
+- **검증:** 위 명령으로 실행 후 `/api/state`에서 3대 모두 `online: true`. `MOVE_TO_VERTEX` 2건(pinky1 `A2→B5`, pinky2 `W3→A4`)이 30초 안에 목적 노드 좌표에 도착.
+- **확인하지 않은 것 / 남은 일:** 실기기(코드 경로는 그대로지만 다음 `--deploy` 때 이 파일이 배포됨). 실측 지도에서 `world` 노드가 `KeyError: 'FRY_PICKUP'`으로 종료하는 것은 그대로 둠(매장 도면 전용 노드). 실행 명령은 [COMMANDS.md](COMMANDS.md) 3장.
+
+## T-26 실측 지도에서 길을 비켜 준 로봇이 원래 노드로 돌아가지 않음
+
+- **증상:** (2026-11-17 경량 시뮬, `test_map_v002`) pinky2를 `B3`로 보낸 뒤 pinky1을 `B5`로 보내면 pinky2가 `C2`로 비켜 주고(`RETREAT ... idle_makes_way`) 그 자리에 계속 남음. 운영자가 세워 둔 위치가 바뀜.
+- **원인:** 임무 중에 양보한 로봇은 `pending_goal`로 원래 목적지를 이어 가지만, 서 있다가 비켜 준 로봇(`_retreat`의 `stay=True`)은 비킨 자리가 최종 위치였음. 가상 매장 도면에서는 `tick`이 대기 위치(`park`)로 돌려보내는데, 실측 지도에는 대기 위치가 없어 그 처리가 빠져 있었음.
+- **수정:** (`fleet_core.py`, 실측 지도에만 적용)
+  - `_make_way` → `_retreat(..., back=True)`: 비켜 준 로봇에 "서 있던 노드로 복귀"를 `pending_goal`로 걸고, 상대가 지나가면(`_yield_done`) 돌아감. 상대의 목적지가 그 노드이거나 `SAFE_DIST` 안이면 걸지 않음.
+  - 돌아가는 로봇은 다른 로봇을 비키게 하거나 우선순위를 뒤집지 않음(`_start_move`의 `quiet`). 처음에는 이 제한이 없어, 이동을 마친 로봇과 돌아가는 로봇이 서로 끝없이 자리를 바꿨음.
+  - 돌아갈 길이 막혀 있으면 다시 시도하지 않고 노드 위에 남음(`YIELD_STAY no_way_back`). 구간을 달리는 중이면 허가받은 노드까지 가서 판단함.
+  - `_yield_done`: 임무 중인 상대의 남은 길이 내 원래 노드를 지나면 아직 지나간 것으로 보지 않음. `YIELD_BACK_WAIT`(60초)을 넘으면 돌아가지 않고 남음(`YIELD_STAY timeout`).
+  - `_move_to_vertex`: 비키는 중이거나 복귀를 기다리는 로봇도 새 이동 명령을 받고, 새 명령이 복귀를 대신함.
+- **검증:** (모의, 로봇 3대, 실측 시간 모델 2.27초 + 거리 ÷ 0.135 m/s, 씨앗 7·11·23 각 300건)
+  - 한 대만 이동(나머지는 무작위 노드에 서 있음): 비켜 준 로봇 중 원래 노드로 돌아온 비율 `test_map_v002` 204/240, `test_map_v001` 157/220. 나머지는 위 조건으로 남음.
+  - 400초 안에 끝난 건수는 수정 전과 같음: v002 900/900(동시 이동), 900/900(한 대 이동), v001 888/900, 898/900. 수정 전에 끝나지 않던 조합만 그대로 끝나지 않음.
+  - 평균 소요(복귀 포함): v002 한 대 이동 17.7 → 19.1초, 동시 이동 35.5 → 37.2초. v001 24.8 → 27.1초, 49.3 → 52.6초.
+  - 경량 시뮬(`sim.launch.py map_id:=test_map_v002`)에서 위 증상 조합: pinky2가 `B1`으로 비켰다가 `B3`로 복귀.
+  - `fleet_bench --scenario rush`(가상 매장, 20개 조합): 수정 전과 같음. `replay_run archive/runs_2026-11-16_18/run_20261116_175751`: 이전과 같음.
+- **확인하지 않은 것 / 남은 일:** 실기기. 돌아가는 수 초 동안은 그 로봇에 새 이동 명령이 거절됨(기존의 "이동 중 명령 거절"과 같은 조건). `_clear_exit`로 비킨 로봇(다른 유휴 로봇의 출구를 열어 준 경우)은 돌아가지 않음. `test_map_v001`의 동시 이동 12건, 한 대 이동 2건이 400초 안에 끝나지 않는 것은 이번 수정과 무관하게 남아 있음. 시험표는 [REAL_ROBOT_GUIDE.md](REAL_ROBOT_GUIDE.md) "양보 시험".
+
+## T-27 로봇이 연결됐는데 관리자 화면 지도에 나오지 않음
+
+- **증상:** (2026-11-17, 사용자 보고) 로봇이 연결됐는데 관리자 화면의 지도에 나오지 않고, 브라우저에서 페이지를 새로 고치면 나옴.
+- **원인(추정):** `admin.html`이 지도 목록(`/api/maps`의 `active`)을 페이지를 열 때 한 번만 받음. 지도에는 "선택한 지도 = 관제가 쓰는 지도"일 때만 로봇을 그리므로, 페이지를 열어 둔 채 관제를 다른 `map_id`로 다시 띄우면 화면이 기억한 `active`가 옛 값이라 로봇과 이동 명령 폼이 나오지 않음. 페이지를 열 때 웹 서비스가 아직 뜨지 않았으면 목록을 받지 못한 채로 남는 것도 같은 결과. 사용자의 화면에서 이 경로였는지는 확인하지 못함.
+- **수정:** (`frybot_web/static/admin.html`)
+  - 지도 도구 줄(경로·노드 버튼 옆)에 **새로고침** 버튼 추가: 지도 목록, 지도 그림, 로봇 상태를 다시 받음.
+  - 0.5초 갱신(`tick`)에서 실행(`run_id`)이 바뀌었거나, 관제의 `map_id`가 화면의 `active`와 다르거나, 목록을 받지 못한 상태면 3초 간격으로 스스로 다시 받음(`checkCatalog`).
+- **검증:** 헤드리스 Chrome으로 `/admin`을 열어 지도 목록 2개, "관제 사용 중", 로봇 3대가 이동 명령 폼에 나오는 것과 스크립트 오류가 없는 것을 확인. 버튼을 누르는 동작과 "페이지를 열어 둔 채 다른 지도로 다시 띄우기"는 브라우저에서 직접 해 보지 못함.
+- **확인하지 않은 것 / 남은 일:** 실기기에서 같은 증상이 다시 나오는지. 다시 나오면 그때의 `/api/state`(`fms.robots[].online`, `fms.map_id`)와 `/api/maps`를 함께 확인.
+
+## T-28 UR 대조에서 나온 누락 (UR-03, 15, 17~19, 21, 22)
+
+- **증상:** (2026-11-17, `주제1 - UR 수정본 v2`와 대조)
+  - 손님 동행 확인이 시뮬 전용 `/sim/world_state`의 손님 좌표를 직접 읽어, 실기기에서는 확인 없이 안내함. 실측 지도에서는 안내 구간을 후진하지 않음.
+  - 사용 중지(`CLOSED`)한 테이블을 다시 열어도 DB(`dining_table`)에는 `CLOSED`로 남음. 화면에는 사용 중지 버튼이 없음.
+  - 관리자 화면에 일시 중단, 이력의 기간·결과 필터, 임무 가용 여부가 없고, 알람의 발생 시각이 현재 시각으로 찍힘. 실기기는 홈 노드에 서 있기만 해도 "충전 중"으로 보고.
+  - 로봇팔의 상태·오류가 관제로 올라오는 통로가 없음.
+- **원인:** 시뮬 우선으로 만든 부분이 실기기 입력을 갖지 않았고, `restaurant.admin`의 `CLOSED → AVAILABLE` 분기에 `_save_table` 호출이 빠져 있었음.
+- **수정:**
+  - `frybot_interfaces`: `GuestTrack.msg`(`/frybot/guest_track`), `ArmStatus.msg`(`/fleet/arm_status`) 추가, `FleetCommand`에 `PAUSE`.
+  - `frybot_mobile/mobile_controller.py`: 동행 확인을 `/frybot/guest_track` 기준으로 바꿈(`_guest_away`), 실측 지도의 안내 구간을 Nav2로 후진(구간마다 `controller_selector`로 제어기 선택), 서빙 팔 상태 발행, 실기기 충전 판정(`_real_charging`).
+  - `frybot_mobile/config/nav2_store.yaml`, `segment_bt.xml`: 후진 전용 제어기 `FollowPathReverse` 추가(`controller_plugins` 이전 값 `["FollowPath"]`), 행동 트리에 `ControllerSelector` 추가. 실측 지도에서 `FollowPath`가 전진 전용으로 덮어써지기 때문.
+  - `frybot_sim/ai_server.py`, `central_control_node.py`: 카메라 대역의 `guide` 프레임 → `GUEST_TRACK` → 토픽.
+  - `frybot_arm/arm_controller.py`: 조리 팔 상태 발행.
+  - `frybot_control`: `fleet_core`에 `PAUSE`, `on_arm_status`, 이상 시작 시각(`fault_since`), 가용 여부와 사유. `restaurant.py`에 저장 누락 수정.
+  - `frybot_web`: `/api/events`에 `since`, `until`, `result`. 관리자 화면에 일시 중단·재개, 부착 팔·충전·가용 표시, 테이블 사용 중지·재개, 이력 기간·결과 필터.
+- **검증:** (경량 시뮬, 가상 매장, `run_20261117_171315`)
+  - `colcon build --packages-up-to frybot_bringup` 통과. `fleet_bench --scenario rush`는 수정 전과 같음(계획 시간 열 제외).
+  - `scenario --scenario demo` 256초에 완료(접수 3, 전달 4, 회수 3). 안내 중 손님을 멈추게 하면 `/frybot/guest_track`의 거리가 0.30 m를 넘고 로봇이 `PAUSED_GUEST`로 섬.
+  - 안내 중 `PAUSE` → 로봇 `PAUSED`, 임무 `SUSPENDED/PAUSED`, 4초간 이동 0 m. `RESUME` → 안내가 이어져 착석.
+  - `SET_TABLE 1 CLOSED` → 다음 접수가 2번으로 배정, DB `CLOSED`. `AVAILABLE` → DB `AVAILABLE`. 이용 중인 테이블은 거절.
+  - `/fleet/arm_status`에 오류를 실어 보내면 서빙 팔(`GRIPPER_ERROR`)과 조리 팔(`ERR_004`)이 상태에 나타나고 시작 시각이 기록됨.
+  - Gazebo + Nav2(`gazebo.launch.py gui:=false robots:=1`, `scenario single`): 253초에 완료, Nav2 목표 68건 성공, 직접 주행 전환 0건. 안내 구간 1.17 m 전부 후진, 구간마다 `FollowPath` ↔ `FollowPathReverse`가 번갈아 선택됨. 수정 뒤 경량 시뮬 demo도 224초에 완료.
+  - `/api/events`: `result=fail` 5건, 기간 지정 시 실행 18개에서 조회. 헤드리스 Chrome으로 관리자 화면 세 탭에 새 항목이 그려지고 스크립트 오류가 없는 것을 확인.
+- **확인하지 않은 것 / 남은 일:**
+  - 실기기 전부: 실측 지도의 Nav2 후진 안내(전진 전용 `FollowPath`와 함께 쓰는 구성은 시뮬로 재현하지 못함), 충전 판정 임계값.
+  - 화면 없는 Gazebo에 로봇 3대를 띄운 실행은 부하 평균이 17~21까지 올라 Nav2가 활성화되지 못했음(`map → base_footprint` TF 대기 시간 초과). 로봇 1대로는 정상. 이번 수정 전에도 그랬는지는 확인하지 못함. 실측 지도에 테이블이 없어 안내 임무를 낼 수 없음.
+  - 실기기용 손님 추적(카메라 영상 전송, 추적 모델)과 실제 팔 제어기는 없음. 토픽만 정의됨.
+  - `RESUME` 직후 로봇이 아직 정지 목록을 보고 있어 첫 경로를 `E_STOP`으로 돌려주고 1.5초 뒤 다시 계획함(`ROUTE_RETRY` 1회). 비상 정지 해제 때도 같은 기존 동작이며 고치지 않음.
+
+## T-29 사람 안전·정지 묶음 (A1, A2, A3, B3, B4, D4, D6, G2, G4)
+
+`docs/CHANGES_AND_CODE_REVIEW.md`의 권장 순서 1번에서 9건을 고쳤습니다. 수정 전 계획과 수정 후 코드를 Codex(GPT-6.1-Sol)가 교차 검토했고, 지적 사항을 반영했습니다.
+
+- **증상 / 원인:** (2026-11-17, 코드 리뷰에서 확인)
+  - A1: `pinky_driver`가 `cmd_vel`을 받을 때만 모터에 값을 보냄. 다이나믹셀은 속도 모드라, 보내는 쪽(Nav2, `mobile_controller`, 네트워크)이 죽으면 마지막 속도로 계속 감.
+  - A2: 시뮬 런치의 기본값이 실기기와 같은 도메인(73)이라, 켜져 있는 Pinky가 시뮬 관제의 경로를 받을 수 있음.
+  - A3: 로봇의 보고가 끊겨도 관제가 통행 허가를 계속 냄. 끊김 판정이 실측 지도에서만 돌아 시뮬로는 볼 수 없었음.
+  - B3, B4: `mobile_controller`의 기본값이 시뮬 값(`kinematic`, `gz`)이고, `real.launch.py`는 `map_id`를 빠뜨리면 가상 매장으로 뜸.
+  - D4: `_tf_pose`가 TF의 시각을 보지 않아 AMCL이 죽어도 굳은 위치로 주행하고 보고함.
+  - D6: 웹 서비스가 `Access-Control-Allow-Origin: *`를 내고 관리자 명령에 접근 통제가 없음.
+  - G2: 가용 판정이 로봇이 보고한 오류를 보지 않아 `DRIVE_ERROR` 로봇에도 임무를 배정함.
+  - G4: 실기기 런치가 손님 추적 값 없이도 안내 구간(후진)을 출발함.
+- **수정:**
+  - A1 `frybot_mobile/pinky_driver.py`: `cmd_vel_timeout`(0.5초) 넘게 명령이 없으면 30 Hz 주기에서 0 RPM을 보냄. 0 RPM 전송이 실패하면 다음 주기에 다시 보냄.
+  - A2 `frybot_bringup/sim_net.py`(신규), `sim.launch.py`, `gazebo.launch.py`: `net` 기본값 `lan` → `sim`(시뮬 전용 도메인 `sim_domain`, 기본 74). 처음에는 `local`(LOCALHOST)을 기본으로 했으나 Gazebo에서 Nav2가 주행하지 못해 바꿈(T-13의 원인).
+  - A3 `frybot_control/fleet_core.py`: 끊김 판정(2초)을 지도와 무관하게 함. 끊긴 로봇에는 허가·재계획·재배정을 하지 않고 락은 유지. 10초(`offline_hold`)를 넘기면 임무를 `SUSPENDED(OFFLINE)`로 두고 `RETRY_TASK`로 재개. `ROBOT_OFFLINE`, `ROBOT_ONLINE` 이벤트 추가.
+  - B3 `mobile_controller.py`: 기본값 `drive=nav2`, `pose_source=tf`. `sim.launch.py`가 `pose_source: gz`를 명시.
+  - B4 `real.launch.py`: `map_id`가 없거나 `proto`이거나 없는 지도면 런치를 멈춤. 도달할 수 없게 된 조리 팔·AI 대역 분기와 `sim_cooking` 인자 삭제.
+  - D4 `mobile_controller.py`: 최신 TF가 `tf_stale_sec`(1.0초)보다 오래되면 주행을 세우고(`WAIT_LOC`) `SENSOR_ERROR`를 보고. 갱신이 돌아오면 이어서 감. `except`를 `TransformException`으로 좁힘.
+  - D6 `frybot_web/httpd.py`, `web_service_node.py`, `static/admin.html`: CORS 헤더와 OPTIONS 응답 삭제. POST는 `application/json`만 받고 다른 출처의 요청을 거절. `/api/admin`은 관제 PC(localhost)는 그대로 받고, 다른 주소는 `admin_token`이 맞을 때만 받음. 실기기 런치는 토큰이 없으면 관제 PC에서만 받음(`admin_local_only`). 시뮬은 전과 같음.
+  - G2 `fleet_core.py`: 로봇 오류나 서빙 팔 오류가 있으면 배정하지 않음(`_fault`). 관리자의 이동·홈 복귀는 `DRIVE_ERROR`만 허용(`_movable`). 화면의 불가 사유에 `ERROR` 추가.
+  - G4 `frybot_mobile/launch/robot.launch.py`: `guest_track_required` 기본 `true`.
+- **검증:** (2026-11-17~18, 실기기 없음)
+  - 빌드: `colcon build --symlink-install --packages-select frybot_bringup frybot_mobile frybot_control frybot_web` 통과.
+  - `fleet_bench --scenario rush`: 15개 조합 모두 수정 전과 같음(계획 시간 열 제외).
+  - A1: 가짜 모터 드라이버로 6건 통과(20 Hz 주행 중 0 RPM 없음, 끊긴 뒤 0.50초에 0 RPM 1회, 전송 실패 3회 뒤 재시도 성공, 0 명령 실패 뒤 0.01초에 재시도, 5 Hz 명령은 유지).
+  - A3, G2: `FleetCore`를 직접 구동해 22건 통과(`test_map_v001`, `v002`). 끊김 중 허가 0건·락 유지, 10초 뒤 보류, 재연결 뒤 자동 재개 없음, `RETRY_TASK`로 재개, 4초 끊김은 보류 없이 진행.
+  - A3 실행 확인: 실측 지도 경량 시뮬에서 주행 중인 pinky1의 제어기를 강제 종료 → 2초 뒤 `ROBOT_OFFLINE`, 락(`B4`, `B4_B5`) 유지, 10초 뒤 `TASK_SUSPEND OFFLINE`(`run_20261117_235838`).
+  - D4: 가짜 TF로 7건 통과(끊긴 뒤 1초 넘으면 `WAIT_LOC` + `SENSOR_ERROR`, 5초 묵은 시각의 TF는 거부, 복구되면 이어짐). 처음 구현은 감지가 2초로 늦어 판정을 고침.
+  - D6: `Access-Control-Allow-Origin` 없음, OPTIONS 501, `text/plain` 415, 다른 출처·`null` 출처 403, 같은 출처 200. `real.launch.py admin_token:=...`에서 localhost 200, LAN 주소는 토큰 없음·틀림 403, 맞으면 200. 토큰 없이 띄우면 LAN 주소는 403. 접수·상태 조회는 LAN에서도 200. 헤드리스 Chrome으로 관리자 화면이 스크립트 오류 없이 그려지는 것 확인(토큰 입력 창은 눌러 보지 못함).
+  - B4: `map_id` 없음, `proto`, 없는 지도 모두 런치가 오류로 멈추고 남는 프로세스 없음. `map_id:=test_map_v001 remote:=false`는 관제 3개 노드가 정상 기동.
+  - 경량 시뮬 가상 매장 `scenario demo`: 252초에 완료, 임무 10건 완료·중단 0(`run_20261117_235326`). 실측 지도 시뮬: 이동 명령 3건 도착.
+  - Gazebo + Nav2(`gazebo.launch.py gui:=false rviz:=false`, 로봇 3대, `scenario single`): `net:=local` 기본에서는 TF 시간 초과로 33개 구간이 모두 직접 주행으로 넘어가 540초 안에 끝나지 않음 → `net:=sim`으로 바꾼 뒤 194초에 완료, TF 시간 초과 0건(`run_20261118_001655`). 테이블 앞 두 구간에서 "Nav2 3회 실패 → 직접 주행"이 4번 있었음(가상 매장의 기존 대체 동작, 이번 수정 전에도 그랬는지는 확인하지 못함).
+  - 도메인 분리: 시뮬이 도는 동안 도메인 73 터미널에서 시뮬 토픽 0개, 도메인 74에서 노드 65개.
+- **확인하지 않은 것 / 남은 일:**
+  - **실기기 전부.** A1(주행 중 제어기를 죽였을 때 0.5초 안에 서는지, 정상 주행에서 오탐이 없는지), D4(`tf_stale_sec` 1.0초가 Pinky의 AMCL 갱신 주기에서 오탐을 내지 않는지), A3(끊긴 사이 취소가 닿지 않은 로봇이 재연결 뒤 어떻게 움직이는지). 새 코드는 `robot_remote --all --deploy`로 로봇에 배포해야 적용됨.
+  - D4에서 주행을 세울 때 Nav2 목표를 취소하고 복구 뒤 같은 구간을 다시 보냄. 취소한 목표의 늦은 응답이 새 목표와 섞일 수 있는 기존 구조(`_nav2_accepted`)는 그대로임.
+  - D6: AI 결과 수신 포트(8100)는 그대로 열려 있음. 토큰은 평문 HTTP로 전달됨.
+  - G2: 기기별 상태 흐름의 운용 제외(`OUT_OF_SERVICE`) 전이는 아직 없음.
+  - 이 PC의 Python 환경에서 `tf_transformations`가 numpy 2와 맞지 않아 `pinky_driver`를 그대로는 불러올 수 없음(시험에서는 대역으로 대체). 로봇 쪽 환경은 확인하지 못함.
+
+## T-30 SSH 비밀번호가 든 로봇 등록부가 패키지 안에 있음 (R7-2)
+
+- **증상:** (2026-11-18, 작업 지시서 W1) `src/frybot/frybot_bringup/config/robots.yaml`에 SSH 비밀번호와 로봇 주소가 평문으로 있음. git에 아직 올라가지 않았지만 `.gitignore`에도 없어 `git add` 한 번으로 저장소에 들어갈 수 있었음. 빌드하면 `install/.../share`에도 링크로 설치됨. 또 등록부 파일이 없으면 `real.launch.py`·`robots.launch.py`는 아무 말 없이 관제만 띄우고, `robot_remote`는 traceback으로 끝남.
+- **원인:** 등록부를 패키지 설정 파일로 두었고(`config/robots.yaml`), `~/.config/frybot/robots.yaml`을 먼저 읽는 기능은 있었지만 쓰지 않았음. `remote.registered()`가 `OSError`를 삼켜 빈 목록을 돌려주고, `robot_remote.main()`은 파일 존재를 확인하지 않음.
+- **수정:**
+  - 등록부를 `~/.config/frybot/robots.yaml`(폴더 700, 파일 600)로 옮김. 내용은 그대로. 패키지 사본과 `build/`·`install/`의 링크를 지움.
+  - `frybot_bringup/config/robots.example.yaml` 추가(비밀번호 빈 값, 예시 주소, 복사 방법).
+  - `.gitignore`에 `src/frybot/frybot_bringup/config/robots.yaml` 추가.
+  - `robot_remote.py`: `registry_missing()` 추가. 등록부가 없으면 찾은 경로와 예시 파일 위치를 한 줄로 알리고 종료 코드 1.
+  - `remote.py`: `registry_notice()` 추가. `real.launch.py`(`remote`가 켜져 있을 때), `robots.launch.py`가 등록부가 없으면 같은 안내를 로그로 남김. 동작은 전과 같이 관제만 기동.
+  - 문서: `src/frybot/README.md`, `docs/REAL_ROBOT_GUIDE.md`, `docs/CODE_REVIEW_CHECKLIST.md`(R7-2 조치).
+- **검증:** (2026-11-18)
+  - `colcon build --symlink-install --packages-select frybot_bringup` 통과. 설치 폴더에는 `robots.example.yaml`만 있음.
+  - `git status --short`에 `robots.yaml`이 나오지 않음. `git check-ignore -v`가 `.gitignore`의 새 줄로 무시한다고 답함.
+  - `load_registry()`가 새 경로를 읽고, 옮기기 전과 같은 로봇 3대(pinky1~3)와 같은 설정 키를 돌려줌.
+  - 없는 경로(`--robots-file /nonexistent/robots.yaml`)로 `robot_remote --all --check` → 안내 한 줄, 종료 코드 1. `registry_notice()`는 등록부가 없을 때 `LogInfo` 1개, 있을 때 0개.
+  - `robot_remote --all --check`(새 경로): pinky1, pinky3 접속·점검 OK. pinky2는 `No route to host`(전원 꺼짐으로 보임).
+- **확인하지 않은 것 / 남은 일:**
+  - pinky2 접속, `real.launch.py`로 실제 기동(실기기 확인 필요). 런치 안내 로그는 함수 단위로만 확인했고 런치를 띄워 보지는 않음.
+  - 점검에서 pinky3에 `frybot_description`이 없다고 나옴(MISSING). 이번 수정과 무관하며 `robot_remote --all --deploy`가 필요함.
+  - 문서(`CHANGES_2026-11-16.md`, `CHANGES_2026-11-17_MAPS.md`, `REAL_ROBOT_GUIDE.md`)에 로봇의 사설 IP가 남아 있음. 지울지는 사용자 판단. docs에 비밀번호 값 자체는 없음을 확인함.
+  - 로봇에 SSH 키를 등록하면 비밀번호 항목을 지울 수 있음(로봇 설정 변경이라 사용자가 직접).
+
+## T-31 같은 입력에도 관제 판단이 실행마다 다름 (R5-9)
+
+- **증상:** (2026-11-18, 작업 지시서 2 W5) 모의 비교에서 같은 씨앗이 실행마다 다른 결과를 냄. moves2 씨앗 19는 해시 씨앗에 따라 끝나기도 하고 끝나지 않기도 함.
+- **원인:**
+  1. `fleet_core._blocker`가 노드를 막는 로봇을 `graph.conflict[node]`(문자열 집합)를 도는 순서대로 찾아, 처음 걸린 로봇을 돌려줌. 집합 순서는 `PYTHONHASHSEED`에 따라 달라짐. 해시 씨앗 1과 3을 비교했을 때 moves3 씨앗 1(`independent_astar`)에서 29.4초의 `ZONE_REQUEST A5 held_by=`가 pinky3/pinky1로 갈렸음.
+  2. 물러난 뒤 다시 시도하는 시각에 전역 `random.uniform`을 써서, 씨앗을 줄 방법이 없었음.
+  3. `_park_goal`에서 빈 충전대를 `graph.home_nodes`(집합)에서 골라, 거리가 같으면 순서에 따라 달라질 수 있었음.
+- **수정:**
+  - `_blocker`는 `sorted(conflict)` 순서로 봄. `home_nodes`도 정렬해 고름. 락 해제·예약 추가처럼 순서가 결과에 영향을 주지 않는 순회는 그대로 둠.
+  - `FleetCore(rng_seed=None)`와 `self.rng`. 기본은 지금처럼 매번 다르고, 모의 도구는 씨앗을 줌.
+  - 모의 도구가 해시 씨앗을 0으로 고정해 다시 실행하던 것(`fix_hash_seed`)을 지움. 남겨 두면 같은 문제가 다시 생겨도 가려짐.
+- **검증:** (모의)
+  - 해시 씨앗 재실행을 지운 상태에서 `PYTHONHASHSEED` 1·2·3으로 moves2·moves3·rush를 씨앗 20개씩 돌린 결과가 같음(`plan_ms` 제외).
+  - 180개 조합(작업 부하 4 × 씨앗 20 × 시간 모델 2 + indep 20개)을 해시 씨앗 1과 3으로 비교했고, 다른 것은 0건(수정 전 1건).
+  - pytest `test_determinism.py` 4건 통과.
+  - 새 기준 표: `archive/mock_compare_2026-11/baseline_w8/`.
+    - 기본 조합(rh+sipp)과 fifo+sipp는 W0 표와 같음.
+    - indep 조합만 바뀜. 예: bottleneck fifo+indep 688.5 → 669.7초, rush fifo+indep 662.3 → 664.5초.
+    - replay_run(0.53, 1.01)과 `--find-yield` 출력은 그대로.
+- **확인하지 않은 것:** 실기기에서 같은 상황이 재현되는지. 관제 코어 밖(웹, 로봇 노드)의 순서 의존은 보지 않음.
+
+## T-32 막다른 자리에 서 있는 로봇 쪽으로 뒤 로봇이 들어와 둘 다 멈춤 (R5-10)
+
+- **증상:** (2026-11-18, W5) 실측 지도 이동 명령 모의에서 미완료 8회. pinky2가 마지막 명령으로 막다른 대기 위치 W3에 서 있는데, pinky1이 W3로 가는 계획을 세워 길목 B7까지 들어온 뒤 1,380초 동안 1.1초마다 계획에 실패함.
+- **원인:**
+  - `_hold_estimate(at_goal=True)`가 이동 중인 로봇은 목적지에 도착하고 4초 뒤 떠난다고 예약함. 이동 명령(MOVE)은 단계가 이동 하나뿐이라 도착하면 계속 서 있으므로, 뒤 로봇의 SIPP가 4초 뒤 W3가 빈다고 보고 계획함.
+  - `_move_to_vertex`는 목적지가 다른 로봇의 목적지와 겹치는지 보지 않음.
+- **수정:**
+  - `_hold_estimate`: 지금 이동이 MOVE 임무의 마지막 단계면 도착 뒤 점유를 무한대로 예약.
+  - `_move_to_vertex`: 다른 로봇이 같은 목적지나 그와 동시에 점유할 수 없는 노드(`graph.conflict`)로 가는 중이면 거절하고 이유를 알림(`_heading_near`). 목적지에 임무 없는 로봇이 서 있는 경우는 지금처럼 받음(비켜 주기가 처리).
+  - 모의 작업 부하(`fleet_bench --scenario moves`)는 거절된 명령을 1초 간격 60번(1분) 다시 시도한 뒤 건너뜀(전에는 10번). 거절된 시도는 `refused`, 건너뛴 명령은 `rejected`로 셈.
+- **검증:**
+  - 가상 매장 rush·bottleneck 평균이 W8-1 기준 표와 같음.
+  - W5의 W3 유형 미완료 8회를 다시 실행: 8회 모두 끝남. 같은 목적지라 거절된 시도는 3~58회(재시도 한도 60번에서 다시 잰 값).
+  - moves2·moves3 전체(8개 조건 × 씨앗 30개, 기본 조합 sipp)
+    - 완료: moves2 236 → 240, moves3 231 → 240(전부)
+    - 전체 소요 중앙값: moves2 220 → 217초, moves3 274 → 286초. 앞 로봇이 도착하기를 기다리는 시간만큼 늘어남.
+    - moves3에서 60번 거절돼 건너뛴 명령은 10건.
+  - 경량 시뮬 실측 지도(`sim.launch.py map_id:=test_map_v001 robots:=2`, `run_20261118_134141`): pinky1을 W3로 보낸 직후 pinky2를 W3로 보내자 "pinky1이(가) W3 또는 바로 옆 노드로 가는 중입니다"로 거절됨.
+- **확인하지 않은 것:** 실기기(실기기 확인 필요). 관리자 화면에서 거절 메시지가 보이는 모습은 API 응답으로만 확인함.
+
+## T-33 계획 실패가 끝없이 반복돼도 임무 보류·알림이 없음 (R5-11)
+
+- **증상:** (2026-11-18, W5) 계획 실패가 1,380초 동안 반복돼도 임무가 `SUSPENDED`가 되지 않아 관리자 알람이 나가지 않음.
+- **원인:** 계획이 실패하면 1초 뒤 다시 시도할 뿐(`pending_goal`) 횟수·시간 제한이 없었음.
+- **수정:**
+  - `fleet_core.PLAN_FAIL_SUSPEND_SEC = 20.0`. 로봇별로 같은 목적지 계획 실패 묶음(`Robot.plan_fail`)을 기억하고, 계획 성공이나 목적지 변경, `RETRY_TASK`에서 지움. W4의 묶음 정의와 같음.
+  - 20초를 넘으면, 임무가 있으면 `_suspend(임무, 'PLAN_FAIL')`와 `PLAN_FAIL_SUSPEND` 로그를 남김. 다시 시도 예정과 락은 A3(끊김 보류)처럼 그대로 두고 `RETRY_TASK`로 재개함. 임무가 없으면 묶음마다 `PLAN_FAIL_ALERT` 한 번만 남기고 다시 시도를 계속함. 손님 안내·음식 적재 임무에도 같은 규칙을 적용함.
+  - `mock_fleet`의 20초 지표가 이 상수를 씀. 모의 작업 부하는 보류가 나면 바로 끝내고 `suspended`를 셈.
+  - `TaskEvent.msg`의 SUSPENDED reason 설명에 PLAN_FAIL을 추가함(필드 변경 없음). `FleetCommand.srv`·`AdminCommand.srv`는 RETRY_TASK가 이미 있어 바꾸지 않음.
+  - 관리자 화면 알람 문구에 "(20초 넘게 길이 막힘)"을 붙임.
+- **검증:**
+  - pytest `test_plan_fail_suspend.py` 2건 통과. 비상 정지 로봇이 W3를 막은 상태에서 20초 뒤 `SUSPENDED(PLAN_FAIL)`가 나고, Restaurant가 incident와 ALERT를 남김. `RETRY_TASK`로 RESUMED가 된 뒤, 길이 계속 막혀 있으면 20초 뒤 다시 보류됨.
+  - 가상 매장 normal·rush·bottleneck(기존 모델 흔들림 0, 실측 모델 흔들림 0.2, 씨앗 30개, 4개 조합)의 결과가 W8-3 전후 같음.
+  - moves 전체 조건의 결과도 W8-3 전후 같음. W8-2 뒤에는 20초 넘는 계획 실패가 없어 보류가 0건.
+  - W5의 미완료 13회는 모두 보류 없이 끝남.
+  - 경량 시뮬 실측 지도(`run_20261118_134141`)
+    - pinky1을 W3에서 비상 정지시킨 뒤 pinky2를 W3로 보내자 20.3초 뒤 `TASK_SUSPEND PLAN_FAIL`, `EVT_SUSPENDED`, `ALERT`가 기록됨.
+    - 관리자 화면 알람에 "이동 임무 M0002 중단 (20초 넘게 길이 막힘) — 복구 대기"가 보임(헤드리스 Chrome).
+    - `RESUME pinky1` 뒤 `RETRY_TASK M0002`를 보내자 pinky1이 비켜 주고 pinky2가 20초 뒤 W3에 도착함.
+- **팀 확인 필요:** Restaurant는 E_STOP·PAUSED가 아닌 보류를 incident 출처 `DEVICE_ERROR`로 기록함. 논리 데이터 모델의 출처 값은 `DEVICE_ERROR`, `ADMIN_STOP` 둘뿐이라 길 막힘에 맞는 값이 없어 그대로 둠.
+- **확인하지 않은 것:** 실기기(실기기 확인 필요).
+
+## T-34 런치 없이 띄운 노드가 시뮬 기본값으로 뜸 (실기기 정리 P1)
+
+- **증상:** (2026-11-18 재검토, `docs/REAL_FIRST_PLAN_2026-11-18.md` 3장) 노드를 런치 없이 띄우면 시뮬 값으로 뜸.
+  - `ros2 run frybot_web web_service`: 관리자 명령(`RESUME`, `MOVE_TO_VERTEX` 등)을 같은 네트워크의 아무 기기에서나 받음(`admin_local_only` 기본 False)
+  - `task_manager`: 로봇 3대, 대기 위치 사용, 자동 홈 이동 끔
+  - `central_control`: 실행 기록의 `simulation`이 true, 로봇 3대
+  - 지도를 쓰는 노드는 `FRYBOT_MAP_ID`가 없으면 아무 안내 없이 가상 매장 도면(proto)으로 뜸
+  - `navigator.launch.py`의 `mode` 기본이 `sim`
+  - `robot.launch.py`는 `map:=`만 주면 그래프가 proto로 뜸
+- **원인:** 처음에 시뮬로 개발해 노드 기본값이 시뮬 값으로 남았음. 실기기 런치가 값을 넘겨 실기기에서는 드러나지 않았음.
+- **수정:**
+  - 노드 기본값을 실기기 값으로 바꿈.
+    - `web_service`: `admin_local_only` True
+    - `task_manager`: `robot_ids` [pinky1], `use_standby` False, `auto_home` True
+    - `central_control`: `scenario` real, `robot_ids` [pinky1]
+    - `navigator.launch.py`: `mode` real
+    - `navigator_nodes()`: `real`이 필수 인자
+  - 시뮬 런치(`sim.launch.py`, `gazebo.launch.py`)에 예전 값을 명시함(`admin_local_only: False`, 가상 매장 `auto_home: False`, `navigator_nodes(rid, real=False)`). `FleetCore` 생성자 기본값은 그대로(오프라인 도구가 씀).
+  - 지도 이름: `map_catalog.require_map_id()`를 지도를 쓰는 노드 5개(central_control, task_manager, web_service, mobile_controller, aruco_dock_detector)가 시작할 때 부름. `FRYBOT_MAP_ID`가 없으면 쓸 수 있는 지도 이름을 알리고 멈춤. 오프라인 도구와 pytest는 지금처럼 빈 값을 proto로 읽음.
+  - `navigator.launch.py`: `map_id` 값으로 `FRYBOT_MAP_ID`를 넣음. 없으면 proto를 넣고 "map_id 가 없어 가상 매장 도면(proto)의 그래프·도크를 씁니다"를 로그에 남김.
+  - `robot.launch.py`(D7, 사용자 결정): `map_id:=`가 필수. 없으면 쓸 수 있는 지도 이름을 안내하고 멈춤.
+- **검증:** 기준 자료는 `archive/real_first_2026-11-18/baseline/`, 수정 뒤는 `p1/`.
+  - fleet_bench rush·bottleneck(씨앗 5, 4개 조합)과 `--scenario moves --map-id test_map_v001 --robots 2`의 평균·원본이 기준과 같음(`plan_ms` 제외). pytest 16건 통과.
+  - `FRYBOT_MAP_ID=proto ros2 run frybot_web web_service`에 이 PC의 LAN 주소(192.168.0.20)로 `POST /api/admin`을 보내면 "관리자 명령은 관제 PC 에서만 보낼 수 있습니다"로 거절됨
+  - `FRYBOT_MAP_ID` 없이 `ros2 run frybot_control task_manager`를 실행하면 RuntimeError로 멈추고 쓸 수 있는 값을 알림
+  - `robot.launch.py robot_id:=pinky1`(map_id 없음)은 "robot.launch.py 에는 map_id:= 가 필요합니다"로 멈춤. `navigator.launch.py mode:=sim`(map_id 없음)은 proto 안내를 남김.
+  - `sim.launch.py` + demo: 251.0초에 완료, 임무 10건, 중단 0건, `manifest.simulation` true(기준 250.9초·219.8초)
+  - `sim.launch.py map_id:=test_map_v001 robots:=2`: 이동 명령 M0001(W1 → W3) 27.0초에 완료(기준 27.2초)
+  - `gazebo.launch.py gui:=false rviz:=false robots:=1`: Nav2(controller·planner·bt_navigator) active, 손님 1팀 시나리오에서 구간 56개 통과, 임무 2건 완료
+- **실기기 확인 필요:** `real.launch.py` 기동, 로봇의 `robot_remote` 기동이 전과 같이 뜨는지
+
+## T-35 로봇에서 단독 실행한 제어기·도킹 검출기의 TF 프레임 기본값이 시뮬 이름 (P1)
+
+- **증상:** `mobile_controller`의 `base_frame` 기본이 `{로봇}/base_footprint`, `aruco_dock_detector`의 세 프레임 기본이 `{로봇}/...`(시뮬의 공유 /tf 이름). 로봇에서 런치 없이 실행하면 TF를 찾지 못해 위치를 얻지 못함(1초 뒤 `SENSOR_ERROR`).
+- **원인:** 시뮬 이름이 기본값이었고, 실기기 이름은 `robot.launch.py`와 `navigator.py`가 넘겼음.
+- **수정:** 기본을 실기기 이름(`base_footprint`, `front_camera_link`, `odom`)으로 바꿈. 시뮬은 `sim.launch.py`가 `base_frame: {로봇}/base_footprint`를, `navigator.py`가 시뮬일 때만 `{로봇}/...` 프레임을 넘김. 단독 실행에는 여전히 `/tf → tf`, `/tf_static → tf_static` 리맵과 `FRYBOT_MAP_ID`가 필요함(파라미터로 줄 수 없음, 머리말에 적음).
+- **검증:** 시뮬 3종(T-34 검증과 같은 실행)이 기준과 같은 수준. Gazebo에서 도킹 검출기가 오류 없이 떴음(종료 신호로만 끝남).
+- **실기기 확인 필요:** 로봇에서 `mobile_controller` 단독 실행 시 TF 수신
+
+## T-36 실기기 제어기가 가짜 바퀴 관절값을 내고 시뮬 토픽을 구독 (R1-4, 실기기 정리 P3)
+
+- **증상:** 실기기의 `mobile_controller`가 `/pinkyN/joint_states`에 가짜 바퀴 관절값(`l_wheel_joint` 등, 항상 0)을 10 Hz로 냄. 같은 토픽에 `pinky_driver`가 실제 값(`left_wheel_joint`)을 내서 두 값이 섞임. 실기기에서도 `/sim/world_state`를 구독함(`mobile_controller`, `web_service`).
+- **원인:** 시뮬 전용 입력·출력이 제어기 한 클래스 안에 조건 없이(또는 시뮬 조건으로) 섞여 있었음.
+- **수정:**
+  - `frybot_mobile/sim_backend.py`(신규)로 옮김: `/gz/model_poses` 구독과 map → odom 보정, map → base TF, 가짜 배터리·충전대 좌표 충전 판정, 가짜 바퀴 관절값, `/sim/world_state`와 안내 카메라 프레임 대역(`_guide_frame`)
+  - 제어기는 시뮬 값(`drive=kinematic` 또는 `pose_source`가 tf가 아님)일 때만 붙임. 각 출력의 예전 조건(TF는 `drive != nav2`, gz는 `pose_source != tf`이고 `drive`가 cmd_vel·nav2, 가짜 배터리는 배터리 토픽이 없을 때)은 백엔드 안에 그대로 둠
+  - `web_service`: `sim_world` 파라미터(기본 False)일 때만 `/sim/world_state` 구독. `sim.launch.py`가 켬
+  - 주행·비상 정지 안의 `drive == 'kinematic'` 분기는 옮기지 않음(D8, 실기기 확인 뒤 검토)
+  - 바뀌는 동작: `drive=nav2`·`pose_source=tf`인데 배터리 토픽이 없는 구성(실기기 런치에는 없음)은 가짜 배터리 대신 `battery` 파라미터 값에 머묾
+- **검증:** (`archive/real_first_2026-11-18/p3/`)
+  - fleet_bench 세 가지가 기준과 같고(`plan_ms` 제외), pytest 16건 통과
+  - 실기기 조건으로 단독 실행한 `/pinky1/mobile_controller`(`drive=nav2`, `pose_source=tf`, 배터리 토픽 있음)는 `/pinky1/battery/percent`, `/pinky1/tf`만 구독하고 `/pinky1/arm/joint_states`만 발행. `/sim/world_state`, `/gz/model_poses`, `/pinky1/joint_states` 없음
+  - `sim.launch.py` + demo: 218.4초에 완료, 임무 10건, 중단 0건. 토픽 목록이 기준과 같음
+  - 실측 지도 시뮬: 이동 명령 27.0초 완료, 토픽 목록이 기준과 같음
+  - Gazebo(1대): `/pinky1/joint_states`에 `l_wheel_joint` 등이 전처럼 나옴, Nav2 active, 구간 54개 통과, 임무 2건 완료
+  - 참고: Gazebo를 `stop_all.sh`로 끝낼 때 경로 실행 중이던 제어기가 컨텍스트가 닫힌 뒤 0 속도를 내려다 `RCLError`가 남. P1 때 로그에도 같은 오류가 있어 이번 수정과 무관함(R1-5 종료 처리와 같은 곳)
+- **실기기 확인 필요:** RViz 로봇 모델의 바퀴 표시(`pinky_driver` 값만 남음), 양보 후진·비상 정지 동작이 전과 같은지(T-22, T-28)
+
+## T-37 11-17 드라이버 사본의 포트가 로봇과 달라 모터·라이다가 뜨지 않음
+
+- **증상:** (2026-11-18 실기기 실험 R1) `robot.launch.py` 기본(`drivers:=true`, frybot 내장 드라이버)으로 띄우면 다음과 같이 실패함.
+  - `pinky_driver`: `could not open port /dev/ttyAMA4: No such file or directory`로 죽음
+  - 라이다 `sllidar_node`: `Error, unexpected error, code: 80008004`로 죽음
+  - 로봇은 움직이지 않음
+- **원인:**
+  - 11-17(pinky_pro 의존 제거)에 `frybot_mobile/pinky_driver.py`와 `robot.launch.py`의 라이다 설정을 PC의 `src/pinky_pro`(커밋 014a09f)에서 복사했음. 그 버전의 포트는 모터 `/dev/ttyAMA4`, 라이다 `/dev/ttyAMA0`
+  - 로봇에 설치된 `~/pinky_pro/src/pinky_pro/pinky_bringup`(11-16에 쓰던 것, pinky1·pinky2 같음)은 모터 `/dev/ttyAMA5`, 라이다 `/dev/ttyS0`. 로봇의 `config.txt`(`dtoverlay=uart5`)와 맞는 것은 이쪽임
+  - 처음에는 로봇 OS 설정이 바뀐 것으로 잘못 추정했음(`docs/REAL_TEST_2026-11-18.md` 찾은 문제 1)
+- **확인:**
+  - `drivers:=pinky_pro`(로봇의 원래 드라이버)로 띄우면 라이다(health OK, 10 Hz)와 모터(엔코더 응답)가 정상
+  - 로봇의 원래 드라이버 파일을 읽어 와 비교함(`archive/real_test_2026-11-18/robot_drivers/`). 다른 점은 포트 두 개와 배터리 모듈의 위치뿐이었음. 배터리는 로봇의 `pinky_bringup/pinky_battery.py`와 `pinkylib.Battery`의 코드가 같아 고치지 않음
+- **수정:**
+  - `pinky_driver.py`: 모터 포트 기본을 `/dev/ttyAMA5`로 바꾸고 `serial_port` 파라미터로 받음
+  - `robot.launch.py`: 라이다 포트를 `/dev/ttyS0`으로 바꾸고, 모터·라이다 포트를 런치 인자 `motor_port`(기본 `/dev/ttyAMA5`), `lidar_port`(기본 `/dev/ttyS0`)로 받음
+- **검증:** 실기기 확인(2026-11-18)
+  - pinky1·pinky2(16:37~): 모터 `Serial port: /dev/ttyAMA5`, 엔코더 응답, 라이다 health OK
+  - pinky3(17:34·17:47): 원래 드라이버와 같은 포트(`port_check_p3.py`), 라이다 health OK, 모터 `started successfully`
+
+## T-38 실기기 기동이 로봇 대수에 따라 크게 느려짐
+
+- **증상:** (2026-11-18 실기기 실험, `archive/real_test_2026-11-18/`) `real.launch.py`로 로봇을 여러 대 띄우면 Nav2가 active 되기까지 시간이 대수에 따라 급격히 늘어남.
+
+  | 실행 | 로봇 | Nav2 active까지 | 비고 |
+  |---|---|---|---|
+  | 16:14 `r1_launch.log` | 1대(드라이버는 T-37로 죽은 상태) | 구성 완료 약 23초 | 활성화는 odom TF가 없어 대기 |
+  | 16:37 `r1b_launch.log` | 2대 | 151초에 구성 완료, active 기록 없음 | pinky2는 AMCL 구성 실패(`Failed to change state for node: amcl`) |
+  | 16:42 `r1c_launch.log` | 2대 | 145~146초 | 위치 추정은 26~27초에 active. `controller_server` 구성 한 단계가 약 120초(1대 때 약 8초) |
+  | 16:51 `r1d_launch.log` | 3대(pinky1·2·3) | 도달 못 함 | 기동 15초 뒤 세 대 모두 로그가 끊기고 `SSH connection lost` 33~43회, pinky3은 `ssh: connect ... Connection timed out` |
+
+  - 관제 PC의 rosbag이 로봇 토픽을 발견하는 데도 2대일 때 최대 140초, 3대일 때 177~366초가 걸림(`r1c_bag.log`, `r1d_bag.log`).
+  - SSH 접속부터 로봇 런치 시작까지는 8~10초로, 전체에서 차지하는 비중이 낮음.
+- **원인:** (추정, 실기기 확인 필요) DDS 탐색(discovery) 부하.
+  - 로봇 한 대가 프로세스 15개를 띄우고, 모든 로봇과 관제 PC가 같은 도메인(73)에서 `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET`으로 서로를 전부 탐색함. 로봇끼리는 통신할 일이 없는데도(관제 PC와만 통신) 대수의 제곱으로 탐색 트래픽이 늘어 Wi-Fi와 Pi 4가 포화되는 것으로 봄.
+  - 실측 지도에는 도크가 없는데(`layout.docks()`가 빈 값) `docking_server`와 `aruco_dock_detector`가 떠서 프로세스 수를 늘림.
+  - 가리지 못한 것: 드라이버가 살아 있는 로봇 1대의 기동 시간 자료가 없음(16:14 실행은 드라이버가 죽은 상태). Pi의 CPU 포화가 주원인일 가능성은 로봇에서 CPU·Wi-Fi 사용량을 재야 가릴 수 있음.
+- **수정:**
+  - `frybot_bringup/launch/real.launch.py`: 런치 인자 `discovery` 추가(기본 `peers`, 예전 동작은 `subnet`). `peers`면 관제 PC 노드에 `ROS_STATIC_PEERS=<로봇 주소들>`을 줌.
+  - `frybot_bringup/robot_remote.py`: `--discovery peers|subnet`(기본 `peers`). `peers`면 로봇에 `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`와 `ROS_STATIC_PEERS=<관제 PC 주소>`를 넘김. 관제 PC 주소는 그 로봇으로 나가는 인터페이스에서 자동으로 찾고(`pc_address`), 못 찾으면 알리고 `subnet`으로 띄움. 등록부의 `ros_automatic_discovery_range`, `ros_static_peers`가 있으면 그 값이 우선.
+  - `frybot_bringup/remote.py`: `remote_bringup`이 `discovery`를 넘기고, `static_peers`가 관제 PC용 값을 만듦.
+  - `frybot_mobile/navigator.py`: 실측 지도(`measured`)에서는 `docking_server`와 `aruco_dock_detector`를 띄우지 않고 lifecycle 목록에서도 뺌(로봇당 프로세스 15 → 13). 가상 매장 도면(시뮬·Gazebo)은 그대로.
+  - 코드 `frybot_bringup/frybot_bringup/robot_remote.py` (`setup_lines`: 로봇에 넘기는 환경 변수)
+
+    수정 전:
+
+    ```python
+    def setup_lines(cfg):
+        ...
+        for key in ('RMW_IMPLEMENTATION', 'ROS_AUTOMATIC_DISCOVERY_RANGE',
+                    'ROS_LOCALHOST_ONLY'):
+            value = str(cfg.get(key.lower(), os.environ.get(key, '')))
+            if value:
+                lines.append(f'export {key}={shlex.quote(value)}')
+        for key, value in (cfg.get('env') or {}).items():
+            ...
+    ```
+
+    수정 후:
+
+    ```python
+    def setup_lines(cfg, peers=''):
+        ...
+        for key in ('RMW_IMPLEMENTATION', 'ROS_AUTOMATIC_DISCOVERY_RANGE',
+                    'ROS_LOCALHOST_ONLY'):
+            value = str(cfg.get(key.lower(), os.environ.get(key, '')))
+            # 등록부에 값이 없으면 LOCALHOST
+            if peers and key == 'ROS_AUTOMATIC_DISCOVERY_RANGE':
+                value = str(cfg.get(key.lower(), 'LOCALHOST'))
+            if value:
+                lines.append(f'export {key}={shlex.quote(value)}')
+        # 관제 PC 만 탐색 상대로 지정
+        if peers:
+            value = str(cfg.get('ros_static_peers', peers))
+            lines.append(f'export ROS_STATIC_PEERS={shlex.quote(value)}')
+        for key, value in (cfg.get('env') or {}).items():
+            ...
+    ```
+  - 코드 `frybot_bringup/frybot_bringup/robot_remote.py` (관제 PC 주소를 찾아 넘김, `--discovery` 인자)
+
+    수정 전:
+
+    ```python
+    def launch_script(rid, cfg, map_id='', extra=()):
+        ...
+
+    def up(rid, cfg, a):
+        ssh = Ssh(rid, cfg)
+        script = launch_script(rid, cfg, a.map_id, a.arg)
+    ```
+
+    수정 후:
+
+    ```python
+    def pc_address(host: str) -> str:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect((host, 9))       # UDP: 패킷은 나가지 않고 경로만 정함
+            return sock.getsockname()[0]
+
+    def launch_script(rid, cfg, map_id='', extra=(), peers=''):
+        ...                               # peers 를 setup_lines 에 넘김
+
+    def up(rid, cfg, a):
+        ssh = Ssh(rid, cfg)
+        peers = ''
+        if a.discovery == 'peers':
+            try:
+                peers = pc_address(cfg['host'])
+            except OSError as err:
+                print(f'[{rid}] 관제 PC 주소를 찾지 못해 discovery=subnet 으로 '
+                      f'띄웁니다: {err}', flush=True)
+        script = launch_script(rid, cfg, a.map_id, a.arg, peers)
+
+    # main(): 인자 추가
+    ap.add_argument('--discovery', default='peers', choices=('peers', 'subnet'))
+    ```
+  - 코드 `frybot_bringup/frybot_bringup/remote.py`
+
+    수정 전:
+
+    ```python
+    def remote_bringup(robot_ids, map_id='', robots_file='', poses=None):
+        ...
+            if poses and rid in poses:
+                cmd += ['--arg', f'initial_pose:={poses[rid]}']
+            acts.append(ExecuteProcess(cmd=cmd, ...))
+    ```
+
+    수정 후:
+
+    ```python
+    def static_peers(robot_ids: list, reg: dict) -> str:
+        hosts = [str(reg[rid]['host']) for rid in robot_ids if rid in reg]
+        old = os.environ.get('ROS_STATIC_PEERS', '')
+        return ';'.join(([old] if old else []) + hosts)
+
+    def remote_bringup(robot_ids, map_id='', robots_file='', poses=None,
+                       discovery='peers'):
+        ...
+            if poses and rid in poses:
+                cmd += ['--arg', f'initial_pose:={poses[rid]}']
+            cmd += ['--discovery', discovery]
+            acts.append(ExecuteProcess(cmd=cmd, ...))
+    ```
+  - 코드 `frybot_bringup/launch/real.launch.py`
+
+    수정 전:
+
+    ```python
+    def setup(context):
+        ...
+        if reg:
+            nodes += remote_bringup(robots, map_id, robots_file=g('robots_file'),
+                                    poses=start_poses(g('poses'), map_id))
+    ```
+
+    수정 후:
+
+    ```python
+    def setup(context):
+        ...
+        discovery = g('discovery')
+        if discovery not in ('peers', 'subnet'):
+            raise ValueError(
+                f'discovery:={discovery} 는 peers | subnet 중 하나여야 합니다.')
+        ...
+        if reg:
+            nodes += remote_bringup(robots, map_id, robots_file=g('robots_file'),
+                                    poses=start_poses(g('poses'), map_id),
+                                    discovery=discovery)
+            # 관제 PC 노드가 로봇을 직접 찾도록 로봇 주소를 탐색 상대로 지정
+            if discovery == 'peers':
+                nodes.insert(1, SetEnvironmentVariable(
+                    'ROS_STATIC_PEERS', static_peers(robots, reg)))
+
+    # generate_launch_description(): 인자 추가
+    ('discovery', 'peers'),
+    ```
+  - 코드 `frybot_mobile/frybot_mobile/navigator.py`
+
+    수정 전:
+
+    ```python
+    def navigator_nodes(rid, real, map_yaml='', measured=False, initial_pose=()):
+        ...
+        nodes = [
+            Node(package='nav2_controller', executable='controller_server', ...),
+            Node(package='nav2_planner', executable='planner_server', ...),
+            Node(package='nav2_bt_navigator', executable='bt_navigator', ...),
+            Node(package='opennav_docking', executable='opennav_docking',
+                 name='docking_server', ...),
+            Node(package='frybot_mobile', executable='aruco_dock_detector', ...),
+            Node(package='nav2_lifecycle_manager', ...,
+                 parameters=[{..., 'node_names': NAV_NODES}]),
+        ]
+    ```
+
+    수정 후:
+
+    ```python
+    def navigator_nodes(rid, real, map_yaml='', measured=False, initial_pose=()):
+        docking = not measured            # 실측 지도에는 도크가 없음
+        ...
+        nodes = [
+            Node(package='nav2_controller', executable='controller_server', ...),
+            Node(package='nav2_planner', executable='planner_server', ...),
+            Node(package='nav2_bt_navigator', executable='bt_navigator', ...),
+        ]
+        dock_nodes = [
+            Node(package='opennav_docking', executable='opennav_docking',
+                 name='docking_server', ...),
+            Node(package='frybot_mobile', executable='aruco_dock_detector', ...),
+        ]
+        nav_names = [n for n in NAV_NODES if docking or n != 'docking_server']
+        nodes += (dock_nodes if docking else []) + [
+            Node(package='nav2_lifecycle_manager', ...,
+                 parameters=[{..., 'node_names': nav_names}]),
+        ]
+    ```
+- **주의:**
+  - LOCALHOST 탐색은 한 기기 안에서 서로 보이는 프로세스 수에 한계가 있음(T-13: 이 PC에서 52개 중 33개만 보였음). 로봇은 13개라 한계 안으로 보지만 실기기 확인 필요.
+  - `remote:=false`로 로봇에서 직접 띄울 때는 탐색 설정이 넘어가지 않음(예전과 같은 `SUBNET`). 같은 효과를 내려면 로봇에서 두 변수를 직접 `export`함(`docs/REAL_ROBOT_GUIDE.md` 부록).
+  - 문제가 생기면 `discovery:=subnet`으로 예전 동작으로 되돌릴 수 있음.
+- **검증:** (2026-11-18, 실기기 없음)
+  - 빌드: `colcon build --symlink-install --packages-select frybot_bringup frybot_mobile` 통과.
+  - `ros2 run frybot_bringup robot_remote pinky3 --map-id test_map_v001 --dry-run`: `export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`, `export ROS_STATIC_PEERS=<관제 PC 주소>`가 나옴. `--discovery subnet`이면 `SUBNET`만 나오고 peer 없음.
+  - `real.launch.py`의 `setup()`을 가짜 등록부(3대)로 호출해 액션 목록 확인: `peers`면 `ROS_STATIC_PEERS`(로봇 3대 주소)가 노드보다 앞에 들어가고 `robot_remote`에 `--discovery peers`가 붙음. `subnet`이면 환경 변수 없음. 잘못된 값은 `ValueError`.
+  - `navigator_nodes`: 실측 지도는 노드 7개(lifecycle 대상 3개: controller·planner·bt_navigator), 시뮬은 예전과 같은 6개(도킹 포함, lifecycle 대상 4개).
+  - **실기기 확인 필요:** 기동 시간이 실제로 줄어드는지 확인하지 못함. 기준은 pinky1·2·3 동시 기동에서 세 대 모두 Nav2 active까지 60초 이내, `SSH connection lost` 0회. 관제 PC에서 `ros2 topic list`에 세 로봇 토픽이 보이는지, 이동 명령이 전달되는지도 함께 확인.
+
+- **실기기 확인(2026-11-18):** (`docs/REAL_TEST_2026-11-18.md` B절)
+  - Nav2 active까지 한 대 23.5~46.5초, 세 대 동시 21.0~23.7초(수정 전 두 대 145~146초). SSH 끊김 0회
+  - controller→planner 구성 구간은 약 120초에서 0.8~9.5초로 줄어듦
+  - 그런데 세 대 peers에서 관제와 로봇이 연결되기까지 기동 뒤 141~181초가 걸림(한 대는 약 26초). 그동안 SSH 중계 출력이 최대 107~205초 끊김. 원인은 확인하지 못함(탐색 부하인지 CPU인지 가리지 못함, B4 측정 안 함)
+  - peers에서 생존 신호와 비상 정지는 로봇에 닿음(주행 중 비상 정지 뒤 0 속도 명령까지 0.04~0.06초)
+  - 관제 연결 지연의 원인 확인(B6): `rviz:=false`이면 관제 연결 48.9~67.5초(2회), RViz를 켜면 141.5~181.4초(3회). RViz가 주원인으로 보임. 표본이 적고 어떤 구독 때문인지는 확인 필요
+
+## T-39 충전대가 없는 실측 지도에서 서 있는 로봇이 CHARGING 을 보고함
+
+- **증상:** (2026-11-18 실기기 실험 B1·B2, `docs/REAL_TEST_2026-11-18.md` B-1)
+  - 실측 지도(`test_map_v001`)에서 로봇이 30초 넘게 서 있으면 상태를 `CHARGING`(charging=true)으로 보고함
+  - 관제는 `IDLE`이 아닌 로봇의 이동 명령을 "로봇이 이동 가능한 대기 상태인지 확인하세요"로 거절함
+  - pinky1(B1, B2)과 pinky3(B2)에서 재현. 같은 실행에서 pinky1의 배터리는 71.1 → 68.7로 내려가는 중이었음
+- **원인:** `mobile_controller._charging_from_battery`(UR-21)가 어디에 서 있든 30초 넘게 서 있는 동안의 잔량 상승(`charge_rise_pct` 1.0)으로 충전 여부를 판정함. 배터리 값의 흔들림만으로 기준을 넘음(흔들림의 크기는 재지 않음)
+- **수정:** 충전대(지도의 `home_nodes`)에서 `charger_radius`(기본 0.10 m) 안에 서 있을 때만 판정함. 실측 지도는 충전대가 없어 충전 판정이 항상 꺼짐. 충전대가 있는 지도에서는 예전과 같음
+  - 코드 `frybot_mobile/frybot_mobile/mobile_controller.py`
+
+    수정 전:
+
+    ```python
+    # __init__
+    self.charge_rise = p('charge_rise_pct', 1.0).value
+    self.charge_window = p('charge_window_sec', 300.0).value
+    ...
+    self.home = g.nodes[g.home_of(self.rid)]
+
+    def _charging_from_battery(self) -> bool:
+        if self.nav_state != 'IDLE' or self.arm_state != 'IDLE':
+            self.idle_since, self.batt_hist = None, []
+            return False
+        ...
+    ```
+
+    수정 후:
+
+    ```python
+    # __init__
+    self.charge_rise = p('charge_rise_pct', 1.0).value
+    self.charge_window = p('charge_window_sec', 300.0).value
+    self.charger_radius = p('charger_radius', 0.10).value
+    ...
+    self.home = g.nodes[g.home_of(self.rid)]
+    # 충전 판정에 쓰는 충전대 좌표(실측 지도는 없음)
+    self.charger_xy = [g.nodes[n] for n in sorted(g.home_nodes)]
+
+    def _charging_from_battery(self) -> bool:
+        # 충전대 근처가 아니면 충전 중이 아님
+        on_charger = any(math.hypot(self.x - cx, self.y - cy)
+                         < self.charger_radius for cx, cy in self.charger_xy)
+        if (self.nav_state != 'IDLE' or self.arm_state != 'IDLE'
+                or not on_charger):
+            self.idle_since, self.batt_hist = None, []
+            return False
+        ...
+    ```
+- **검증:** 실기기 확인(2026-11-18, `run_20261118_174735`)
+  - 세 대(pinky1·2·3)를 실측 지도에서 띄우고 약 183초 서 있는 동안 세 대 모두 `charging=False`, 상태 `STANDBY`
+  - 이어서 한 대씩 이동, 두 대 동시 이동, 주행 중 비상 정지·재개가 모두 받아들여지고 완료됨(`docs/REAL_TEST_2026-11-18.md` B5절)
+  - 충전대가 있는 지도(가상 매장)의 실기기 충전 판정은 확인하지 못함
+
+## T-40 세 대를 RViz 와 함께 띄우면 관제와 로봇의 연결이 2~3분 걸림
+
+- **증상:** (2026-11-18 실기기 실험 B2·B5·B6, `docs/REAL_TEST_2026-11-18.md` B-6)
+  - 세 대를 기본 명령(RViz 켬)으로 띄우면 런치 시작부터 관제가 로봇을 보기까지(`t_online`) 141.5~181.4초(세 번). `rviz:=false`면 48.9~67.5초(두 번)
+  - 한 번(B6-4)은 로봇 쪽 Nav2 기동도 111.6~142.0초로 늦어지고 세 대 모두 SSH가 한 번씩 끊김
+  - `fleet_rviz.launch.py`는 로봇 인자가 없어 pinky1·pinky2만 표시함
+- **원인:** 확인되지 않음. 좁힌 데까지만 적음(2026-11-19 실기기 실험 C1·C2, `docs/REAL_TEST_2026-11-19.md`)
+  - 기동과 동시에 `fleet_rviz` 노드만 띄우면 `t_online` 57.4~59.9초, RViz만 띄우면 75.5~77.9초(각 1회). 둘을 함께 띄울 때만 100초를 넘음
+  - 어느 구독(전역·지역 코스트맵, TF, 로봇 모델)이 무거운지, 탐색 메시지가 느는 것인지 데이터량이 느는 것인지는 가리지 못함
+- **수정:** 원인을 없앤 것이 아니라, 기동과 겹치지 않게 순서를 바꾸는 선택 인자를 넣음. **실기기 시험(C4)에서 기준에 못 미쳐 기본으로는 꺼 둠**(아래 검증)
+  - `frybot_bringup/wait_online.py`(새 실행 파일 `wait_online`): `/fleet/robot_status`만 구독하고, 런치에 든 로봇이 모두 보고하거나 시간 제한이 지나면 끝남
+  - `real.launch.py`: `wait_online`이 끝난 뒤에 `fleet_rviz`와 RViz를 시작함. 인자 `rviz_wait`(기본 `false` = 예전처럼 곧바로 띄움), `rviz_wait_sec`(기본 120). `rviz_wait:=true`일 때만 기다림
+  - 실측 지도의 로봇은 위치가 잡혀야 상태를 보고함. 그래서 `poses:=`가 없는 로봇이 하나라도 있으면(RViz에서 초기 자세를 찍어야 함) 기다리지 않고 바로 띄움
+  - `fleet_rviz.launch.py`: `robots` 인자 추가(`real.launch.py`와 같은 규칙, 비우면 등록부의 로봇 전부)
+  - 코드 `frybot_bringup/launch/real.launch.py`
+
+    수정 전:
+
+    ```python
+    def setup(context):
+        ...
+        if g('rviz') == 'true':
+            config = fleet_rviz_config(robots)
+            nodes += [Node(package='frybot_bringup', executable='fleet_rviz', ...),
+                      Node(package='rviz2', executable='rviz2', ...)]
+    ```
+
+    수정 후:
+
+    ```python
+    def setup(context):
+        ...
+        poses = start_poses(g('poses'), map_id)
+        ...
+        if g('rviz') == 'true':
+            config = fleet_rviz_config(robots)
+            views = [Node(package='frybot_bringup', executable='fleet_rviz', ...),
+                     Node(package='rviz2', executable='rviz2', ...)]
+            no_pose = [rid for rid in robots if rid not in poses]
+            if g('rviz_wait') != 'true':        # 기본: 예전처럼 곧바로
+                nodes += views
+            elif no_pose:                       # RViz 에서 초기 자세를 찍어야 함
+                nodes += [LogInfo(msg=...)] + views
+            else:                               # 모든 로봇이 보고한 뒤에 시작
+                waiter = Node(package='frybot_bringup', executable='wait_online',
+                              parameters=[{'robot_ids': robots, 'timeout_sec':
+                                           float(g('rviz_wait_sec'))}])
+
+                def start_views(event, context):
+                    return None if context.is_shutdown else views
+
+                nodes += [waiter, RegisterEventHandler(OnProcessExit(
+                    target_action=waiter, on_exit=start_views))]
+
+    # generate_launch_description(): 인자 추가
+    ('rviz_wait', 'false'), ('rviz_wait_sec', '120'),
+    ```
+  - 코드 `frybot_bringup/frybot_bringup/wait_online.py` (새 파일, `setup.py`에 실행 파일 `wait_online` 등록)
+
+    수정 전:
+
+    (없음. 새로 추가한 코드)
+
+    수정 후:
+
+    ```python
+    class WaitOnline(Node):
+        def __init__(self) -> None:
+            super().__init__('wait_online')
+            robots = self.declare_parameter('robot_ids', ['pinky1']).value
+            self.timeout = float(
+                self.declare_parameter('timeout_sec', 120.0).value)
+            self.waiting = set(robots)
+            self.create_subscription(
+                RobotStatus, '/fleet/robot_status', self._status, 50)
+
+        def _status(self, status: RobotStatus) -> None:
+            self.waiting.discard(status.robot_id)   # 보고한 로봇을 지움
+
+    def wait(node: WaitOnline) -> bool:
+        start = time.monotonic()
+        while rclpy.ok() and node.waiting:
+            if time.monotonic() - start > node.timeout:
+                return False                        # 시간 제한: 그냥 진행
+            rclpy.spin_once(node, timeout_sec=0.2)
+        return not node.waiting
+    ```
+  - 코드 `frybot_bringup/launch/fleet_rviz.launch.py`
+
+    수정 전:
+
+    ```python
+    def generate_launch_description():
+        config = (Path(get_package_share_directory('frybot_bringup'))
+                  / 'rviz' / 'fleet.rviz')          # pinky1·pinky2 용 고정 설정
+        return LaunchDescription([
+            Node(package='frybot_bringup', executable='fleet_rviz', ...),
+            Node(package='rviz2', executable='rviz2',
+                 arguments=['-d', str(config)]),
+        ])
+    ```
+
+    수정 후:
+
+    ```python
+    def setup(context) -> list:
+        arg = LaunchConfiguration('robots').perform(context)
+        robots = pick_robots(arg, registered(''))
+        config = fleet_rviz_config(robots)          # 고른 로봇에 맞춘 설정
+        return [
+            Node(package='frybot_bringup', executable='fleet_rviz',
+                 parameters=[{'robot_ids': robots}], ...),
+            Node(package='rviz2', executable='rviz2',
+                 arguments=['-d', str(config)]),
+        ]
+
+    def generate_launch_description():
+        return LaunchDescription([
+            DeclareLaunchArgument('robots', default_value=''),
+            OpaqueFunction(function=setup)])
+    ```
+- **주의:**
+  - 손으로 같은 순서를 재현한 C1에서, RViz를 붙인 뒤 60초 동안 `ROBOT_OFFLINE`이 0건에서 5건으로 늘었음(pinky1 2, pinky2 3, 각 0.2~0.7초 뒤 복귀). 그 상태에서 이동과 비상 정지·재개는 통과함. 짧은 끊김이 주행 중에 미치는 영향은 실기기 확인 필요
+  - 런치를 내릴 때 `fleet_rviz`가 SIGINT로 끝나지 않는 것을 C1에서 봄(손으로 띄운 경우). 고치지 않음
+- **검증:** 오프라인 확인 통과, 실기기(C4, 2026-11-19, `rviz_wait:=true`가 기본이던 상태)는 **기준 미달**
+  - 빌드: `colcon build --symlink-install --packages-select frybot_bringup` 통과
+  - `wait_online`(격리한 도메인 75, 가짜 상태 보고): 두 대가 모두 보고하자 6.7초에 종료 코드 0, 보고가 없으면 시간 제한(3초)에 경고를 내고 종료 코드 0
+  - 런치 이벤트: `wait_online`이 끝나면 다음 프로세스가 시작됨. 기다리는 중 Ctrl-C로 내리면 시작되지 않음(시험용 런치)
+  - `real.launch.py`의 액션 목록: `rviz_wait:=true`는 `wait_online` + 이벤트 핸들러, 기본과 `poses`가 빠진 로봇이 있을 때는 `fleet_rviz` + `rviz2`, `rviz:=false`는 없음
+  - 실기기 C4(세 대, `docs/REAL_TEST_2026-11-19.md` C4절): 관제 연결(`t_online`)은 55.2~73.3초로 줄었음(함께 띄울 때 141.5~181.4초). `ssh_lost` 0, Ctrl-C 뒤 남은 프로세스 없음
+  - 그러나 RViz가 뜬 직후 세 대의 상태 보고가 끊김: 세 번 중 두 번 3.7~7.8초의 긴 끊김이 있었음. C4-2는 11건 중 3건(세 대 각 1건, 5.4·6.3·6.9초)이고 나머지 8건은 0.5초 이하, C4-2b는 9건 중 4건(3.7·4.0·7.8·7.6초)이고 나머지는 0.2~1.7초. 한 번(C4-1b)은 0.1초 1건. 손으로 띄운 C1은 1초 미만 5건. 실행마다 차이가 큼
+  - C4-2b에서는 끊긴 동안 pinky1·pinky2가 자동 홈 이동으로 주행 중이었음(허가받은 구간을 0.08 m/s로 계속 감). 관제는 끊긴 로봇에 다음 허가를 내지 않아 pinky2가 B3에서 섰음
+  - `wait_online`은 로봇의 첫 상태 보고에 끝나는데, 이 보고가 Nav2 active보다 먼저 올 수 있어 RViz가 Nav2 기동과 겹칠 수 있음(C4-1b에서 Nav2 active 46.1~65.9초, RViz 41.8초)
+  - 판단(2026-11-19): 연결은 빨라지지만 끊김이 로봇이 움직이는 때로 옮겨 가므로 기본값을 `false`로 되돌림. 다음은 어느 구독이 끊김을 만드는지 가리는 것(기획안 `docs/BRINGUP_RVIZ_PLAN_2026-11-19.md` 4.7절 C5)
+  - 실기기 C5(2026-11-19, `run_20261119_123207`, 세 대가 서 있는 상태에서 구독을 하나씩 붙임, `docs/REAL_TEST_2026-11-19.md` C5절): 한 가지로 좁혀지지 않음
+    - 붙인 뒤 30초의 끊김(건수 / 최장): TF 2 / 1.4초, 전역 코스트맵 2 / 1.8초, 지역 코스트맵 4 / 4.1초(다시 2 / 0.3초), `fleet_rviz` 0(다시 1 / 0.9초), RViz 코스트맵 끔 1 / 0.5초, RViz 전체 1 / 2.5초, `fleet_rviz` + RViz 6 / 4.4초(다시 1 / 1.6초, 무효 회차에서도 5.0초). 붙이기 전 60초는 0건
+    - 2초 넘는 끊김이 반복된 것은 `fleet_rviz` + RViz뿐(3회 중 2회). 표본은 항목당 1~2회
+    - 끊김은 대부분 붙인 뒤 3.5~7초에 시작. 그때 pinky3의 CPU 유휴가 1.4%(sy 55.6%, 무선 드라이버 `kworker brcmf_wq` 27.8%)였고 송신이 약 10초 동안 1.3 MB/s(평소 약 0.2)로 올랐음. 붙이기 전 유휴는 28~45%
+    - 추정: 특정 구독이 아니라, 여유가 적은 로봇(Pi 4)이 여러 구독이 한꺼번에 붙는 순간의 탐색과 첫 메시지에 CPU·무선이 포화됨. 확인되지 않음
+  - 추가 수정(2026-11-19, 사용자 결정): `rviz/fleet.rviz`의 전역 코스트맵 표시를 기본으로 끔(표시 항목은 남아 있어 Displays 창에서 켤 수 있음). 세 대용으로 생성한 설정에서 전역 코스트맵 표시 3개가 꺼져 있고 지도·지역 코스트맵·풋프린트·모델은 켜져 있는 것을 확인. 끊김과 연결 시간에 주는 효과는 실기기 확인 필요(C5에서 "RViz 코스트맵 끔"은 1건 / 0.5초였으나 표본 1회이고 지역 코스트맵까지 끈 조건)
+  - 실기기 C6-C(2026-11-19, `run_20261119_131751`, 전역 코스트맵 표시 켬/끔을 같은 실행에서 번갈아 각 3회 붙임, `docs/REAL_TEST_2026-11-19.md` C6절): **뚜렷한 차이 없음**
+    - 로봇별 값 9개씩의 합계·평균: 끊김 켬 20건 / 끔 17건, 2초 넘는 끊김 8건 / 7건, 최장 끊김의 중앙값 3.1초 / 3.0초(최댓값 6.3초 / 4.3초), 붙인 직후 CPU 유휴 평균 12.2% / 14.1%, 송신 최고 평균 1.30 / 1.44 MB/s, 정상 상태 유휴 41.8% / 42.0%
+    - 2초 넘는 끊김이 나온 회차: 켬 3회 중 3회, 끔 3회 중 2회
+    - 기동 시간(함께 띄울 때의 `t_online`) 비교는 배터리 때문에 하지 못함
+    - 조치(2026-11-19, 사용자 결정): 효과가 보이지 않아 전역 코스트맵 표시를 다시 기본 켜짐으로 되돌림(`rviz/fleet.rviz`). 세 대용 생성 설정에서 3개가 켜져 있는 것을 확인
+  - 실기기 C6-A(`run_20261119_125915`): 서 있는 로봇의 CPU는 `mobile_controller` 56~80%(코어 1개 기준), `sllidar` 21~36%, `pinky_driver` 20~29%, `joint_state_publisher` 13~21%, Nav2 노드는 각 약 7%. 유휴 21~46%. pinky1·pinky2는 70~74.5°C이고 pinky1에는 온도 제한 이력(`throttled=0x80000`)이 있음
+  - 실기기 C6-B(`run_20261119_130630`, RViz 켬): pinky2·pinky3 단독 이동과 비상 정지, 세 대 동시 이동(최소 간격 0.508 m), 동시 이동 중 한 대만 비상 정지, 동선이 겹치는 두 대 이동(교착 없음, 최소 간격 0.186 m)이 통과. 비상 정지 뒤 `cmd_vel` 0까지 0.09~0.19초, 오도메트리 정지까지 0.34~0.41초. 이동 중 끊김은 최장 0.6초. 기동은 온라인 82.9초, pinky1 `ssh_lost` 1
+  - 확인하지 못한 것: 주행 중 비상 정지(C6-B에서 확인함), `poses` 없는 기동에서 RViz가 곧바로 뜨는지, RViz 화면, 예전 방식(함께 띄움)에서 온라인 뒤 같은 끊김이 있는지
+
+## T-41 서 있는 로봇의 mobile_controller 가 CPU 를 코어 절반 넘게 씀
+
+- **증상:** (2026-11-19 실기기 실험 C6-A·C7, `docs/2026-11-19_REAL_TEST.md`)
+  - 서 있는 Pinky에서 `mobile_controller`가 CPU를 62.5~78.6% 씀(코어 1개 기준, 상위 1위). 전체 유휴는 21~48%
+  - 스레드별로 보면 메인 스레드 하나가 54.5~56.7%이고, 콜백을 실행하는 작업 스레드 6개는 각 2.2~2.8%. 로봇(pinky1·pinky2)과 회차 사이의 차이가 거의 없음
+  - 여유가 적은 상태에서 관제 PC 쪽 구독이 한꺼번에 붙으면(RViz, `ros2 topic hz` 여러 개) 로봇 CPU 유휴가 1~10%로 내려가고 상태 보고가 수 초 끊김(T-40)
+- **원인:** rclpy는 발행자·구독자를 만들 때마다 QoS 불일치와 타입 불일치를 감시하는 이벤트 처리기를 2개씩 자동으로 붙임. 이 노드에는 실행기의 대기 대상이 40개였고 그중 36개가 이 처리기였음. 실행기는 입력이나 타이머가 올 때마다(PC 재현에서 초당 약 142번) 대기 목록을 처음부터 다시 만들기 때문에, 메인 스레드 시간의 대부분이 여기에 쓰임(`cProfile`: `waitable.__add__`, `event_handler.__enter__`)
+  - 확인 방법: 관제 PC의 격리한 도메인(75)에서 `mobile_controller`를 실기기 파라미터로 띄우고 가짜 입력(TF 초당 60개, 오도메트리 30 Hz, 라이다 10 Hz, 생존 신호 5 Hz)을 넣어 메인 스레드 CPU를 잼. 로봇에서 직접 프로파일한 것은 아님
+- **수정:** `frybot_mobile/mobile_controller.py`. 노드의 `create_publisher`·`create_subscription`을 감싸 기본 이벤트 처리기를 끔. `/fms/heartbeat`와 `/fms/traffic_grant` 구독에는 남김(`EVENT_TOPICS`, 사용자 결정). TF 수신과 `sim_backend`가 이 노드에 만드는 구독에도 같이 적용됨
+  - 코드 `frybot_mobile/frybot_mobile/mobile_controller.py`
+
+    수정 전:
+
+    ```python
+    class MobileController(Node):
+        def __init__(self):
+            super().__init__('mobile_controller')
+            ...
+            # Node 의 메서드를 그대로 씀: 발행·구독마다 기본 이벤트 처리기 2개
+            self.pub_status = self.create_publisher(
+                RobotStatus, '/fleet/robot_status', 50)
+            self.create_subscription(TrafficGrant, '/fms/traffic_grant', ...)
+    ```
+
+    수정 후:
+
+    ```python
+    from rclpy.event_handler import PublisherEventCallbacks
+    from rclpy.event_handler import SubscriptionEventCallbacks
+
+    # 경고(기본 이벤트 처리기)를 남겨 둘 토픽. 나머지는 끔
+    EVENT_TOPICS = ('/fms/heartbeat', '/fms/traffic_grant')
+
+    class MobileController(Node):
+        def create_publisher(self, msg_type, topic: str, qos_profile, **kwargs):
+            if topic not in EVENT_TOPICS:
+                kwargs.setdefault('event_callbacks', PublisherEventCallbacks(
+                    use_default_callbacks=False))
+            return super().create_publisher(msg_type, topic, qos_profile,
+                                            **kwargs)
+
+        def create_subscription(self, msg_type, topic: str, callback,
+                                qos_profile, **kwargs):
+            if topic not in EVENT_TOPICS:
+                kwargs.setdefault('event_callbacks', SubscriptionEventCallbacks(
+                    use_default_callbacks=False))
+            return super().create_subscription(msg_type, topic, callback,
+                                               qos_profile, **kwargs)
+
+        def __init__(self):
+            super().__init__('mobile_controller')
+            ...
+            # 호출은 그대로. 위의 두 메서드가 대신 불림
+            self.pub_status = self.create_publisher(
+                RobotStatus, '/fleet/robot_status', 50)
+            self.create_subscription(TrafficGrant, '/fms/traffic_grant', ...)
+    ```
+
+  - 바뀌는 것: 위 두 토픽 말고는 QoS·타입이 맞지 않을 때의 경고 로그가 `mobile_controller`에 나오지 않음(메시지가 안 오는 것은 전과 같음). 상대 노드의 로그와 `ros2 topic info -v`로는 여전히 확인할 수 있음
+  - 바뀌지 않는 것: 메시지 송수신, QoS 설정, 통행 허가·생존 신호·비상 정지 처리, 주행 로직
+  - 시뮬과 실기기가 같은 코드라 시뮬에도 적용됨
+- **검증:** PC·시뮬 확인(2026-11-19). 실기기 확인 필요
+  - 빌드: `colcon build --symlink-install --packages-select frybot_mobile` 통과
+  - PC 재현(같은 가짜 입력, 10초씩, 수정 전·후를 번갈아 3회): 메인 스레드 20.5 / 20.9 / 26.0% → 10.1 / 10.6 / 13.1%, 프로세스 합 25.7 / 27.7 / 33.3% → 14.5 / 15.8 / 19.2%. 대기 대상 40개 → 8개. 같은 PC에서 다른 시뮬이 돌고 있어 실행 간 흔들림이 있음
+  - 경고 유지 확인: QoS가 맞지 않는 발행자를 붙였을 때 `/fms/heartbeat`는 경고가 나오고(1건), `/pinky1/battery/percent`는 나오지 않음(0건)
+  - 시뮬: `sim.launch.py rviz:=false` + `scenario --scenario demo` 완주(263.6초, 종료 코드 0). `analyze_run`: 임무 완료 10 / 중단 0 / 계획 실패 0, 런치 로그에 Traceback 0건
+  - 실기기 C8(2026-11-19, pinky1·pinky2에만 배포, `docs/2026-11-19_REAL_TEST.md` C8절)
+    - CPU(`run_20261119_150631`, C7과 같은 조건): 메인 스레드 54.5~56.7% → 34.1~39.3%(16~22%p 감소), 스레드 합 70.3~73.5% → 50.7~57.7%, 전체 유휴(vmstat) 52~55%
+    - 동작(`run_20261119_152320`, RViz 켬): 한 대씩 왕복, 두 대 동시 이동, 주행 중 비상 정지·재개(`cmd_vel` 0까지 0.062~0.076초, 오도메트리 정지 0.269~0.351초)가 모두 통과. `NAV2_FAILED`·`PLAN_FAIL` 0, Traceback 0, 이동 중 끊김 최장 0.4초
+    - 붙는 순간의 끊김(T-40)에 주는 효과는 판단하지 못함: 두 대에서는 수정 전에도 긴 끊김이 없었음(수정 전 2건 최장 0.9초, 수정 뒤 4건 최장 0.5초). 세 대에서 다시 봐야 함
+    - pinky3에는 아직 배포하지 않음. pinky1의 온도 제한 이력(`throttled=0x80000`, 71.5~76.9°C)은 그대로
+  - 같은 종류의 노드인 `pinky_driver`(19~29%)와 `joint_state_publisher`(13~21%)는 고치지 않음
+
+## T-42 막다른 노드(D1_STOP)에서 뒤쪽 노드로 나가지 못함(제자리 회전 중 실패)
+
+- **증상:** (2026-11-20 실기기, test_map_v04, pinky1 + jetcobot1, `runs/20261120_02_serve_v04_real_s2` (폴더 이름은 2026-11-20에 바꿈. 폴더 안 events.csv 의 run_id 열은 옛 이름 그대로))
+  - SERVE S0003 의 LOAD(7.4초) 뒤 D1_STOP(방향 90°, 벽까지 약 7.5 cm) -> D1_IN(5 cm 뒤) 구간에서 후진하지 않고 Nav2 목표 'navigate from (0.09, 0.20) to (0.09, 0.14)' 를 보냄
+  - 벽 앞에서 제자리 회전 -> 'collision ahead', 'Failed to make progress' 반복 -> NAV2_FAILED 3회 -> 임무 SUSPENDED
+  - 회전하는 동안 map->odom 방향이 111 -> 168°로 57° 움직임
+- **원인:** `mobile_controller._navigate`
+  - 구간을 후진할지(`rev[tgt]`)는 맞게 정했음(로봇이 3 mm 덜 들어가 있어 D1_IN 까지 5 cm 미만 -> '가까운 노드로 들어가기' 분기에서 오차 > 90° 라 후진)
+  - 그러나 실측 지도 + Nav2 에서 cmd_vel 로 후진하는 분기는 양보(`yielding`)와 비켜 선 자리(`pockets`)뿐. 그 밖의 후진 구간은 `_nav2_segment` 로 가고, 실측 지도의 FollowPath 는 전진 전용(`use_rotate_to_heading`)이라 제자리 회전 뒤 전진함
+  - 2026-11-20 보고 1의 '처음 1~2구간·오차 > 2.1 rad 이면 cmd_vel 후진'은 가상 매장(Nav2 후진 허용)에만 맞고 실측 지도에서는 틀린 설명이었음
+  - 차체 footprint 반대각선 8.4 cm > 벽까지 7.5 cm 라 제자리 회전은 벽에 닿음(회전 중 오도메트리 -424° 대 AMCL -367°, 제자리인데 AMCL 위치가 9 cm 밀림 -> 미끄러짐으로 추정, 실기기 확인 필요)
+- **수정:** `frybot_mobile/frybot_mobile/mobile_controller.py`
+  - 지도에서 이웃이 하나뿐인 노드를 막다른 노드(`dead_ends`)로 둠. test_map_v04: W1, W2, W3, D1_STOP, D2_STOP
+  - 경로의 첫 구간이 막다른 노드에서 출발하고 다음 노드가 뒤쪽(오차 > 2.1 rad)이면 `dead_exit` 로 표시하고, 양보 후진과 같은 분기(cmd_vel 직접, 뒤 라이다 `rear_stop_dist` 검사, 6초 막히면 돌아서 감)를 탐. 보고 상태는 MOVING. 안내(GUIDE)·양보(YIELD)·도킹 코드는 그대로
+
+    수정 전:
+
+    ```python
+                if math.hypot(route[tgt].x - self.x, route[tgt].y - self.y) < 0.05:
+                    rev[tgt] = err > math.pi / 2
+                ...
+            elif self.drive == 'nav2' and self.measured_map and rev[tgt] and self.yield_reverse \
+                    and (yielding or tgt in pockets):
+    ```
+
+    수정 후:
+
+    ```python
+                if (tgt == 1 and not guide and not yielding
+                        and route[0].node_id in self.dead_ends
+                        and err > 2.1):
+                    dead_exit.add(tgt)
+                    rev[tgt] = True
+                elif math.hypot(route[tgt].x - self.x,
+                                route[tgt].y - self.y) < 0.05:
+                    rev[tgt] = err > math.pi / 2
+                ...
+            elif self.drive == 'nav2' and self.measured_map and rev[tgt] and self.yield_reverse \
+                    and (yielding or tgt in pockets or tgt in dead_exit):
+    ```
+
+  - W1 같은 대기 위치: 들어올 때처럼 -y(통로 반대쪽)를 보고 서 있다가 나가면 출구 B1 이 뒤쪽이라 같은 후진이 적용됨. 2단계 첫 시도처럼 180°(출구가 옆, 90° 차이)로 놓인 경우는 회전이 필요해 이번 수정 범위 밖(출발 자세를 W1:90 처럼 출구 쪽으로 주는 편이 안전)
+- **검증:** PC 확인(2026-11-20). 실기기 확인 필요
+  - 빌드 `colcon build --symlink-install --packages-select frybot_mobile` 통과, pytest 16 통과, `fleet_bench --scenario rush` 기준 결과와 같음(plan_ms 열 제외)
+  - 단위 확인(저장소 밖 임시 스크립트, 실측 지도·drive=nav2 조건에서 실제 `_navigate` 를 돌리고 Nav2·cmd_vel 호출만 가짜로 바꿈):
+    - D1_STOP(90°) -> D1_IN -> A1: 수정 전 Nav2 전진(회전) 2구간 -> 수정 후 D1_IN 까지 cmd_vel 후진, A1 은 Nav2
+    - W1(-90°) -> B1 -> C1: 수정 전 Nav2 -> 수정 후 B1 까지 cmd_vel 후진
+    - W1(180°) -> B1, D1_IN(막다른 곳 아님) -> A1(뒤쪽): 수정 전후 같음(Nav2)
+  - 경량 시뮬 test_map_v04 서빙 1건(`archive/sim_runs_2026-11-20/20261120_dead_exit_sim`) TASK_DONE 41.4초. D1_STOP -> D1_IN 에서 방향 90° 유지한 채 y 0.195 -> 0.141(후진). 경량 시뮬(kinematic)은 수정 전에도 이 구간을 후진했으므로 새 분기 확인은 위 단위 확인으로 대신함
+
+- **재현(2차, 2026-11-20 실기기 `runs/20261120_03_serve_v04_real_s3` (폴더 이름은 2026-11-20에 바꿈. 폴더 안 events.csv 의 run_id 열은 옛 이름 그대로)):** 위 수정을 배포한 뒤에도 같은 자리에서 실패
+  - 도킹 뒤 자세 (0.081, 0.210, 90.2°), D1_STOP 노드에서 1.8 cm(-15 mm 덜 들어감, 옆 -10 mm). LOAD 뒤 B4 경로의 첫 Nav2 목표가 'Begin navigating from (0.08, 0.21) to (0.09, 0.20)' = 0번 노드 D1_STOP 자신
+  - 목표가 뒤·옆쪽이라 Nav2(전진 전용)가 벽 앞에서 제자리 회전(방향 90 -> 354°), 'Controller patience exceeded' -> 'Nav2 failed the segment to D1_STOP' 재시도 2/2 두 번 -> NAV2_FAILED -> SUSPENDED
+- **원인(2차):** 출발할 때 0번 노드에서 1.2 cm 안이어야 0번을 도착으로 봄. 1.8 cm 라 0번 구간(자기 노드로 자리 잡기)이 생겼고, 이 구간은 '가까운 노드' 분기에서 후진으로 정해져도 cmd_vel 분기 조건(양보·비켜 선 자리·`dead_exit`(tgt == 1))에 들지 않아 Nav2 로 감. 1차 실험(s2)은 오차가 3 mm 라 0번이 바로 도착 처리돼 1번 구간에서 실패했던 것
+  - 관제의 REJOIN(off_node=0.02m)은 첫 실패 뒤에 나와 원인이 아님. 실패 뒤 다시 짠 경로도 D1_STOP 에서 시작하게 할 뿐
+- **수정(2차):** `mobile_controller.py`
+  - 막다른 노드에서 나가는 경로(2개 이상 노드)는 그 노드에서 `dead_end_settle_dist`(기본 0.05 m) 안이면 0번 노드를 도착으로 봄. 다음 구간이 실제 자세에서 바로 출발
+  - 막다른 노드의 첫 구간은 출구 방향과 관계없이 cmd_vel 분기로(뒤쪽 오차 > 90° 이면 후진, 아니면 전진). 막다른 곳에서는 Nav2 로 제자리 회전 목표가 가지 않음. 뒤 라이다 검사는 후진일 때만(전진할 때 등 뒤 벽에 막히지 않게)
+  - 1차의 'err > 2.1 rad 일 때만' 조건은 없앰(90~120° 사이도 cmd_vel)
+
+    수정 후(2차) 발췌:
+
+    ```python
+            reached = 0 if route and math.hypot(...) < 0.012 else -1
+            if (reached < 0 and len(route) > 1
+                    and route[0].node_id in self.dead_ends
+                    and math.hypot(route[0].x - self.x, route[0].y - self.y)
+                    < self.dead_end_settle):
+                reached = 0
+            ...
+                    if (tgt == 1 and not guide and not yielding
+                            and route[0].node_id in self.dead_ends):
+                        dead_exit.add(tgt)
+                        rev[tgt] = err > math.pi / 2
+            ...
+                elif (self.drive == 'nav2' and self.measured_map
+                      and self.yield_reverse
+                      and (tgt in dead_exit
+                           or rev[tgt] and (yielding or tgt in pockets))):
+                    if rev[tgt] and self._rear_blocked():
+                    ...
+                        done = self._step_toward(route[tgt].x, route[tgt].y,
+                                                 rev[tgt], dt, ...)
+    ```
+
+  - 남는 경우: 막다른 노드에서 5 cm 넘게 벗어나 있으면(진짜 노드 밖) 예전처럼 Nav2 로 먼저 그 노드로 돌아감. 출구가 옆(W1 을 180°로 놓음)이면 cmd_vel 로 제자리 회전한 뒤 전진(Nav2 는 아니지만 회전은 함)
+- **검증(2차):** PC 확인(2026-11-20). 실기기 확인 필요
+  - 빌드 통과, pytest 16 통과, `fleet_bench --scenario rush` 기준과 같음(plan_ms 제외)
+  - 실제 자세 기준 err: (0.081, 0.210, 90.2°) -> D1_IN 171.5°, (0.089, 0.198, 90.1°) -> 177.9°. 후진할 때 맞출 방향은 8.5°·2.1°로 `_step_toward` 의 제자리 회전 기준(0.2 rad = 11.5°)보다 작아 회전 없이 조향하며 후진
+  - 단위 확인(실제 `_navigate`, Nav2·cmd_vel 호출만 가짜, T-42 이전 코드와 비교):
+    - 도킹 뒤 (0.081, 0.210, 90.2°): 전 [nav2 D1_STOP, nav2 D1_IN, nav2 A1](= 실기기 실패와 같음) / 후 [cmd_vel D1_IN 후진, nav2 A1]
+    - 도킹 뒤 (0.089, 0.198, 90.1°): 전 [nav2 D1_IN, nav2 A1] / 후 [cmd_vel D1_IN 후진, nav2 A1]
+    - W1 에서 2 cm 벗어남 (0.106, -0.565, -90°): 전 [nav2 W1, nav2 B1, ...] / 후 [cmd_vel B1 후진, nav2 C1]
+    - W1(180°): 전 [nav2 B1, ...] / 후 [cmd_vel B1 전진, nav2 C1]
+    - D1_IN(막다른 곳 아님) -> A1(뒤쪽): 전후 같음 [nav2]
+  - 경량 시뮬 서빙 1건(`archive/sim_runs_2026-11-20/20261120_dead_exit_sim2`) TASK_DONE 41.3초, LOAD 뒤 D1_STOP -> D1_IN 에서 방향 90° 유지한 채 y 0.191 -> 0.141(후진)
+
+
+## T-43 Nav2 구간 시작 직후 'compute_path_to_pose 응답 시간 초과'로 구간이 실패함
+
+- **증상:** (2026-11-20 실기기, test_map_v04, pinky1, `runs/20261120_02_serve_v04_real_s2` (폴더 이름은 2026-11-20에 바꿈. 폴더 안 events.csv 의 run_id 열은 옛 이름 그대로), 로봇 로그 up_pinky1.log)
+  - bt_navigator 가 'Begin navigating ...' 직후 22~63 ms 만에 'Timed out while waiting for action server to acknowledge goal request for compute_path_to_pose' -> 'Goal failed' 를 냄. 한 실행에서 9회
+  - mobile_controller 가 'Nav2 failed the segment ..., retry' 로 다시 보내 대부분 이어갔지만, 재시도 횟수(nav2_retries)를 쓰고 구간이 늦어짐
+- **원인:** `frybot_mobile/config/nav2_store.yaml` 의 `bt_navigator.default_server_timeout: 20`(ms). 행동 트리의 ComputePathToPose 가 planner_server 의 목표 수락 응답을 20 ms 만 기다림. CPU 여유가 적은 Pinky(T-41)에서는 그 안에 응답이 오지 못함. 경로 계산이 느린 것이 아니라 수락 응답 대기 시간이 짧은 것. segment_bt.xml 에 재시도가 없어 한 번 놓치면 그 Nav2 목표가 바로 실패함
+- **수정:** `default_server_timeout` 20 -> 200 (ms). 다른 파라미터는 그대로
+
+    수정 전:
+
+    ```yaml
+    bt_navigator:
+      ros__parameters:
+        default_server_timeout: 20
+    ```
+
+    수정 후:
+
+    ```yaml
+    bt_navigator:
+      ros__parameters:
+        # [수정 2026-11-20] T-43: 20 -> 200 (ms). Pinky 에서 planner_server 의 목표
+        # 수락 응답이 20 ms 를 넘겨 2026-11-20 실기기 시험에서 구간 실패 9회
+        default_server_timeout: 200
+    ```
+
+  - 영향: planner_server 가 정말 응답하지 않을 때 실패 판정이 180 ms 늦어짐. 정상 동작에는 영향 없음. 시뮬(Gazebo)도 같은 파일을 씀
+- **검증:** PC 확인(2026-11-20). 실기기 확인 필요
+  - `colcon build --symlink-install --packages-select frybot_mobile` 통과
+  - `navigator.params_file('pinky1', real, ...)` 로 만든 파일의 `pinky1.bt_navigator.ros__parameters.default_server_timeout` 이 실기기(real=True)·시뮬(real=False) 모두 200
+  - 실기기에서 같은 경고가 사라지는지는 배포 뒤 확인 필요
+
+## T-44 도크 진입 구간에서 Nav2 가 실패하면 로봇이 결과 없이 멈춤, 대기 위치 안 회전, 도크 앞 방향 오차
+
+- **증상:** (2026-11-20 실기기, test_map_v04, pinky1 + jetcobot1, `runs/20261120_04_serve_v04_real_s4`(폴더 안 events.csv 의 run_id 열은 옛 이름 serve_v04_real_s4), 로봇 로그 up_pinky1_s4.log, 방향 기록 yaw_s4.csv)
+  - (1) 출발 자세 (0.054, -0.493, 86°) = W1 에서 7 cm(REJOIN off_node=0.07m). 5 cm(T-42 2차 기준)를 넘어 Nav2 로 W1 에 먼저 복귀하면서 대기 위치 안(벽 7.8 cm)에서 제자리 회전(86 -> 348 -> 254 -> 316 -> 260°)
+  - (2) D1_IN 도착 방향 62°, AMCL x 가 0.053~0.097 로 흔들림. 도킹 시작 조건(|옆 오차| <= 0.03)을 못 맞춰 drive 단계로 감: 'Begin navigating from (0.06, 0.12) to (0.09, 0.20)' -> 'Controller patience exceeded' 2회 -> 'Goal failed'
+  - (3) 그 뒤 174초 동안 로그 없이 정지. 상태 MOVING, error 없음, cmd_vel 0. 관제도 정체·실패를 판정하지 않음(TASK_SUSPEND·ALERT 없음). 사용자가 보고 ESTOP
+- **원인:** `frybot_mobile/frybot_mobile/mobile_controller.py`
+  - (3) 실측 지도의 Nav2 실패(`n2['state'] == 'FAILED'`) 처리(재시도 뒤 NAV2_FAILED)가 일반 구간 분기 안에만 있었음. 도크로 끝나는 구간은 `_dock_segment` 로 가고, 그 drive 단계의 `_nav2_segment` 는 FAILED 이면 False 만 돌려줌 -> 결과·로그 없이 무한 대기. 진행이 없는지 보는 감시도 로봇·관제 어디에도 없었음
+  - (1) T-42 2차는 막다른 노드에서 5 cm 안일 때만 그 노드를 건너뜀. 7 cm 는 '노드 밖'으로 보고 Nav2 로 그 노드에 돌아감
+  - (2) 직전 구간(A1 -> D1_IN)은 Nav2 위치 허용 오차로 끝나 방향을 맞추지 않음(62°). 시작 조건 미달이면 곧바로 drive 단계(Nav2)로 가서, 벽 앞 짧은 목표에 방향 차이까지 겹침
+- **수정:** `mobile_controller.py`(로봇 재배포 필요), `fleet_core.py`(로그 1줄), `NavigateRoute.action`(주석)
+  - A: Nav2 실패 처리를 분기 사슬 뒤로 옮겨 도크 구간에도 적용. 재시도 `nav2_retries`(2) 뒤 'Nav2 failed the segment ... giving the route back (NAV2_FAILED)' 오류 로그와 함께 NAV2_FAILED
+  - B: 무진행 감시 `no_progress_sec`(기본 20초, 0 이면 끔). 주행 중 오도메트리 위치 `no_progress_dist`(0.03 m)·방향 `no_progress_yaw`(0.2 rad) 넘게 바뀌지 않으면 정지, 오류 로그, 사유 NO_PROGRESS 로 경로를 돌려줌. 허가 대기·관제 끊김·위치 추정 끊김·손님 대기 뒤에는 시간을 처음부터 다시 잼(1초 넘게 감시가 비면 초기화). 실기기는 AMCL 흔들림(4 cm)을 피하려고 오도메트리 기준. 관제는 NO_PROGRESS 를 다시 시도하지 않고 임무를 보류(SUSPENDED) -> 관리자 알람(기존 경로). 다시 시도하지 않는 경로 실패는 `ROUTE_FAIL` 로그로도 남김(임무 없는 이동 포함)
+  - C: 막다른 노드에서 나가는 경로는 로봇이 '막다른 노드 - 출구 노드' 선분 옆 `dead_end_lane_dist`(0.05 m) 안(선분 위, 막다른 노드 뒤로 5 cm 까지)이면 그 노드를 건너뛰고 출구로 바로 cmd_vel(T-42 의 첫 구간 분기). s4 출발 자세는 선분 옆 3.7 cm. 관제는 REJOIN 으로 이미 W1 을 잡고 있어 판단이 어긋나지 않음(로봇은 0번 도착 -> 1번 진행을 보고)
+  - D: 도킹 시작 조건 미달이면 한 번만 앞 노드에서 도크 방향으로 제자리 정렬(cmd_vel, 허용 0.08 rad) -> 0.5초 멈춤 -> 다시 판정. 그래도 미달이면 전처럼 drive 단계. D1_IN 은 벽에서 12.5 cm 라 회전 여유(footprint 반대각선 8.4 cm). 정렬은 위치를 바꾸지 않으므로 옆 오차가 실제로 크면 그대로 drive 로 가지만, 방향은 맞춰진 채 들어가고 실패하면 A 로 유한 시간에 끝남
+
+    수정 전(요지):
+
+    ```python
+            if dock is not None:
+                done = self._dock_segment(...)
+            elif ...:
+                ...
+            elif self.drive == 'nav2':
+                done = self._nav2_segment(...)
+                if self.measured_map and self.n2['state'] == 'FAILED':
+                    ...  # 재시도 / NAV2_FAILED
+    ```
+
+    수정 후(요지):
+
+    ```python
+            watch, stuck = self._progress_watch(watch, tgt)
+            if stuck:
+                ...  # NO_PROGRESS
+            ...
+            if dock is not None:
+                done = self._dock_segment(...)
+            ...
+            if self.drive == 'nav2' and self.measured_map \
+                    and self.n2['state'] == 'FAILED':
+                ...  # 재시도 / NAV2_FAILED (도크 구간 포함)
+    ```
+
+  - 점검(같은 '실패했는데 결과 없음' 경로): `_navigate` 안에서 끝나지 않을 수 있던 곳은 (a) 도크 drive 단계 Nav2 실패(이번), (b) 도킹 서버가 목표 수락·결과를 주지 않음(docking 단계 ACTIVE 유지), (c) 'turn'·'align' 회전이 안 끝남(바퀴 걸림), (d) Nav2 서버 없음(WAIT_NAV2), (e) 비켜 설 후진이 뒤 장애물로 막힘(6초 뒤 회전으로 넘어가 유한). (a)는 A 로, (b)(c)(d)는 B 로 유한 시간에 NO_PROGRESS. 손님 대기는 guest_timeout(20초) GUEST_LOST, trim 은 T-42 의 6초 제한, creep 은 4초 제한이 이미 있음
+- **검증:** PC 확인(2026-11-20). 실기기 확인 필요
+  - 빌드 `colcon build --symlink-install --packages-select frybot_interfaces frybot_mobile frybot_control` 통과, pytest 16 통과, `fleet_bench --scenario rush` 기준 결과와 같음(plan_ms 제외)
+  - 단위 확인(저장소 밖 임시 스크립트, 실제 `_navigate`, Nav2·cmd_vel·도킹 호출만 가짜, T-42 이전 코드와 비교, 15초에 끊음):
+    - s4 출발 (0.054, -0.493, 86°) W1 -> B1 -> C1: 전 [nav2 W1, nav2 B1, ...] / 후 [cmd_vel B1 전진, nav2 C1]
+    - s4 재현: A1 -> D1_IN 도착 (0.055, 0.143, 62°, 옆 3.6 cm), D1_STOP Nav2 실패: 전 결과 없음(15초) / 후 [도크 방향 정렬 +28°, nav2 D1_STOP] -> 2.6초에 NAV2_FAILED
+    - D1_IN (0.081, 0.143, 62°), 도크 서버 없음 + Nav2 실패: 전 결과 없음 / 후 2.6초에 NAV2_FAILED
+    - 도킹 서버가 목표 수락에 답하지 않음(무진행 3초로 시험): 전 결과 없음 / 후 3.0초에 NO_PROGRESS
+    - W1(-90°) -> B1 에서 cmd_vel 이 움직이지 않음(무진행 3초): 후 3.0초에 NO_PROGRESS
+    - s3 도킹 뒤 (0.081, 0.210, 90.2°), 막다른 곳 아닌 D1_IN -> A1: T-42 2차 결과 그대로
+  - 경량 시뮬 test_map_v04 서빙 1건(`archive/sim_runs_2026-11-20/20261120_t44_sim`) TASK_DONE 41.6초, 런치 로그에 NO_PROGRESS·NAV2_FAILED·Traceback 0건
+
+## T-45 실측 지도에서 임무를 마친 로봇이 그 자리(B4)에 남음(홈으로 돌아가지 않음)
+
+- **증상:** (2026-11-20 실기기, test_map_v04, pinky1, `runs/20261120_05_serve_v04_real_s5`) 서빙 2건이 성공한 뒤 pinky1 이 B4 에 IDLE 로 남음. 관리자 GO_HOME 을 보내야 B4 -> W1(24초)로 돌아감
+- **원인:** `frybot_control/frybot_control/fleet_core.py`
+  - 임무가 끝나면 `_run_phase` 가 `_go_home(r)` 을 부르는데, `_go_home` 은 실측 지도(`graph.map_id` 있음)이면 바로 return 함. 실측 지도에는 충전대(home_nodes)가 없고 대기 위치 규칙(`_park_goal`)이 가상 매장용이라 막아 둔 것
+  - `tick` 의 '유휴 로봇은 자리로' 처리도 가상 매장에서만 돎(실측 지도에서는 비켜 준 로봇이 원래 노드로 돌아가는 T-26 규칙과 관리자 이동 명령을 지키려고)
+- **수정:** `fleet_core.py` (관제 PC 쪽만. 로봇 패키지는 그대로)
+  - 실측 지도에서 임무(이동 명령 MOVE 제외)가 끝나면 `_return_home`: 자기 홈 노드(roadmap.json homes, pinky1 = W1)로 임무 없이 복귀(`returning`). 가상 매장의 복귀와 같은 방식이라 복귀 중에도 새 임무가 오면 그 임무로 바뀜(`_assign`). 로그 `RETURN_HOME`, 도착하면 기존 `HOME`
+  - 실측 지도에서 임무 없는 이동은 길이 막히면 다시 시도하지 않고 그 자리에 남으므로(T-26), 복귀 중(`returning`)일 때만 `tick` 이 3초마다 다시 계획(`Robot.return_retry`)
+  - 관리자 이동 명령(MOVE_TO_VERTEX, GO_HOME, 기동 후 자동 홈 이동)은 MOVE 임무라 끝난 자리에 그대로 남음(사용자 의도 '임무 완료 후 복귀'와 맞음). `_go_home` 과 가상 매장 동작은 그대로
+
+    수정 전:
+
+    ```python
+                    r.task = None
+                    self._go_home(r)        # 실측 지도에서는 아무것도 안 함
+                    return
+    ```
+
+    수정 후:
+
+    ```python
+                    r.task = None
+                    if self.graph.map_id and t.type != 'MOVE':
+                        self._return_home(r, t.id)
+                    else:
+                        self._go_home(r)
+                    return
+    ```
+
+- **검증:** PC·시뮬 확인(2026-11-20). 실기기 확인 필요
+  - `colcon build --symlink-install --packages-select frybot_control` 통과, pytest 16 통과, `fleet_bench --scenario rush`(가상 매장) 기준 결과와 같음(plan_ms 제외)
+  - 경량 시뮬 test_map_v04 robots:=1(`archive/sim_runs_2026-11-20/20261120_t45_return_home_sim`): S0001 TASK_DONE(41.4초) -> RETURN_HOME(W1) -> B4 에서 B3 로 복귀하던 중(6초 뒤) S0002 접수 -> 0.02초 뒤 TASK_ASSIGN(복귀 경로가 S0002 경로로 바뀜) -> S0002 TASK_DONE(47.6초) -> RETURN_HOME -> 18.3초 뒤 HOME(W1)
+  - 같은 시뮬에서 web_service 는 포트 8080 이 기획 패널의 실기기 런치에 쓰이고 있어 뜨지 못함(서빙 흐름과 무관)
+
+## T-46 도킹 중 벽에 닿음(test_map_v04 D1_STOP, 앞 여유 1.3 cm)
+
+- **증상:** (2026-11-20 실기기, pinky1, 사용자 관찰) "도킹할 때 벽에 박았다". v04 D1_STOP 은 지도상 벽에서 7.5 cm, 로봇 앞끝까지 1.3 cm 여유(지도 해상도 5 cm)
+- **분석:** 로그 `up_pinky1_s5.log` 의 `docked at D1_STOP` 4회와 천장 카메라 영상(각 도킹 시각의 프레임을 같은 구역으로 잘라 비교)
+  - 1회(s5 12:19:21) +3 mm 덜 감 / 옆 -4 mm, 2회(s5 12:22:27, 관제가 나란함으로 보고 취소) -2 / -32 mm, 3회(full 12:33:22) +13 / -7 mm, 4회(full 12:36:24) +15 / -31 mm
+  - 영상에서 4회가 다른 세 번보다 벽 쪽으로 약 2 cm 이상 더 들어가 로봇 윗판이 벽면에 붙음(12:36:25.4~25.9). 1~3회는 벽 앞에서 멈춤. 로그(지도 좌표)는 4회가 오히려 15 mm 덜 갔다고 기록 -> 위치 추정(AMCL)이 도킹 축 방향으로 2 cm 넘게 틀렸던 것으로 봄
+  - 도킹 서버(pose_dock)는 시작할 때의 위치 추정으로 도크 자세를 오도메트리 좌표로 바꾼 뒤 오도메트리로만 다가가 6 mm 안에서 멈춤. 그래서 실제 정지 위치는 시작 때 AMCL 오차만큼 어긋나고, 벽까지의 실제 거리는 아무도 보지 않음. 앞 여유 1.3 cm 는 AMCL 흔들림(s4 서 있는 동안 4 cm)과 지도 벽 위치 오차(셀 5 cm)보다 작음
+  - 마무리 회전(trim)은 원인이 아님: 끝난 방향 오차 0.1~0.3 도. 사각 footprint(앞 6.2 cm, 반폭 5.7 cm)의 모서리는 회전각 θ 일 때 앞으로 약 5.7·sinθ cm 더 나오므로 0.3 도면 0.3 mm. 단 v04 처럼 벽까지 7.5 cm 인 자리에서 13 도 넘게 제자리 회전하면 모서리(중심에서 8.4 cm)가 닿음. v05 D1_STOP(벽에서 11.5 cm)은 한 바퀴 돌아도 3 cm 남음. 정렬 회전(align)은 도크 앞 노드에서 하므로 해당 없음
+  - 옆 오차 3 cm 도 원인이 아님(막다른 곳 옆벽까지 10 cm 이상)
+- **수정:** `frybot_mobile/frybot_mobile/mobile_controller.py` (로봇 쪽, 배포 필요)
+  - 앞쪽 라이다 정지 추가. 로봇 앞 ±6.5 cm(`front_half_width`, 반폭 5.7 + 0.8) 직사각형, 앞 ±60 도 안의 점 중 라이다 기준 앞 거리가 `front_stop_dist`(0.10 m) 미만이면 정지. 라이다는 중심보다 1.7 cm 뒤(URDF `rplidar_mount`)라 앞끝까지 7.9 cm, 0.10 이면 앞끝 2.1 cm 앞(10 Hz 스캔 지연 x 0.05 m/s = 5 mm 더 감). v05 D1_STOP 정상 정지 때 라이다-벽 약 13 cm 라 오검출 없음. v04 D1_STOP 은 약 9 cm 라 항상 먼저 섬
+  - 검사 구간: 도킹 서버가 미는 구간(docking 단계), 도크 노드로 기어가는 creep, 막다른 노드에서 `cmd_vel` 로 전진해 나가는 첫 구간. 스캔은 이 구간에서만 평가(Pinky CPU)
+  - 도킹 중 막히면(또는 새 스캔이 1초 넘게 없으면) 도킹 목표를 취소하고 **그 자리를 도착으로 처리**, trim 회전도 하지 않음. 실패로 돌려주어도 로봇은 같은 자리에 서 있고 임무만 보류되므로 얻는 것이 없고, 음식 받는 곳이라 벽에 닿지 않는 것이 우선. 정지 위치가 팔 작업에 맞는지는 실기기 확인 필요
+  - 막다른 곳 전진 출발이 막히면 트일 때까지 서서 기다림(상태 `FRONT_BLOCKED`, `RobotStatus.msg` 주석 추가). 20초 넘으면 기존 무진행 감시가 `NO_PROGRESS` 로 돌려줌
+  - `docked at` 로그에 `front lidar NN mm` 를 붙여 실제 벽 거리를 남김(`front_stop_dist` 조정용)
+
+    수정 전(docking 단계):
+
+    ```python
+            if k['stage'] == 'docking':
+                self.nav_state = 'DOCKING'
+                if k['state'] == 'SUCCEEDED':
+                    k['stage'] = 'trim'
+    ```
+
+    수정 후:
+
+    ```python
+            if k['stage'] == 'docking':
+                self.nav_state = 'DOCKING'
+                front = self._front_clear()
+                if k['state'] == 'ACTIVE' and (
+                        front is False or front is None
+                        and time.time() - self.front_since > 1.0):
+                    if k['handle'] is not None:
+                        k['handle'].cancel_goal_async()
+                    self.pub_cmd.publish(Twist())
+                    ...  # 경고 로그
+                    k.update(stage='trim', state='', handle=None,
+                             front_stop=True)       # trim 회전 생략
+                elif k['state'] == 'SUCCEEDED':
+                    k['stage'] = 'trim'
+    ```
+
+- **검증:** 단위 확인(2026-11-20, 실제 `_navigate`·`_dock_segment`·`_creep`·`_front_clear` 를 돌리고 도킹 서버·cmd_vel·스캔만 가짜, test_map_v05)
+  - 도킹 접근 중 앞 8 cm -> 경고 `stopped by the front lidar (80 mm < 100 mm)` 뒤 도착 처리, 회전 없음 / 앞 50 cm -> 도킹 서버 성공으로 끝(경고 없음) / 스캔 없음 -> 1.1초 뒤 정지
+  - W1(90 도) -> B1 전진 출발, 앞 8 cm -> 상태 `FRONT_BLOCKED`, 3초 무진행으로 `NO_PROGRESS` / 앞 트임 -> `cmd_vel` 전진 / W1(-90 도) 후진 출발은 앞 검사 안 함
+  - creep: 앞 8 cm·스캔 없음 -> 움직이지 않음, 앞 50 cm -> 0.02 m/s 전진
+  - `colcon build --symlink-install --packages-select frybot_interfaces frybot_control frybot_mobile frybot_bringup` 통과
+  - 실기기 확인 필요: Pinky 라이다가 로봇 자신(서빙 팔·카메라 지지대)을 앞 구역 안에서 보는지, 실제 정지 거리, Gazebo 가상 매장 도크(같은 코드)에서 오검출 여부도 확인 안 함
+
+## T-47 팔 없는 로봇에도 서빙(SERVE·COLLECT)이 배정됨
+
+- **증상:** (보고 3 의 제안 1) 관제는 어느 로봇에 서빙 팔이 있는지 몰라, pinky1(팔 있음) + pinky2(팔 없음)로 띄우면 SERVE 가 pinky2 에 갈 수 있음. 등록부가 pinky2 를 `serving_arm:=real` 로 띄우면 팔 구동부가 없어 `ARM_OFFLINE` 로 임무가 보류됨(실기기 full 12:33 의 `ARM_OFFLINE` 은 팔 구동부를 띄우기 전이라 다른 경우)
+- **수정:**
+  - `frybot_control/frybot_control/fleet_core.py`: `serving_robots`(비면 모든 로봇 = 예전 동작). 배정 비용에서 팔 없는 로봇의 SERVE·COLLECT 에 큰 값(`NO_ARM_COST`)을 더하고, 그래도 짝지어지면 배정하지 않고 대기. 롤링 재배정도 팔 없는 로봇으로 넘기지 않음. 팔 있는 로봇이 관제에 하나도 없으면 `submit_task` 가 거절(`no robot with a serving arm`). 있으면 그 로봇이 빌 때까지 기다림(바쁜 동안 다른 로봇이 놀아도 대기). GUIDE·MOVE 는 그대로
+  - `task_manager_node.py`: 파라미터 `serving_robots`(쉼표 문자열), 기동 로그 `serving robots (SERVE, COLLECT): [...]`
+  - `frybot_bringup/remote.py` `serving_robots()`, `real.launch.py`: 등록부 `arms` 에서 켜진 서빙 팔의 `mount` 를 넘김(런치에 든 로봇으로 줄이지 않음 -> 팔 있는 로봇이 런치에 없으면 SERVE 거절). 인자 `serving_robots:=pinky1` 로 덮어쓰고 `all` 이면 제한 없음. `sim.launch.py` 에도 같은 인자(기본 비움)
+
+    수정 전(`_schedule` 끝):
+
+    ```python
+            for t, r in self.scheduler.assign(pend, free, cost, self.now):
+                self._assign(t, r)
+    ```
+
+    수정 후:
+
+    ```python
+            for t, r in self.scheduler.assign(pend, free, cost, self.now):
+                if self._can_take(r, t):     # 팔 없는 로봇과 짝지어지면 대기
+                    self._assign(t, r)
+    ```
+
+- **검증:** PC·시뮬 확인(2026-11-20). 실기기 확인 필요
+  - pytest 16 통과, `fleet_bench --scenario rush` 기준 결과와 같음(plan_ms 제외 20개 조합, 비어 있으면 동작 불변)
+  - FleetCore 직접 호출(test_map_v05, pinky1·pinky2): `serving_robots` 비움·`[pinky1]` -> SERVE 접수, `[pinky3]` -> 거절
+  - `real.launch.py` 의 `setup()` 만 호출(기동 없음): 등록부 기준 `pinky1`, `serving_robots:=all` -> 빈 값, `serving_robots:=pinky2` -> `pinky2`
+  - 경량 시뮬 test_map_v05 robots:=2 serving_robots:=pinky1 (`archive/sim_runs_2026-11-20/20261120_t47_serving_robots_v05_sim`): SERVE 2건 연속 접수 -> S0001 pinky1, S0002 는 pinky2 가 놀고 있어도 37.2초 대기 뒤 pinky1(S0001 완료 직후) -> 둘 다 완료(40.0초, 91.2초) -> RETURN_HOME -> HOME(W1)
+
+## T-48 노드에서 벗어나 서 있는 로봇 옆 노드를 다른 로봇에게 허가해 두 로봇이 11 cm 까지 가까워짐
+
+- **증상:** (2026-11-20 실기기, test_map_v05, `runs/20261120_07_two_robot_v05`) 첫 이동(pinky2 W2 -> B1)에서 pinky2 가 B1 에 도착한 뒤 두 로봇의 실제 중심 거리가 약 11 cm(스캔 맞춤 pinky1 (0.095, -0.475), pinky2 (0.12, -0.365)). 기획 패널 감시가 ESTOP(`1-setup separation 0.084`). pinky2 의 Nav2 충돌 경고 0건
+- **원인:** `frybot_control/frybot_control/fleet_core.py`
+  - 기획 패널이 기동 뒤 스캔 맞춤 자세를 `/pinky1/initialpose` 로 다시 넣어, 이동 명령 전 관제(`/api/state`)는 pinky1 을 x 0.097, y -0.478, yaw 88도, node W1 로 받고 있었음. 즉 W1(0.091, -0.552)에서 B1 쪽으로 7.5 cm 벗어난 보고 위치를 알고 있었음(기동 직후 `AUTO_HOME off=0.01m` 는 재설정 전 값)
+  - 그런데 점유(락)는 가장 가까운 노드(W1) 하나에만 잡히고, 허가 판단(`_blocker`)은 락과 conflict(SAFE_DIST 15.5 cm 안의 노드 락)만 봄. W1-B1 은 15.7 cm 라 W1 락은 B1 을 막지 않고, pinky1 의 실제 위치는 B1 에서 8 cm 였음 -> B1 허가
+  - 처음 넣은 초기 자세(`poses`, 0.082 -0.543 -98도)가 실제(87도)와 크게 달랐던 것도 뒤에 있음(T-49)
+- **수정:** `fleet_core.py`
+  - `_stray(o)`: '노드에서 벗어나 서 있는' 로봇 = 위치 보고가 있고, 허가받은 구간 주행 중(granted > idx >= 0)이 아니며, 자기 노드·잡은 락 노드 모두에서 `off_node_dist`(6 cm) 넘게 떨어짐. 주행 중 로봇은 지나는 두 노드의 락으로 덮이므로 제외(노드를 떠나는 정상 통과를 막지 않음). 6 cm 안의 흔들림도 제외(W1-B1 15.7 cm 가 위치 추정 흔들림만으로 잠기지 않게)
+  - `_blocker(node)`: 기존 락·conflict 검사 뒤 `_pos_blocker`: stray 로봇의 보고 위치가 node 에서 SAFE_DIST 안이면 그 로봇이 막음. 락을 새로 쓰지 않는 파생 점유라 REJOIN·held 관리와 충돌 없음. 끊긴 로봇도 마지막 위치로 봄(락과 같은 원칙). `_blocker` 를 쓰는 허가·REJOIN 후보·대기 자리 고르기에 모두 적용. `ZONE_REQUEST` 사유에 ` off_node`
+  - 예약표(`_table`): stray 로봇의 보고 위치 SAFE_DIST 안 노드를 서 있는 동안 점유로 넣음. 넣지 않으면(모의 비교) pinky2 가 B2 까지 와서 3초마다 재계획을 끝없이 반복(알람 없음). 넣으면 출발하지 않고 PLAN_FAIL 20초 뒤 SUSPENDED(PLAN_FAIL) + 관리자 알람(T-33). 해소는 관리자가 벗어난 로봇을 MOVE_TO_VERTEX 로 노드에 올리거나 비켜 줌(자동으로 움직이지 않음)
+  - `frybot_bringup/launch/real.launch.py`: `auto_home` 기본 `false`(이전 `true`). 연결된 로봇은 제자리 대기(사용자 요청)
+
+    수정 전:
+
+    ```python
+            for n in (node, *sorted(self.graph.conflict[node])):
+                o = self.locks.get(n)
+                if o not in (None, rid):
+                    return o
+            return None
+    ```
+
+    수정 후:
+
+    ```python
+            for n in (node, *sorted(self.graph.conflict[node])):
+                o = self.locks.get(n)
+                if o not in (None, rid):
+                    return o
+            return self._pos_blocker(node, rid)   # 노드에서 벗어난 로봇의 보고 위치
+    ```
+
+- **검증:** PC·시뮬 확인(2026-11-20). 실기기 확인 필요
+  - `src/frybot/frybot_control/test/test_off_node_block.py`(신규): pinky1 을 오늘 위치(W1 에서 7.7 cm)에 두고 pinky2 를 B1 으로 -> 최소 거리 0.675 m, B1 허가 없음, 20초 뒤 SUSPENDED(PLAN_FAIL). pinky1 이 W1 위면 예전처럼 B1 도착. 수정을 끄면(`_stray` 항상 False) 첫 시험 실패(최소 거리 0.080 m, 오늘 재현)
+  - pytest 23 통과, `fleet_bench --scenario rush` 기준 결과와 같음(plan_ms 제외 20개 조합). moves 2대: v04 sipp·ccbs·independent 통과(전과 같음), v05 는 전과 같이 sipp·ccbs 실패(지도 구조, 보고 10)
+  - 경량 시뮬 v05 2대(`archive/sim_runs_2026-11-20/20261120_t48_off_node_v05_sim`): SERVE(pinky1) + MOVE pinky2 W2->A3 동시 -> 둘 다 완료, pinky1 W1 복귀
+
+## T-49 초기 자세를 잘못 주면 AMCL 이 정지 상태에서 고치지 못함 -> 기동 때 스캔으로 자동 위치 추정
+
+- **증상:** (2026-11-20 실기기 07) pinky1 의 초기 자세(`poses`)가 (0.082, -0.543, -98도)였는데 실제는 (0.095, -0.475, 87도). AMCL 은 로봇이 서 있으면 갱신하지 않아 틀린 자세가 그대로였고, 기획 패널이 `scan_fit.py` 로 찾은 자세를 손으로 다시 넣음. 사용자 요청: 관제를 띄우고 로봇이 연결되면 로봇이 자기 위치를 스스로 찾고 그 자리에서 대기
+- **수정:** `frybot_mobile` (로봇 쪽, 배포 필요)
+  - `scan_match.py`(신규, ROS 없이 쓰는 계산부): map_id 의 지도로 1 cm 거리장(`cv2.distanceTransform`). 점수 = 스캔 점마다 벽까지 거리를 10 cm(`dist_cap`)에서 자른 평균(다른 로봇·사람에 맞은 점의 영향 제한). 벽에서 5 cm 넘게 떨어진 빈 칸을 4 cm·5도 격자로 훑고 상위 후보 20개를 패턴 탐색으로 다듬음. 저장 자세도 후보로 검증. 모호 판정: 최선과, 20 cm 또는 30도 넘게 다른 다음 후보의 점수 차가 `localize_margin`(6 mm) 미만 -> 저장 자세 30 cm·30도 안 후보가 있으면 그것, 없으면 자세 없음. 최선 점수가 `localize_max_score`(4 cm) 초과면 맞는 자세 없음. 시간 상한 `localize_budget_sec`(30 s)
+  - `auto_localize.py`(신규): 실기기 라이다 구동(nav2 + AMCL, 실측 지도)에서만 붙음(경량 시뮬 kinematic 에는 없음). `initial_pose` 가 없고 `auto_localize`(robot.launch 기본 true)면 첫 스캔과 라이다 장착 TF 를 받은 뒤 별도 스레드에서 한 번만 찾고 `/<robot>/initialpose` 로 넣음(3번). 그동안 상태 `LOCALIZING`, 실패하면 `NOT_LOCALIZED` + `SELF_CHECK_ERROR`(RViz 2D Pose Estimate 로 정하면 풀림). 위치가 잡힌 동안 5초마다(1 cm 넘게 움직였거나 60초)와 종료 때 `~/.frybot/last_pose/<map_id>/<robot>.json` 에 저장
+  - `mobile_controller.py`: 위치를 모르는 동안 위 상태로 보고(전에는 보고 없음 = OFFLINE). `robot.launch.py`: `auto_localize`, `initial_pose` 를 넘김
+  - 관제: `fleet_core.on_robot_status` 가 `LOCALIZING`·`NOT_LOCALIZED` 는 상태·오류만 기록(위치·노드 점유·배정·허가에 쓰지 않음). `device_state`: 둘 다 `INITIALIZING`(기동·초기 점검 중), 실패는 `SELF_CHECK_ERROR`. `RobotStatus.msg` 주석
+- **검증:** PC 확인(2026-11-20). 실기기 확인 필요(실제 스캔·지도 오차에서 점수, Pi 의 탐색 시간)
+  - 가짜 스캔(test_map_v05 광선 추적, 360 광선, 잡음 1 cm, 점 5% 누락, PC 기준 시간)
+
+    | 자세 | 결과 | 오차 | 최선 / 다음 후보 점수 | 시간 |
+    |---|---|---|---|---|
+    | W1·W2(90도), B1·B4·C1·D1_IN·A3(0도) | OK | 0.2~0.9 cm, 0.5도 이하 | 0.004~0.006 / 0.014~0.021 | 0.26~0.33 s |
+    | W1·W2(30도), B1-B2 중간(180도), 오늘 자리(0.095, -0.475, 87도) | OK | 0.8 cm, 1도 이하 | 0.004 / 0.012~0.030 | 0.3 s |
+    | W3(90도·30도), 저장 자세 없음 | AMBIGUOUS(자세 없음) | - | 0.004 / 0.007(180도 대칭 자리 (0.18, 0.20, -91도)) | 0.3 s |
+    | W3, 저장 자세 W3 / W1(옮겨진 경우) | OK_SAVED / AMBIGUOUS | 0.3 cm / - | | 0.3 s |
+    | W1 + 다른 로봇이 B1 에 섬(가림) | AMBIGUOUS, 저장 자세 W1 이면 OK_SAVED(1.1 cm) | | 0.019 / 0.021 | 0.3 s |
+    | C1 + 다른 로봇 20 cm 앞 | OK | 0.7 cm | 0.014 / 0.020 | 0.26 s |
+    | W1·B1·C1·D1_IN·A3, 잡음 2 cm | OK | 0.6~1.4 cm, 4도 이하 | 0.006~0.010 | 0.3 s |
+
+  - Pi 4 는 numpy 가 PC 의 약 10배 느리다고 보고 3~4초로 추정(시간 상한 30 s, 한 번만 실행)
+  - ROS 통합(도메인 75, 실기기 설정의 mobile_controller + 가짜 라이다·TF·AMCL): W2 -> 상태 LOCALIZING -> `initialpose` (0.768, -0.555, 90도)(실제 0.766, -0.552) -> 정상 보고, 자세 파일 저장. W3 저장 자세 없음 -> AMBIGUOUS, `NOT_LOCALIZED/SELF_CHECK_ERROR`, initialpose 없음. W3 저장 자세 있음 -> OK_SAVED (1.544, -0.557, 90도)
+  - 단위 시험 `src/frybot/frybot_mobile/test/test_scan_match.py`(3건), `src/frybot/frybot_control/test/test_localizing_status.py`(2건) 통과
+
+## T-50 주행 중 위치 추정(AMCL)이 25도 틀어진 뒤 회복하지 못하고 갇힘, 첫 기동 자동 위치 추정이 모호로 끝남
+
+- **증상:** (2026-11-20 실기기, test_map_v05, `runs/20261120_08_two_robot_v05`)
+  - 자동 위치 추정: 두 로봇 모두 3.5초에 맞는 자세를 찾았으나 AMBIGUOUS. pinky1 best 0.0007 / 대칭 후보 (1.661, 0.225, -92도) 0.0051, pinky2 0.0036 / (0.901, 0.215, -91도) 0.0091. 차이 4.4·5.5 mm < 기준 6 mm, 저장 자세 없는 첫 기동
+  - pinky1 이 비켜 주며 C1 -> D1_IN -> A2 -> A3 -> C2 -> B3 -> B2 로 돌아 복귀하다 B2 근처에서 `collision ahead` 409줄, `Controller patience exceeded`, NAV2_FAILED 3회 -> ROUTE_FAIL, 이후 MOVE 도 같은 자리에서 SUSPENDED. 그때 AMCL (0.342, -0.428, 7도) 대 스캔 맞춤 (0.405, -0.425, 32도): 방향 25도·위치 6 cm 틀림(트인 통로, 벽 접촉 없음, 제자리 회전 여러 번 뒤)
+- **원인:**
+  - 모호: 실제 스캔은 가짜 스캔보다 맞는 자세 점수가 훨씬 낮고(0.0007·0.0036) 대칭 후보와의 비율은 2.5~7배로 뚜렷했지만, 절대 차이(mm) 기준만 써서 모호로 판정. 홈 위치라는 정보를 쓰지 않았음
+  - 갇힘: 로봇 쪽에 위치 추정이 맞는지 확인하는 장치가 없음. AMCL 방향이 틀리면 전역 경로·지역 비용지도가 실제와 어긋나 RPP 가 앞에 장애물이 있다고 보고 서고(`collision ahead`), Nav2 재시도도 같은 틀린 자세로 반복. 틀어진 이유(추정)는 아래 '분석'
+- **수정:** `frybot_mobile` (로봇 쪽, 배포 필요)
+  - `scan_match.py`: `localize(home=...)`: 저장 자세가 없고 모호하면 자기 홈 노드 30 cm 안 후보를 고름(`OK_HOME`). 홈 노드엔 방향이 없어 거리만 봄. `local_search`(+-20 cm, +-45도, 2 cm·3도 격자 + 다듬기), `recheck`(지금 점수가 `pose_check_score` 1.2 cm 이하면 그대로, 나쁘면 근처 탐색 뒤 5 mm 넘게·0.6배 이하로 좋을 때만 보정 자세를 냄)
+  - `auto_localize.py`: 감시. 자세를 찾은 뒤에도 스캔 구독을 유지하고, 오도메트리가 2초 정지한 동안 8초마다 `check_now('standing')`. 보정하면 `/initialpose` 2번 + `pose corrected` 경고(30도 넘으면 오류 로그). 보정 뒤 20초 간격. 위치를 못 찾은 상태·주행 중에는 하지 않음
+  - `mobile_controller.py`: Nav2 구간 실패 처리에서 재시도 전에 `check_now('Nav2 failed the segment to ...')`, 보정했으면 1초 기다린 뒤 재시도. 파라미터 `localize_home_prior`, `pose_monitor`, `pose_check_period_sec` 8, `pose_check_score` 0.012, `pose_fix_improve` 0.005, `pose_fix_interval_sec` 20, `pose_fix_warn_deg` 30(근거는 코드 주석)
+
+    수정 전(Nav2 실패 재시도):
+
+    ```python
+                    self._stop()
+                    self.n2.update(...)
+                    tries[tgt] = tries.get(tgt, 0) + 1
+    ```
+
+    수정 후:
+
+    ```python
+                    self._stop()
+                    self.n2.update(...)
+                    if self.locz is not None and self.locz.check_now(
+                            f'Nav2 failed the segment to {route[tgt].node_id}'):
+                        time.sleep(1.0)            # AMCL 이 새 자세를 내도록
+                    tries[tgt] = tries.get(tgt, 0) + 1
+    ```
+
+- **분석(왜 틀어지는지, 의견):** 로그에는 구간 시작의 AMCL 위치만 있고(bt_navigator 'Begin navigating', 방향 없음) 오도메트리·방향이 없어 어느 회전에서 벌어졌는지 특정하지 못함. 경로는 직각 전환 6번(C1->D1_IN 후 동쪽, A3 에서 남쪽, B3 에서 서쪽 등). A2->A3 구간이 이미 6초 넘게 걸려 (0.71, 0.02)에서 끊겼다 재시도한 것이 첫 이상 징후. 의심 순서:
+  1. AMCL 레이저 모델이 너무 완만함: `sigma_hit`·`z_hit`·`z_rand` 를 지정하지 않아 기본값(0.2 m, 0.5, 0.5). 2 m x 1 m 지도·32 cm 통로에서 0.2 m 는 넓어 방향 오차를 바로잡는 힘이 약함. 제안(미적용): `sigma_hit` 0.2(기본) -> 0.05, `z_hit` 0.5 -> 0.9, `z_rand` 0.5 -> 0.1
+  2. 빠른 제자리 회전: `_rotate`·`_step_toward` 최대 1.5 rad/s, 라이다 10 Hz 라 스캔 한 장 동안 약 8.6도 돌고, `update_min_a` 0.1 이라 회전 중 일그러진 스캔으로 갱신함. 바퀴 미끄러짐으로 오도메트리 방향도 틀어짐. 제안(미적용): 최대 회전 1.5 -> 0.8 rad/s 로 낮춰 비교, 또는 회전 중 AMCL 갱신을 줄이도록 `update_min_a` 0.1 -> 0.3
+  3. 운동 잡음 `alpha1`~`alpha4` 0.2: 90도 회전에 sigma 약 0.7 rad 로 넓어 원인 가능성은 낮음
+  - 먼저 할 것(제안): 구간마다 오도메트리 방향과 AMCL 방향을 같이 기록하고, 제자리 360도 회전 시험으로 오도메트리 방향 오차를 재서 1과 2 중 무엇인지 가림
+- **모호 기준 6 mm 재검토(의견):** 실제 첫 기동 두 번은 맞는 자세 0.0007·0.0036 대 대칭 0.0051·0.0091(비율 7.3배·2.5배, 차이 4.4·5.5 mm). 가짜 스캔의 대칭 W3 은 0.0036 대 0.0065(1.8배, 2.9 mm). '차이 3 mm 이상 그리고 2배 이상'으로 바꾸면 실제 두 번은 통과하고 가짜 W3 은 모호로 남음. 다만 실제 표본이 2개뿐이라 잘못된 자세를 받아들일 위험이 있어 이번에는 6 mm 를 두고 홈 근처 우선으로 풂. 로그에 두 점수가 남으니 표본을 더 모은 뒤 비율 기준을 검토하는 것을 권함
+- **검증:** PC·가짜 스캔 확인(2026-11-20). 실기기 확인 필요
+  - 가짜 스캔(v05, 잡음 1~2 cm, PC) `recheck`: B2 25도·6 cm 틀림 0.0618 -> 보정 오차 0.5 cm·0.5도, B1-B2 중간 -25도·6 cm 0.8 cm·0.2도, 오늘 상황(실제 0.405,-0.425,32도 / AMCL 0.342,-0.428,7도) 0.0494 -> 0.3 cm·0.5도, C1 0.8 cm·0.3도, 다른 로봇이 B1 에 있을 때 B2 틀림도 0.9 cm·1.2도로 보정. 맞는 자세(잡음 2 cm, 1 cm·2도 어긋남, 다른 로봇 20 cm 앞·B1 가림)는 7건 모두 보정 안 함. 탐색 0.04~0.09 s(PC), 점수만 볼 때 1 ms 수준
+  - 홈 근처 우선: W3 저장 자세 없음 + 홈 W3 -> OK_HOME, 홈 W1 -> AMBIGUOUS
+  - ROS 통합(도메인 75, 실기기 설정 mobile_controller + 가짜 라이다·TF·AMCL·odom): AMCL 이 B2 에서 25도·6 cm 틀린 자세를 내면 서 있는 동안 `pose corrected (standing): (0.488, -0.395, 155 deg) score 0.0608 -> (0.428, -0.400, -180 deg) score 0.0052 (6.0 cm, +25 deg)`, 맞는 자세면 initialpose 0번
+  - 실제 `_navigate` 하네스: B1 구간 Nav2 실패 3회마다 재시도 전에 `check_now` 호출
+  - colcon build(frybot_mobile, frybot_control) 통과, pytest 26 통과(`test_scan_match.py` 6건), `fleet_bench --scenario rush` 기준 결과와 같음
+
+## T-51 사람이 로봇을 홈으로 옮겨 놓으면 저장 자세가 어긋나 홈 근처 우선이 걸리지 않음
+
+- **증상:** (2026-11-20 실기기 09) 두 로봇 모두 AMBIGUOUS. pinky1 best (0.069, -0.530, 90도) 0.0028 / 대칭 후보 (1.661, 0.208, -91도) 0.0056, 저장 자세 (0.390, -0.439, 46도). pinky2 best (0.699, -0.527, 82도) 0.0032 / (0.946, 0.180, -90도) 0.0078, 저장 자세 (0.111, -0.501, -58도). 사람이 로봇을 홈으로 옮겨 놓아 저장 자세가 어느 후보와도 맞지 않음
+- **원인:** `frybot_mobile/frybot_mobile/scan_match.py` `localize` 가 홈 근처 우선(T-50)을 '저장 자세가 없을 때만'(`elif`) 써서, 저장 자세가 있지만 맞지 않는 경우는 바로 AMBIGUOUS
+- **수정:** 모호할 때 (1) 저장 자세 30 cm·30도 안 후보(OK_SAVED) (2) 없으면(저장 자세가 없거나 어느 후보와도 맞지 않으면) 홈 노드 30 cm 안 후보(OK_HOME) (3) 그것도 없으면 AMBIGUOUS
+
+    수정 전: `elif home is not None:` (저장 자세가 있으면 건너뜀)
+
+    수정 후: `if home is not None:` (저장 자세 근처 후보가 없을 때도)
+
+- **모호 기준(차 3 mm 이상 그리고 2배 이상) 재검토(의견):** 실제 표본 4개 (차, 비율) = (4.4 mm, 7.3배), (5.5, 2.5), (2.8, 2.0), (4.6, 2.4). 이 기준이면 09 의 pinky1(2.8 mm, 2.0배)은 여전히 모호. 가짜 스캔의 대칭 W3 이 (2.9 mm, 1.8배)라 맞는 경우와 대칭 경우의 차이가 0.2배·0.1 mm 수준으로 붙어 있어 점수만으로 가르기 어려움. 그래서 기준은 6 mm 그대로 두고, 이 지도의 대칭은 저장 자세·홈이라는 사전 정보로 푸는 것을 권함. 점수로 풀려면 지도에 비대칭 지형(벽 쪽 상자·표식)을 두는 쪽이 확실함
+- **검증:** PC 확인(2026-11-20). 실기기 확인 필요
+  - 단위 시험 `test_home_prior_when_saved_pose_matches_nothing`: W3 에 선 로봇, 저장 자세 B2(46도) + 홈 W3 -> OK_HOME(1.5 cm 안), 홈 W1 -> AMBIGUOUS, 저장 자세 W3 -> OK_SAVED
+  - 09 수치로 따져 보면: pinky1 best 가 홈 W1 에서 3 cm, pinky2 best 가 홈 W2 에서 7 cm 라 둘 다 OK_HOME, 대칭 후보는 홈에서 멀어 고르지 않음
+  - `colcon build --symlink-install --packages-select frybot_mobile` 통과, pytest 27 통과
+
+## T-52 서 있는 로봇이 노드에서 6 cm 미만 벗어나면 옆 노드가 열림, 이동 명령 거절 이유를 알 수 없음, 위치 추정 감시 동작을 로그로 알 수 없음
+
+- **증상:** (2026-11-20 실기기 09, `runs/20261120_09_two_robot_v05`)
+  - pinky1 이 W1 에서 B1 쪽으로 5.9 cm 벗어난 채 온라인. off_node_dist(6 cm) 미만이라 '노드 밖'으로 보지 않아 B1(실제 9.9 cm)이 허가될 상태(기획 패널이 수동으로 W1 에 다시 세움). 같은 노드로 다시 세우는 MOVE_TO_VERTEX 는 '이미 해당 노드에 있습니다'로 거절
+  - 3·4단계 첫 시도에서 MOVE_TO_VERTEX pinky1 이 두 번 '로봇이 이동 가능한 대기 상태인지 확인하세요.'로 거절
+  - pinky2 의 B2 -> B1 구간 Nav2 실패(collision ahead, Controller patience exceeded, 3회 실패 2번). 위치 추정 감시(T-50) 로그가 없어 동작 여부를 알 수 없음
+- **원인:**
+  - 보고 위치 점유(T-48)를 노드에서 6 cm 넘게 벗어난 로봇에만 적용. 서 있는 로봇의 실제 거리 기준이 없었음
+  - 이동 명령 거절: `_move_to_vertex` 가 `_movable`(온라인, 비상 정지, 임무, 팔, 배터리, 로봇 오류, 팔 오류)·route·pending_goal·보고 상태를 한 문장으로 거절. 이벤트: 첫 거절(2073.06 B2) 직후 2074.19 ROBOT_OFFLINE(상태 보고가 2072.2 쯤부터 끊김), 둘째 거절(2096.83 B5)은 오프라인 중(2094.99~2098.12). 둘째는 '연결 끊김'이 확실, 첫째는 관제가 아직 온라인으로 보던 0.9초 사이라 오류 보고(예: 위치 추정 TF 끊김의 SENSOR_ERROR) 쪽으로 추정(로그로 확정 못 함). 로봇은 서 있을 때 WAIT_FMS 를 보고하지 않으므로 그 경우는 아님
+  - Nav2 실패: 두 번 모두 B2 근처(x 0.39~0.44, y -0.37~-0.38, 통로 중심보다 2~3 cm 북쪽)에서 이동 직후. 첫째 때 pinky1 은 C1(B1 에서 22 cm), 둘째 때는 A3 로 멀었음. 지도에서 그 근처 벽까지 여유는 10 cm 이상. RPP `max_allowed_time_to_collision_up_to_carrot` 0.3 s(0.08 m/s 에서 2.4 cm)라 'collision ahead' 는 지역 비용지도에서 footprint 바로 앞 2~3 cm 안에 장애물이 있다는 뜻 -> 지도에 없는 물체(사람·케이블·삼각대 등)·라이다 잡음, 또는 위치 추정 오차로 통로 벽이 경로에 겹친 것 중 하나. 감시 로그가 없어 위치 추정이 맞았는지 가를 수 없음 -> **수정 없음(의견)**, 다음 실험에서 아래 로그로 가림
+- **수정:**
+  - `frybot_control/frybot_control/fleet_core.py`: 서 있는 로봇(허가 구간 주행 중이 아님)은 모두 보고 위치로 봄(`_stray` 의 6 cm 문턱 제거). 노드와 보고 위치 거리 < `pos_block_dist` 0.12 m 면 허가·예약 안 함. 근거: SAFE_DIST 0.155 - 서 있을 때 위치 추정 흔들림 여유 0.035(AMCL +-2~3 cm). W1-B1 15.7 cm 에서 노드 위 3 cm 흔들림은 12.7 cm 라 막지 않고, 09 의 5.9 cm(9.9 cm)·07 의 7.7 cm(8 cm)는 막음. 기존 락·conflict(노드 사이 SAFE_DIST)는 그대로이고 이것은 그 위의 파생 점유
+  - `_unmovable_reason`: 거절 이유를 하나씩(연결 끊김, 비상 정지, 임무 중, 팔 작업, 배터리, 로봇 오류 이름, 서빙 팔 오류, 경로 실행 중, 복귀 대기, 보고 상태) 메시지와 이벤트 `MOVE_REJECT` 에 남김
+  - 같은 노드로 다시 세우기: 노드에서 1.5 cm(`RESETTLE_MIN`, Nav2 도착 허용 오차) 넘게 벗어났으면 받음. 노드 복귀(REJOIN)처럼 heading 을 그 노드로 둬 경로 첫 노드까지 들어가게 함(노드 하나짜리 경로를 건너뛰는 `_run_phase` 규칙을 피함)
+  - `frybot_mobile/frybot_mobile/auto_localize.py`: 감시 집계(확인 횟수·마지막 점수·보정 횟수·건너뛴 이유별 횟수), 60초마다와 종료 때 한 줄 요약 `pose monitor: ...`. Nav2 실패 때는 결과를 항상 한 줄(`pose check (...): score ..., no correction needed / no clearly better pose nearby; nearest scan point N cm at A deg`) 또는 건너뛴 이유로 남김
+
+    수정 전(`_stray` 끝):
+
+    ```python
+            near = min(math.dist((o.x, o.y), self.graph.nodes[n])
+                       for n in (o.node, *o.held) if n in self.graph.nodes)
+            return near > self.off_node_dist
+    ```
+
+    수정 후(서 있으면 True, 거리 판단은 `_pos_blocker` 에서 `pos_block_dist` 로):
+
+    ```python
+            return True
+    ...
+                if o.id != rid and self._stray(o) \
+                        and math.dist(xy, (o.x, o.y)) < self.pos_block_dist:
+                    return o.id
+    ```
+
+- **검증:** PC·시뮬 확인(2026-11-20). 실기기 확인 필요
+  - `src/frybot/frybot_control/test/test_off_node_block.py` 4건 추가: W1 에서 5.9 cm 벗어남 -> B1 허가 없음, 노드 위 3 cm 흔들림 -> pinky2 B1 도착, 4 cm 벗어난 로봇을 W1 로 다시 세움(1 cm 안 도착) / 1 cm 면 '이미' 거절, 비상 정지·SENSOR_ERROR 거절 메시지에 이유 포함. 기존 7.7 cm·노드 위 시험도 통과
+  - pytest 31 통과, `fleet_bench --scenario rush` 기준 결과와 같음(plan_ms 제외 20개 조합), moves 2대 v04·v05 전과 같음
+  - 경량 시뮬 v05 2대(`archive/sim_runs_2026-11-20/20261120_t52_pos_block_v05_sim`): SERVE(pinky1)·MOVE pinky2 W2->A3 완료, pinky1 W1 복귀, Traceback 0
+  - ROS 통합(도메인 75, mobile_controller + 가짜 라이다·TF·AMCL): 60초 요약 `pose monitor: checks 7, last score 0.0052 (6 s ago), corrections 0, skipped -, state OK`, 종료 때 `checks 8 ...`
+
+## T-53 관리자 화면 '남은 거리'가 누적 주행 거리를 보여 줌
+
+- **증상:** (2026-11-20, 사용자 보고) 관리자 화면 장치 상세의 '남은 거리'가 주행할수록 커지고 정지해도 줄지 않음. 목적지에 도착해도 0 이 되지 않음
+- **원인:** `fleet_core.on_robot_status` 가 보고마다 `r.dist += hypot(새 위치 - 이전 위치)` 로 누적한 총 주행 거리를 snapshot 의 `dist` 로 내고, `frybot_web/static/admin.html` 이 그 값을 '남은 거리'로 표시. 남은 거리를 계산하는 곳이 없었음
+- **수정:**
+  - `frybot_control/frybot_control/fleet_core.py`: `_remaining(r)` 추가, snapshot 로봇 항목에 `remaining`(m) 추가. 보고 위치 → 아직 도착하지 않은 다음 경로 노드(`idx + 1`, `idx = -1` 이면 `route[0]`)까지 직선 거리 + 그 노드부터 경로 마지막 노드까지 통로 길이 합(같은 노드가 이어진 대기 스텝은 0). 경로가 없거나 마지막 노드에 도착했으면 0. 누적이 아니라 매 snapshot 마다 다시 계산하므로 새 경로를 받으면 그 경로 기준이 됨. 기준은 화면의 '목적지'(현재 경로의 마지막 노드)이고 임무 전체(픽업 → 테이블 → 홈)가 아님
+  - 누적 `r.dist` 와 snapshot `dist` 키는 그대로 둠(`offline_bench.py` 의 총 주행 거리 지표이자 화면 '누적 주행 거리' 항목, 사용자 확정)
+  - `frybot_web/static/admin.html`: '남은 거리'에 `remaining` 사용, 경로가 없으면 '—'. 누적 주행 거리는 별도 항목 '누적 주행 거리'(snapshot `dist`, m)로 표시(사용자 요청)
+
+    수정 전(`admin.html`):
+
+    ```js
+    '<div><dt>남은 거리 · 배터리</dt><dd>' + (r.dist || 0).toFixed(2) + ' m · ' + ...
+    ```
+
+    수정 후:
+
+    ```js
+    '<div><dt>남은 거리 · 배터리</dt><dd>' + (r.route && r.route.length && r.remaining != null ? r.remaining.toFixed(2) + ' m' : '—') + ' · ' + ...
+    '<div><dt>누적 주행 거리</dt><dd>' + (r.dist || 0).toFixed(2) + ' m</dd></div>' +
+    ```
+
+    추가(`fleet_core.py`):
+
+    ```python
+    def _remaining(self, r: Robot) -> float:
+        if not r.route:
+            return 0.0
+        k = max(r.idx + 1, 0)
+        if k >= len(r.route):
+            return 0.0
+        nodes = [s.node for s in r.route[k:]]
+        rest = sum(self.graph.dist(a, b)
+                   for a, b in zip(nodes, nodes[1:], strict=False) if a != b)
+        return math.dist((r.x, r.y), self.graph.nodes[nodes[0]]) + rest
+    ...
+                        # [수정 2026-11-20] T-53: remaining = 현재
+                        # 경로의 남은 거리(m). dist 는 누적 주행 거리
+                        # (벤치 지표, 화면 '누적 주행 거리' 항목)
+                        'remaining': round(self._remaining(r), 2),
+                        'dist': round(r.dist, 2)} ...
+    ```
+
+- **검증:** PC·시뮬 확인(2026-11-20)
+  - `src/frybot/frybot_control/test/test_off_node_block.py` 에 `test_remaining_follows_current_route` 추가(같은 test_map_v05·MockFleet·`_world` 재사용, 새 파일 없음): 왕복 W1 → B5 → W1 의 각 편도에서 배정 직후 = 경로 길이(1.607 m, 오차 2 cm 이내), 주행 중 늘지 않고 감소, 도착 뒤 0. 복귀 도착 뒤 누적 `dist` 3.21 m(±5 cm)
+  - pytest 32 통과, `fleet_bench --scenario rush --check` CSV 가 수정 전과 같음(plan_ms 제외 20개 조합. 종료 코드 1 은 수정 전과 같은 cooperative_astar 5조합의 '의도된 대기 20초 1')
+  - 경량 시뮬 v05 2대(`archive/sim_runs_2026-11-20/20261120_t53_remaining_v05_sim`, 웹 포트만 8180 으로 바꾼 scratchpad 런치 사본): `/api/state` 의 pinky1 `remaining` 1.60 → 1.45 → 1.08 → 0.73 → 0.36 → 0.05 → 0.0(B5 도착), 그동안 `dist` 0.01 → 1.61. 새 명령 B5 → W1 뒤 1.61 → 1.26 으로 다시 감소(`api_remaining.txt`). 종료 때 Traceback 1건은 경로 주행 중 런치를 끈 기존 종료 오류(`RCLError: feedback publisher is invalid`, 체크리스트 1순위 2026-11-18 발견)
+  - 관리자 화면(`archive/sim_runs_2026-11-20/20261120_t53_remaining2_admin_v05_sim/admin_dom.txt`, headless Chrome 으로 /admin 을 띄워 JS 실행 뒤 DOM 확인): pinky1 W1 → B5 중 '남은 거리' — → 1.39 → 1.06 → 0.78 → 0.48 → 0.20 m → 도착 뒤 —, '누적 주행 거리' 0.00 → 0.22 → 0.55 → 0.83 → 1.13 → 1.40 → 1.61 m. 이 실행은 도착 뒤 끄고 Traceback 0
+
+## T-54 analyze_run 의 '알고리즘 변경' 줄에 변경이 없을 때 '-' 가 나오지 않음
+
+- **증상:** (2026-11-20, 전체 리뷰 R16-15) `ros2 run frybot_control analyze_run runs/<run_id>` 에서 스케줄러·플래너 변경(SET_*)이 없는 실행도 '알고리즘 변경: ' 뒤가 빈 칸으로 나옴. 의도는 '-'
+- **원인:** `frybot_control/frybot_control/analyze.py:44` 의 식 `f'알고리즘 변경: ' + ', '.join(...) or '-'` 에서 `+` 가 `or` 보다 먼저 계산돼 왼쪽이 항상 빈 문자열이 아님(AST 의 BoolOp 왼쪽이 BinOp). 자리표시자 없는 f 접두어(ruff F541)도 붙어 있었음
+- **수정:** 괄호로 `join(...) or '-'` 를 먼저 계산하고 f 접두어를 뺌
+
+    수정 전:
+
+    ```python
+            f'알고리즘 변경: ' + ', '.join(f'{r["event"]}={r["result"]}' for r in rows if r['event'].startswith('SET_')) or '-',
+    ```
+
+    수정 후:
+
+    ```python
+            '알고리즘 변경: ' + (', '.join(
+                f'{r["event"]}={r["result"]}' for r in rows
+                if r['event'].startswith('SET_')) or '-'),
+    ```
+
+- **검증:** PC 확인(2026-11-20). 경량 시뮬 demo(`archive/sim_runs_2026-11-20/20261120_t16_s3_demo_sim`)의 analyze_run 출력이 '알고리즘 변경: -'. ruff F541 0건
+
+## T-55 대칭 자리에 놓고 켜면 저장 자세·홈 우선이 틀린 자세를 AMCL 에 넣고, 그 자세가 다시 저장됨
+
+- **증상:**
+  - (2026-11-23, 작업 지시 17-B 2번) pinky1 을 오른쪽 위, W1 의 대칭점 (1.64, 0.19)에 놓고 기동함
+    - auto_localize 가 맞는 자세 best (1.576, 0.075, −95°) 0.0005 를 찾았으나, 대칭 후보 (0.109, −0.412, 85°) 0.0010 과 차이가 0.5 mm 라 모호로 판정함
+    - 저장 자세가 W1 근처였으므로 `OK_SAVED` 가 틀린 W1 쪽 자세를 AMCL 에 넣음
+    - 종료 때 그 틀린 자세가 다시 저장돼 다음 기동(17-B 3·4번)으로 이어짐
+  - (2026-11-23, 18-T 2회차) 같은 자리에서 이번에는 `OK_HOME` 이 틀린 W1 쪽 (0.164, −0.400, 85°)을 넣음
+    - 저장 자세 −60° 가 후보 방향과 맞지 않아 홈 근처 우선으로 넘어간 경우
+    - 천장 카메라 판정으로 다시 넣지 않았다면 반대편에 있다고 믿고 주행했을 상황
+- **원인:**
+  - test_map_v05 는 180° 대칭에 가까워 스캔 점수만으로는 맞는 자리와 대칭 자리를 가르지 못함(T-50·T-51)
+  - 모호할 때 쓰는 저장 자세·홈 우선(`scan_match.localize`)은 '로봇이 전에 있던 곳(또는 홈)에 그대로 있다'는 가정임
+  - 사람이 로봇을 대칭 쪽으로 옮겨 놓으면 그 가정이 틀리고, 틀린 자세가 저장 자세로 굳음
+- **수정(작업 지시 18):** 모호할 때 관제 PC 의 천장 카메라에 먼저 물음
+  - `frybot_interfaces/srv/SpotCheck.srv` 신규
+  - `frybot_control/ceiling_view.py`(계산부, ROS 없음), `ceiling_locator_node.py`(서비스 `/frybot/spot_check`), `ceiling_tool.py`(기준 화면·마커 등록·인쇄·점검) 신규
+  - 로봇 쪽(`scan_match.localize`)
+    - 모호하면 best 와 margin 안의 서로 다른 후보들을 `chooser` 로 넘김
+    - `auto_localize._ask_camera` 가 서비스 발견·응답을 각각 `localize_camera_timeout_sec`(3 s)까지 기다림
+    - `pick_by_camera` 가 고르면 `OK_CAMERA`. 못 고르거나 서비스가 없으면 예전 규칙(저장 자세 → 홈)
+  - 고르는 조건
+    - 한 후보만 점수 0.15 이상, 나머지 0.05 이하, 서로 30 cm 넘게 떨어짐
+    - 점수 = 후보 둘레 20 cm 정사각형에서 빈 바닥 기준 화면과 Lab 색 차이 40 을 넘는 화소 비율
+    - 근거(17-A·B, 18-T): 로봇이 선 자리 0.168~0.574, 빈 자리 0.000~0.050
+    - 고르면 안 되는 경우: 가운데 C2 앞뒤 혼동 0.294/0.146(두 후보 11 cm), 다른 로봇이 대칭 자리 15 cm 옆 0.314/0.228(17-A #26)
+  - 다른 로봇: 위치가 잡힌 다른 로봇이 20 cm 안에 있는 후보는 점수 −1(설명됨)이라 카메라가 고르지 않음
+  - 영상 ↔ 지도 대응
+    - 바닥 ArUco(DICT_4X4_50, id 40~43, roadmap.json `ceiling_markers`)가 4개 이상 보이면 그 프레임에서 호모그래피
+    - 아니면 벽 바닥선 수동 대응(방사 왜곡 k=0.288)
+  - 카메라 공유: `cam_record.py` 가 0.5 s 마다 원본 프레임을 `~/.frybot/ceiling/latest.jpg` 에 남기고, 노드는 장치가 바쁘면 2 s 안의 그 파일을 씀
+  - 런치: `real.launch.py ceiling_camera:=true`(기본), `ceiling_device:=/dev/video0`
+
+    수정 전(`scan_match.localize` 의 모호 처리 첫머리):
+
+    ```python
+            # 모호: 저장 자세 근처이면서 best 와 점수 차 margin 안인 후보 우선
+            if saved is not None:
+    ```
+
+    수정 후:
+
+    ```python
+            camera = ''
+            if chooser is not None:
+                amb: list[Candidate] = []
+                for c in cands:
+                    if c.score < best.score + margin and all(not _close(
+                            c, a, distinct_dist, distinct_yaw) for a in amb):
+                        amb.append(c)
+                pick, camera = chooser(amb)
+                if pick is not None:
+                    return MatchResult(amb[pick], best, second, 'OK_CAMERA',
+                                       time.monotonic() - t0, camera)
+            # 모호: 저장 자세 근처이면서 best 와 점수 차 margin 안인 후보 우선
+            if saved is not None:
+    ```
+
+- **카메라가 없을 때의 한계(그대로 남음):** 이 결함은 카메라가 답할 때만 막힘
+  - ceiling_locator 가 없거나(`ceiling_camera:=false`), 빈 바닥 기준 화면이 없거나(NO_REFERENCE), 카메라가 바쁘거나 읽히지 않거나(CAMERA_BUSY·CAMERA_FAIL), 장면이 크게 바뀌었거나(SCENE_CHANGED), 3 s 안에 답하지 않으면 예전과 똑같이 저장 자세·홈 우선이 틀린 자세를 넣을 수 있음
+  - 가운데 자리처럼 위치가 같고 방향만 다른 모호성은 카메라로 풀지 못함(그대로 AMBIGUOUS)
+  - 기준 화면 자동 갱신은 관제에 없는 로봇(꺼진 채 맵 안에 놓인 로봇)을 알 수 없어, 그 로봇이 기준 화면에 들어갈 수 있음
+- **검증:** PC 확인(2026-11-23). 실기기 확인 필요
+  - 단위(`frybot_mobile/test/test_ceiling_pick.py`, 실제 천장 프레임 `test/data/ceiling`)
+    - 17-B 1·2·3번과 18-T 1·2회차는 실제 자리를 고름, 17-B 4번(C2)은 고르지 않음
+    - 17-A #26 은 다른 로봇이 설명해 고르지 않음
+    - 가짜 스캔(오른쪽 위, 저장 자세 W1): 카메라 없이는 `OK_SAVED` 가 틀린 W1, 카메라로는 `OK_CAMERA` 가 실제 자리, 카메라가 답하지 않으면 `OK_SAVED`(예전 그대로)
+  - 단위(`frybot_control/test/test_ceiling_view.py`, 합성 영상): 수동 대응 k 0.288, 마커 4개 대응이 수동과 1 cm 안, 3개 이하면 수동, NO_REFERENCE·CAMERA_FAIL·SCENE_CHANGED, 다른 로봇 설명, 기준 화면 갱신
+  - 통합(도메인 76, localhost)
+    - 구성: 실기기 설정의 mobile_controller + 가짜 라이다·TF·AMCL + 녹화 프레임(17-B 2번)을 입력으로 받는 ceiling_locator, 저장 자세 W1
+    - 가짜 스캔이 실제보다 깨끗해 `localize_margin:=0.03` 으로 실기기처럼 모호하게 만듦
+    - 노드 있음: 후보 8곳 중 실제 자리 0.369, 나머지 0.000 → `OK_CAMERA`, initialpose (1.576, 0.080, −95°)
+    - 노드 없음: `OK_SAVED` → 틀린 W1 (0.149, −0.439, 86°)(예전 규칙 그대로)
+    - 처음에는 서비스 발견을 1 s 만 기다려 기동 직후 'no /frybot/spot_check service' 로 넘어갔음 → 발견·응답을 각각 3 s 까지 기다리게 고침
+  - 카메라 공유(실제 /dev/video0)
+    - 장치 직접: ok, W1 0.479 / 대칭 0.000
+    - cam_record 녹화 중: 최신 프레임 파일로 ok 0.480 / 0.000, 녹화 30.1 fps 유지
+    - 녹화 중 + 최신 파일 없음: CAMERA_BUSY
+  - 18-T 실물 수동 재현(작업 지시 18-T, runs/20261123_02~04): 카메라 후보 판정이 5번 모두 실제 자리 쪽(0.31~0.40 대 0.000)
+
+## T-56 Nav2 구간 실패 뒤 위치 점검에서 예외가 나 경로 결과가 사라지고 관제가 임무를 IN_PROGRESS 로 계속 잡음 (R16-50)
+
+- **증상:**
+  - (2026-11-23, 18-T 2회차 runs/20261123_03) B3→B2 구간에서 Nav2 가 collision ahead → Controller patience exceeded 로 실패함
+  - 직후 mobile_controller 에 `Error raised in execute callback: 'NoneType' object has no attribute 'yaw'`, `Goal state not set, assuming aborted` 가 찍힘
+  - 재시도·NAV2_FAILED 이벤트가 없음
+  - 로봇 상태는 MOVING, 관제의 M0001 은 IN_PROGRESS 로 남음
+  - MOVE_TO_VERTEX 가 '임무 M0001 수행 중'으로 거절돼 관제까지 재기동해야 했음
+- **원인:**
+  - `auto_localize.check_now` 의 Nav2 실패 분기(`fix is None and not standing`)가 결과를 로그로 남긴 뒤 return 하지 않음
+  - 그대로 내려가 `fix.yaw`(fix=None)에서 AttributeError 가 남
+  - 예외가 `mobile_controller._navigate`(경로 액션 실행 콜백) 밖으로 나가 경로 결과 없이 액션이 끝남
+  - 2026-11-20 전체 리뷰에서 R16-50 으로 찾았으나 고치지 않았던 결함
+- **수정:**
+  - (1) `check_now`: 그 분기 끝에 `return False`
+  - (2) `_navigate` 의 `check_now` 호출을 `(AttributeError, TypeError, ValueError, IndexError)` 로 감싸고 오류 로그 뒤 재시도로 진행
+    - 근거: 위치 점검은 보조 진단임. 그 안의 계산(None 값, 스캔 배열 모양, numpy 의 ValueError 계열)이 실패해도 재시도 → NAV2_FAILED 반환은 반드시 이어져야 함. 결과가 사라지면 관제가 임무를 영구히 붙잡음
+    - 맨 except·이유 없는 except Exception 은 쓰지 않음
+
+    수정 전(`auto_localize.check_now`):
+
+    ```python
+                if fix is None and not standing:
+                    ...
+                    n.get_logger().warn(
+                        f'{n.rid}: pose check ({why}): score {score:.4f} at '
+                        f'({x:.3f}, {y:.3f}, {math.degrees(yaw):.0f} deg), '
+                        f'{verdict}; {self._nearest(s)}')
+                elif fix is None:
+    ```
+
+    수정 후:
+
+    ```python
+                        f'{verdict}; {self._nearest(s)}')
+                    return False
+                elif fix is None:
+    ```
+
+    수정 전(`mobile_controller._navigate`):
+
+    ```python
+                    if self.locz is not None and self.locz.check_now(
+                            f'Nav2 failed the segment to {route[tgt].node_id}'):
+                        time.sleep(1.0)            # AMCL 이 새 자세를 내도록
+    ```
+
+    수정 후:
+
+    ```python
+                    fixed = False
+                    if self.locz is not None:
+                        try:
+                            fixed = self.locz.check_now(
+                                f'Nav2 failed the segment to '
+                                f'{route[tgt].node_id}')
+                        except (AttributeError, TypeError, ValueError,
+                                IndexError) as err:
+                            self.get_logger().error(
+                                f'{self.rid}: pose check failed ({err!r}), '
+                                'going on with the Nav2 retry')
+                    if fixed:
+                        time.sleep(1.0)            # AMCL 이 새 자세를 내도록
+    ```
+
+- **검증:** PC 확인(2026-11-23). 실기기 확인 필요
+  - 단위(`frybot_mobile/test/test_check_now.py`): Nav2 실패 + fix 없음이면 False 와 로그, 잠금 해제. fix 가 있으면 예전처럼 initialpose 2번
+    - 수정 전 코드(임시 복사본)에서는 `AttributeError: 'NoneType' object has no attribute 'yaw'` 로 실패, 수정 후 통과
+  - 통합(도메인 76): task_manager + 실기기 설정 mobile_controller + 가짜 라이다·AMCL + 목표를 모두 실패시키는 가짜 Nav2, B2 → B3 이동
+    - 수정 후: 'pose check ... no correction needed' → 'retry 1/2', 'retry 2/2' → 'giving the route back (NAV2_FAILED)'. 관제 경로 재시도 2번 뒤 M0001 `SUSPENDED`, 로봇 IDLE
+    - 수정 전(임시 복사본): 첫 실패에서 위 예외, 임무 `IN_PROGRESS`·로봇 MOVING 으로 남음(실기기와 같음)
+  - 위치 점검 안에서 이 네 가지가 아닌 예외가 나는 경우는 여전히 경로 결과를 잃을 수 있음(확인 필요)
+
+## T-57 세 대를 함께 띄우면 로봇이 천장 카메라 서비스(/frybot/spot_check)를 3초 안에 찾지 못함
+
+- **증상:** (2026-11-23, 작업 지시 19 1회차 runs/20261123_05_ceiling_loc_3robots_home)
+  - pinky1·2·3 을 W1·W2·W3 에 놓고 `real.launch.py` 로 함께 띄움. 세 대 모두 라이다 판정이 모호했음
+  - 세 대 모두 `camera no /frybot/spot_check service in 3.0 s` 로 카메라에 묻지 못하고 `OK_HOME` 으로 감(이번에는 맞는 자리)
+
+    ```
+    pinky1: auto localisation OK_HOME in 6.4 s, best (0.084, -0.495, 95 deg) score 0.0018, next distinct (1.656, 0.135, -90 deg) score 0.0062, saved (0.087, -0.525, -90 deg), camera no /frybot/spot_check service in 3.0 s -> (0.084, -0.495, 95 deg)
+    ```
+
+  - ceiling_locator 는 로봇이 묻기 약 25 s 전에 떠 있었고 PC 에서는 서비스가 보였음. 요청은 한 건도 오지 않음
+  - 같은 순간의 프레임을 `ceiling_tool check` 로 판정하면 세 대 모두 실제 자리 0.58·0.37·0.40, 대칭 자리 0.0 이라 고를 수 있었음
+- **원인(19-B 진단, 실측):** 로봇에서 robot_remote 와 같은 탐색 환경(ROS_STATIC_PEERS=PC[;팔], LOCALHOST)으로 임시 rclpy 노드를 만들어 SpotCheck 클라이언트의 발견·응답 시간을 잼
+
+  | 조건 | 노드를 만든 때 | 서비스 발견 | 응답 |
+  |---|---|---|---|
+  | 관제만, 로봇 스택 없음(4회) | - | 즉시(0 s) | 0.9~1.1 s |
+  | 관제 + pinky1 한 대 기동 중(3회) | - | 즉시 | 1.0~1.2 s. 이때 pinky1 의 실제 기동도 `OK_CAMERA` |
+  | 세 대 동시 기동, 런치 전에 만든 노드(3대) | 런치 전 | 런치 뒤 1.6~1.7 s | 1.0~2.5 s |
+  | 세 대 동시 기동, 기동 중 만든 노드(3회) | 런치 뒤 21~30 s | 만든 뒤 20.5·25.1·28.3 s(런치 뒤 44~58 s) | 1.3·3.6 s. 1회는 15 s 안에 응답 없음(관제에 약 14 s 늦게 도착) |
+
+  - 탐색 설정(peers/LOCALHOST)은 문제가 아님(런치 전에 만든 노드는 1.6 s 에 봄)
+  - 세 대가 함께 뜰 때, 기동 중에 새로 생긴 참가자(mobile_controller 포함)는 PC 와 서로 발견하는 데 20~28 s 걸림. 발견 직후 첫 요청도 늦게 도착할 수 있음
+  - mobile_controller 는 런치 뒤 20~35 s 에 뜨고 스캔 매칭 4~14 s 뒤에 물으므로, 3 s 대기로는 모자랐음
+  - 같은 시간대에 로봇 SSH 연결 시간 초과·끊김(pinky1, pinky2)도 있었음. Wi-Fi 혼잡(T-38·T-40 부류)으로 추정, 확인 필요
+  - 실제 기동 4회 × 3대 모두 'no service in 3 s' 였음(1회는 'no answer in 3 s')
+  - 클라이언트는 이미 `AutoLocalizer` 초기화 때 만들어지고 있었음(모호 판정 뒤에 만드는 것이 아님)
+  - 탐색 지연 자체(20~28 s)는 이번에 고치지 않음(T-40 부류, 수치만 기록)
+- **수정:**
+  - (1) `auto_localize._ask_camera`: 발견·응답을 각각 3 s 기다리던 것을, 클라이언트 생성 뒤 `localize_camera_wait_sec`(35 s)까지로 바꿈. 35 s 는 실측 최댓값 28.3 s 에 여유를 둔 값(기획 승인)
+    - 응답이 `localize_camera_timeout_sec`(3 s) 안에 없으면 남은 시간 안에서 다시 요청함. 먼저 온 응답을 쓰며, 늦게 도착한 앞 요청의 응답도 받음
+    - 상한을 넘겨 불렸어도 최소 3 s 는 기다림
+    - 대기 시작·발견·응답 시각을 로그 한 줄씩 남김
+    - 기다리는 동안 상태는 `LOCALIZING`(탐색 스레드가 끝날 때까지 그대로)
+    - `localize_budget_sec`(30 s)는 지금도 스캔 매칭에만 걸림(카메라 문의는 매칭 뒤)
+  - (2) `mobile_controller`: 파라미터 `localize_camera_wait_sec`(35.0)
+  - (3) `robot.launch.py`: 인자 `localize_camera`(true), `localize_camera_wait_sec`(35.0)를 내보냄. `robot_remote --arg` 로 넘길 수 있음
+  - (4) `real.launch.py` + `remote.remote_bringup(extra_args=...)`: `ceiling_camera:=false` 면 로봇에 `localize_camera:=false` 를 넘겨, 카메라를 끈 운용에서는 기다리지 않음
+    - `robot_remote` 로 직접 띄우면 기본은 켬. 카메라 노드가 없으면 모호할 때마다 노드 생성 뒤 35 s 까지 기다린 뒤 예전 규칙으로 감
+
+    수정 전(`auto_localize._ask_camera`):
+
+    ```python
+            t = float(self.p['camera_timeout'])
+            if not self.cli.wait_for_service(timeout_sec=t):
+                return None, f'no /frybot/spot_check service in {t:.1f} s'
+            ...
+            fut = self.cli.call_async(req)
+            fut.add_done_callback(lambda _: done.set())
+            if not done.wait(t):
+                fut.cancel()
+                return None, f'no answer in {t:.1f} s'
+            r = fut.result()
+    ```
+
+    수정 후:
+
+    ```python
+            t = float(self.p['camera_timeout'])
+            t_ask = time.monotonic()
+            end = max(self.cli_t + float(self.p['camera_wait']), t_ask + t)
+            log.info(f'{rid}: camera: waiting for /frybot/spot_check '
+                     f'(node up {t_ask - self.cli_t:.1f} s, '
+                     f'wait up to {end - t_ask:.1f} s)')
+            if not self.cli.wait_for_service(timeout_sec=end - t_ask):
+                return None, (f'no /frybot/spot_check service in '
+                              f'{time.monotonic() - t_ask:.1f} s')
+            ...
+            while True:
+                fut = self.cli.call_async(req)
+                fut.add_done_callback(lambda _: done.set())
+                futs.append(fut)
+                left = end - time.monotonic()
+                if done.wait(max(min(t, left), 0.0)) or left <= t:
+                    break
+            if not done.is_set():
+                for f in futs:
+                    f.cancel()
+                return None, (f'no answer in {time.monotonic() - t_found:.1f} s '
+                              f'({len(futs)} requests)')
+            r = next(f.result() for f in futs if f.done())
+    ```
+
+    수정 후(`real.launch.py`):
+
+    ```python
+            extra = ([] if g('ceiling_camera') == 'true'
+                     else ['localize_camera:=false'])
+            nodes += remote_bringup(robots, map_id, robots_file=g('robots_file'),
+                                    poses=poses,
+                                    discovery=discovery, extra_args=extra)
+    ```
+
+- **검증:** PC 확인(2026-11-23). 실기기 확인 필요
+  - 단위(`frybot_mobile/test/test_camera_wait.py`, 가짜 클라이언트) 6건:
+    - 서비스가 늦게 보임
+    - 첫 요청 유실 뒤 재요청
+    - 늦게 온 첫 응답 사용
+    - 끝까지 서비스 없음(상한에서 포기)
+    - 응답 없음(상한에서 포기, 요청 취소)
+    - 상한을 넘겨 불림(최소 3 s)
+    - 수정 전 코드(임시 복사본)에서는 6건 중 4건 실패, 수정 후 6건 통과. 전체 pytest 68 passed
+  - 가짜 통합(도메인 76): 가짜 라이다·AMCL과 실제 천장 프레임 파일을 쓰고, `localize_margin` 0.016 으로 모호하게 만듦
+    - ceiling_locator 를 12 s 늦게 띄움: 'waiting ... (node up 0.8 s, wait up to 34.2 s)' → 'service found after 11.8 s' → 'answer after 0.3 s (1 requests)' → `OK_CAMERA` (0.091, -0.557, 91 deg)
+    - ceiling_locator 없음: 'no /frybot/spot_check service in 34.3 s' 뒤 `OK_HOME`
+    - `localize_camera:=false`: 기다리지 않고 바로 `OK_HOME`
+    - `remote_bringup` 명령: `ceiling_camera:=false` 일 때만 `--arg localize_camera:=false` 가 붙음
+  - 실기기(2026-11-23, 이동 없음, 홈 W1·W2·W3, 모두 +y)
+    - 두 대(runs/20261123_06_ceiling_loc_2robots_home_retry, pinky1·3): 둘 다 서비스 즉시 발견, 응답 0.1·0.3 s, `OK_CAMERA`(실제 자리 0.515·0.426, 대칭 자리 0.000)
+    - 세 대(runs/20261123_07_ceiling_loc_3robots_home_retry): 세 대 모두 `OK_CAMERA`. 노드 생성부터 응답까지 pinky1 26.7 s(6.8 s 에 발견, 응답은 요청 7번째에 19.8 s 뒤), pinky2 31.4 s(22.1 s 에 발견, 요청 3번, 9.2 s), pinky3 26.3 s(24.6 s 에 발견, 1.8 s). 35 s 상한에 대한 여유는 pinky2 가 3.6 s 로 가장 작음
+    - 넣은 자세와 천장 화면 위치(덩어리 중심)의 차이는 5.0~5.4 cm
+    - 2회차 임의 자리(runs/20261123_08_ceiling_loc_3robots_moved): pinky1·3 `OK_CAMERA`(대칭 자리 0.000), pinky2 는 모호하지 않아 `OK`. 노드 생성부터 응답까지 pinky1 28.8 s(19.9 s 에 발견, 요청 2번), pinky3 32.1 s(31.5 s 에 발견) -> 35 s 상한까지 2.9 s 남음(지금까지 가장 빠듯함)
+
+## T-58 세 대가 같은 바퀴 치수를 써 오도메트리가 로봇마다 어긋남
+
+- **증상:** MT-3 바닥 검사(runs/20261124_03_motor_floor_3robots, 2026-11-24)에서 정지 스캔 맞춤(ICP)으로 잰 실제 이동과 엔코더(명목값 환산)가 로봇마다 달랐다. 같은 로봇 안의 반복 편차는 ±0.2%(직진)·±0.1%(회전)로 작아 보정할 수 있는 크기다.
+
+  | 로봇 | 직진 라이다÷엔코더 | 360도 회전 실제÷엔코더 |
+  |---|---|---|
+  | pinky1 | 1.0022 | 1.0104 |
+  | pinky2 | 0.9945 | 0.9951 |
+  | pinky3 | 1.0235 | 0.9916 |
+
+- **원인:** `robot.launch.py`가 세 대 모두에 `wheel_radius 0.027`, `wheel_separation 0.0961`을 고정으로 넘겼다. 로봇마다 바퀴(타이어) 지름과 접지 간격이 다르다. `pinky_driver`의 속도 명령 → RPM과 오도메트리는 같은 두 파라미터를 쓰므로(pinky_driver.py `twist_callback`, `update_and_publish`), 한 곳만 바꾸면 둘이 함께 맞는다.
+- **수정(2026-11-24, MT-4):** 로봇별 값을 등록부에서 받아 끝까지 넘긴다. 값이 없으면 예전과 같다.
+  - 등록부 로봇 항목의 선택 키 `wheel_radius`, `wheel_separation`(m) → `robot_remote.launch_script`가 `robot.launch.py wheel_radius:=… wheel_separation:=…`로 넘김(숫자가 아니면 기동 전 오류). `real.launch.py` 원격 기동도 같은 `robot_remote`를 거친다.
+  - `robot.launch.py`의 새 인자 `wheel_radius`, `wheel_separation`(기본 빈 값 = 명목값). 명목값에서 10% 넘게 벗어나거나 숫자가 아니면 `ValueError`로 런치가 멈춘다(경고 뒤 기본값으로 뜨면 틀린 오도메트리로 주행하므로 멈추는 쪽을 택함). 기동 로그에 `[pinkyN] wheel_radius … m, wheel_separation … m (robot value|nominal)` 한 줄.
+  - 넣을 값(반지름 = 0.027 × 직진 비, 간격 = 0.0961 × 직진 비 ÷ 회전 비): pinky1 0.02706·0.0953, pinky2 0.02685·0.0960, pinky3 0.02763·0.0992.
+
+  수정 전(`robot.launch.py` `driver_actions`):
+
+  ```python
+          Node(package='frybot_mobile', executable='pinky_driver',
+               parameters=[{'wheel_radius': 0.027,
+                            'wheel_separation': 0.0961,
+                            'serial_port': motor_port}]),
+  ```
+
+  수정 후:
+
+  ```python
+          # [수정 2026-11-24] MT-4: 바퀴 치수를 인자로(예전 0.027, 0.0961 고정)
+          Node(package='frybot_mobile', executable='pinky_driver',
+               parameters=[{**(wheel or wheel_params('', '')),
+                            'serial_port': motor_port}]),
+  ```
+
+  수정 후(`robot_remote.launch_script`):
+
+  ```python
+      # [수정 2026-11-24] MT-4: 등록부의 로봇별 바퀴 치수. 키가 없으면 넘기지
+      # 않아 robot.launch.py 의 명목값(예전과 같음). 범위 검사는 robot.launch.py
+      args.update(wheel_args(rid, cfg))
+  ```
+
+- **검증:** PC·런치 구성 확인(2026-11-24). 실기기 주행 확인 필요
+  - 빌드: `colcon build --symlink-install --packages-select frybot_mobile frybot_bringup` 성공.
+  - 단위(`frybot_mobile/test/test_wheel_geometry.py`, 6건 통과): 같은 엔코더 증분에서 보정값의 직진 거리 비가 MT-3 직진 비(±0.05%), 회전각 비가 회전 비(±0.1%)와 같음. 명목값이면 예전 식 그대로. 세 대 값 모두 속도 명령 → RPM → 1 s 엔코더 → 오도메트리가 명령(0.08 m/s, 0.5 rad/s)과 0.2% 안에서 같음(두 계산이 같은 파라미터를 씀).
+  - 전달: 시험 등록부(비밀번호 없음)로 `robot_remote --dry-run` → pinky1~3 은 `wheel_radius:=… wheel_separation:=…`가 붙고, 키 없는 로봇은 붙지 않음, `abc`는 기동 전 오류(종료 코드 1). 실제 등록부(키 없음)로 만든 세 대의 기동 명령은 수정 전과 바이트 단위로 같음.
+  - 런치 구성(`setup()`을 가짜 컨텍스트로 호출, PC와 세 로봇에 배포한 파일): 인자 없음 → `pinky_driver` 0.027·0.0961(nominal). 로봇 값 → 그 값(robot value). `27`·`abc` → 런치 멈춤. `drivers:=pinky_pro` → 값을 쓰지 않는다는 로그.
+  - 기존 pytest: frybot_mobile 43 passed, frybot_control 31 passed. `fleet_bench --scenario rush --check`: 기본 조합(min_cost_eta_rh + sipp) 통과(관제 코드는 바꾸지 않음. cooperative_astar 3조합의 '의도된 대기 20초 1' 실패는 이번 변경과 무관).
+  - 로봇 배포(`robot_remote --all --deploy`) 세 대 성공. 충전 중이라 로봇 스택·드라이버는 띄우지 않음(드라이버 기동은 모터 재부팅·토크 on).
+  - 실제 등록부(`~/.config/frybot/robots.yaml`) 값 입력(2026-11-24, 사용자 지시로 기획 패널이 입력): 백업 `robots.yaml.bak_20261124_mt4`(권한 600), pinky1·2·3 에 두 키 6줄만 추가, yaml 비교로 다른 키 불변 확인. `robot_remote pinkyN --map-id test_map_v05 --discovery subnet --dry-run`의 기동 명령에 `wheel_radius:=… wheel_separation:=…`가 붙는 것 확인(`--all`은 기동에 쓸 수 없어 종료 코드 2, 로봇 이름을 하나씩 줌).
+  - 로봇 기동 로그에서 적용 확인(`(robot value)` 줄, `pinky_driver`의 `Wheel radius:`): 미실시, 실기기 확인 필요.
+  - 남은 확인: 보정 뒤 0.3 m 직진·360도 회전에서 라이다 대 odom 비율 1.000±0.003(실기기 확인 필요).
+
+## T-59 로봇 스택을 끄면 바퀴 모터 토크가 켜진 채 남음 (MT-7 D)
+
+- **증상:** 2026-11-25 MT-6 정리 때 pinky2 만 `torque_enable` 1(나머지 0). MT-7 B 재현(pinky2, 바퀴 안 돎)에서 전체 스택을 `robot_remote --stop` 으로 끄면 3/3 남음. robot_launch.log 의 pinky_driver 는 `terminate()` 안의 `time.sleep(0.1)`(dynamixel_driver.py 75·79줄)에서 `KeyboardInterrupt` 로 죽음(launch: `process has died, exit code -2`). 드라이버만 셸에서 `&` 로 띄워 INT·TERM·INT 두 번을 보내면 24회 모두 0 이라 재현 조건을 따로 찾아야 했음. 토크가 남으면 바퀴가 잠겨 손으로 밀기 어렵고 모터가 계속 전류를 써 발열·배터리 소모(다음 기동 때 모터 재부팅으로 풀림).
+- **원인(확인, runs/20261125_05_mt7_d_torque/logs/D1_sigtest_pinky2.log):**
+  - rclpy(Jazzy)의 신호 처리기는 SIGINT 를 받으면 컨텍스트를 내리고 그 전에 있던 Python 처리기도 부른다. `ros2 launch` 가 띄운 드라이버는 SIGINT 가 기본 처리(`default_int_handler`)라 신호마다 `KeyboardInterrupt` 가 주 스레드의 아무 줄에서 난다. 셸의 `&` 로 띄운 드라이버는 SIGINT 가 무시(SIG_IGN) 상태로 시작해 이 일이 없어서, 단독 시험에서 재현되지 않았다(같은 드라이버를 `SIG_DFL` 로 띄우면 재현).
+  - (1) 두 번째 SIGINT: `stop_script()` 가 `pkill -INT robot.launch.py` 와 `pkill -INT lib/frybot_mobile`(드라이버 직접)을 보내고 launch 도 자식에게 SIGINT 를 다시 보내 드라이버는 두 번 받는다. 두 번째가 `terminate()` 도중이면 거기서 끊긴다. 단독(SIG_DFL)에서 두 번째를 0.01·0.04·0.07 s 뒤 보내면 6/6 토크 남음(0 RPM 뒤 sleep 에서 끊김), 0.10 s 면 한 모터만 꺼짐(루프 중간), 0.13 s 면 1/2 남음.
+  - (2) 첫 SIGINT: 30 Hz 타이머의 다이나믹셀 읽기(BulkRead) 도중에 `KeyboardInterrupt` 가 나면 dynamixel_sdk 의 `port.is_using` 이 True 로 남는다. 그 뒤 `terminate()` 의 쓰기(0 RPM, 토크 끄기, LED)는 모두 `COMM_PORT_BUSY` 로 패킷을 보내지 않고 돌아오는데 결과를 검사하지 않아 몰랐다. strace 로 첫 SIGINT 뒤 직렬 쓰기가 0건인 것을 확인. 단독 SIGINT 한 번에도 10회 중 1회 남음. B 의 '토크 쓰기 뒤 sleep 에서 끊겼는데도 1' 1회가 이 경우.
+  - SIGKILL(stop_script 의 4 s 뒤 `kill -9`, 수동 kill -9)은 정리 코드가 돌 수 없어 토크가 남는다(고칠 수 없음, 재기동 때 풀림).
+- **수정(2026-11-25):** `frybot_mobile/pinky_driver.py` `main()`, `frybot_mobile/dynamixel_driver.py` `terminate()`. stop_script 는 바꾸지 않음(드라이버가 신호 횟수·시점과 무관하게 끝까지 정리하면 됨).
+
+  수정 전(`pinky_driver.main`):
+
+  ```python
+      rclpy.init(args=args)
+      node = None
+      try:
+          node = Pinky()
+          rclpy.spin(node)
+      except KeyboardInterrupt:
+          pass
+      # Pinky() 생성 중 예외가 나면 node 가 None 이라 아래에서 AttributeError
+      finally:
+          node.driver.terminate()
+          node.destroy_node()
+          rclpy.shutdown()
+  ```
+
+  수정 후:
+
+  ```python
+      signal.signal(signal.SIGINT, _ignore_signal)   # rclpy 가 넘겨 불러도 KeyboardInterrupt 없음
+      rclpy.init(args=args)
+      node = None
+      try:
+          node = Pinky()
+          rclpy.spin(node)
+      except (KeyboardInterrupt, ExternalShutdownException):
+          pass
+      finally:
+          signal.signal(signal.SIGINT, signal.SIG_IGN)   # 정리하는 동안 신호 무시
+          signal.signal(signal.SIGTERM, signal.SIG_IGN)
+          if node is not None:                           # R16-29 도 막음
+              if not node.driver.terminate():
+                  node.get_logger().error(
+                      'torque off failed on some motor (check torque_enable)')
+              node.destroy_node()
+          rclpy.try_shutdown()
+  ```
+
+  수정 전(`DynamixelDriver.terminate`):
+
+  ```python
+      def terminate(self):
+          self.set_double_rpm(0, 0)
+          time.sleep(0.1)
+          for dxl_id in self.DXL_IDS:
+              self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, 0)
+              self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_LED_RED, 0) # LED OFF
+          time.sleep(0.1)
+          self.portHandler.closePort()
+  ```
+
+  수정 후:
+
+  ```python
+      def terminate(self, retries: int = 3) -> bool:
+          self.portHandler.is_using = False     # 끊긴 거래가 남긴 '사용 중' 표시
+          self.set_double_rpm(0, 0)
+          time.sleep(0.1)
+          ok = True
+          for dxl_id in self.DXL_IDS:
+              ok = self._torque_off(dxl_id, retries) and ok   # 결과 검사, 3번까지
+              self.packetHandler.write1ByteTxRx(
+                  self.portHandler, dxl_id, self.ADDR_LED_RED, 0)  # LED OFF
+          time.sleep(0.1)
+          self.portHandler.closePort()
+          return ok
+  ```
+
+- **검증(2026-11-25, runs/20261125_05_mt7_d_torque):**
+  - 빌드 `colcon build --symlink-install --packages-select frybot_mobile` 성공, frybot_mobile pytest 53 passed. 새 시험 `test/test_driver_shutdown.py` 5건(사용 중 표시가 남아도 토크 끄기, 실패 재시도, 계속 실패면 False, terminate 도중 자기 자신에게 SIGINT 를 보내도 끝까지 돎, Pinky() 실패 때 terminate 안 부름). 수정 전 코드로 돌리면 3건 실패 뒤 4번째에서 KeyboardInterrupt 로 시험이 중단됨.
+  - 세 대 배포(`robot_remote --all --deploy`), 설치된 코드에 수정 반영 확인.
+  - 실기기(관제 없음, cmd_vel 없음, 바퀴 안 돎), 끈 뒤 `mt1_regs.py` 로 torque_enable 읽음:
+
+    | 종료 방법 | 로봇 | 횟수 | 토크 남음(수정 전) | 토크 남음(수정 후) | 종료 시간 |
+    |---|---|---|---|---|---|
+    | 전체 스택 → `robot_remote --stop` | pinky2 | 5 | 3/3 | 0/5 | 11.9~13.0 s(수정 전 12.4 s) |
+    | 전체 스택 → `robot_remote --stop` | pinky3 | 5 | — | 0/5 | 12.6~15.6 s |
+    | 전체 스택 → robot_remote 에 SIGINT(real.launch·Ctrl-C 와 같은 길) | pinky1 | 3 | — | 0/3 | 33.8~34.4 s(PC 의 robot_remote 가 끝날 때까지) |
+    | 드라이버 단독(SIG_DFL) SIGINT 한 번 | pinky2 | 5 | 1/10 | 0/5 | |
+    | 단독 SIGINT 두 번(0.04 s 간격) | pinky2 | 3 | 6/6(0.01~0.07 s) | 0/3 | |
+    | 단독 SIGTERM | pinky2 | 2 | | 0/2 | |
+    | 단독(셸 &, SIG_IGN) SIGINT | pinky2 | 1 | 0 | 0/1 | |
+
+    수정 후 로그에 pinky_driver 의 KeyboardInterrupt·'torque off failed' 0건(launch 로그의 KeyboardInterrupt 12줄은 모두 pinky_battery).
+  - 남은 것: 일부 종료에서 드라이버가 `RCLError: Failed to publish: publisher's context is invalid` 로 종료 코드 1(신호로 컨텍스트가 내려간 뒤 30 Hz 타이머가 한 번 더 발행). `finally` 의 정리는 그대로 돌아 토크는 0(위 표). 로그만 남는 문제라 이번에는 고치지 않음(2026-11-26 T-62 에서 수정). SIGKILL 은 여전히 토크가 남음. 실주행 뒤 종료는 MT-7 C 에서 확인.
+
+## T-60 T-58 바퀴 값(스캔 맞춤 기준)이 줄자와 어긋남
+
+- **증상:** HW 마무리 T1(2026-11-25, `runs/20261125_08_hwfinal_t1t2_b1`)에서 1 m 직진을 바닥 줄자로 재니 T-58 값의
+  오도메트리가 로봇마다 달랐다. 같은 이동을 라이다로 재면 로봇마다 다른 쪽으로 치우쳤다(앞벽÷줄자 pinky1 +0.46 %,
+  pinky3 −1.13 %). 줄자 기준으로 확정한 값과 비교한 T-58 값의 실제 어긋남(확정값÷T-58 값)은 pinky1 1.0137(+1.4 %),
+  pinky2 1.0186(+1.9 %), pinky3 0.9906(−0.9 %)이다. 두 단계로 찾았다.
+  - 11-25: 1 m 줄자를 로봇당 한 번 대략 읽은 줄자÷odom 1.0096·1.0108·0.9956(−0.4~+1.1 %)으로 1차 보정안을 냄.
+  - 11-26: 1차 값으로 1 m × 3회를 mm 까지 읽으니 1.0042·1.0076·0.9948 로 아직 기준(1±0.003) 밖 → 2차 보정.
+  - 근거 문서: docs/2026-11-24_MOTOR_PID_CHECK.md 12.2 "A3 추가"·"A3 확정".
+- **원인:** T-58 은 정지 스캔 맞춤(ICP, B 통로, 0.3 m 직진)을 기준으로 바퀴 값을 정했다. 라이다로 잰 이동 거리에는 로봇마다
+  다른 치우침이 있어 그것이 바퀴 값에 그대로 들어갔다. 2026-11-26 줄자 시험에서 잰 라이다÷줄자(1 m, 3회 평균):
+
+  | 로봇 | 앞벽 직선 맞춤÷줄자 | ICP÷줄자 |
+  |---|---|---|
+  | pinky1 | 0.9989 | 0.9942 |
+  | pinky2 | 0.9939 | 0.9873 |
+  | pinky3 | 0.9914 | 0.9911 |
+
+  치우침의 원인(라이다 거리 눈금, 장착 각, 통로에서의 ICP 맞춤)은 가르지 않았다(확인 필요).
+- **수정(2026-11-26, 등록부만, 코드 변경 없음):** 줄자를 기준으로 반지름과 간격을 같은 비율로 바꿈(회전 보정 = T-58 의
+  간격÷반지름 유지). 두 단계: 1차는 11-25 줄자 한 번 값, 2차는 1차 값으로 잰 1 m × 3회 평균.
+
+  수정 전(`~/.config/frybot/robots.yaml`, 바퀴 줄만):
+
+  ```yaml
+    pinky1:
+      wheel_radius: 0.02706
+      wheel_separation: 0.0953
+    pinky2:
+      wheel_radius: 0.02685
+      wheel_separation: 0.096
+    pinky3:
+      wheel_radius: 0.02763
+      wheel_separation: 0.0992
+  ```
+
+  수정 후:
+
+  ```yaml
+    pinky1:
+      wheel_radius: 0.02743     # ×1.0096 뒤 ×1.0042
+      wheel_separation: 0.0966
+    pinky2:
+      wheel_radius: 0.02735     # ×1.0108 뒤 ×1.0076
+      wheel_separation: 0.0977
+    pinky3:
+      wheel_radius: 0.02737     # ×0.9956 뒤 ×0.9948
+      wheel_separation: 0.0983
+  ```
+
+  백업은 `robots.yaml.bak_20261126_wheel`(1차 전)·`_wheel2`·`_wheel3`·`_wheel4`(로봇별 2차 전), 권한 600.
+- **검증(2026-11-26, `runs/20261126_01_hwfinal_wheel_verify/report.md`):**
+  - 방법: 로봇을 B1 에 +x 로 놓고 1.0 m 를 0.08 m/s 로 3번 전진(매번 출발 전 15 s·도착 뒤 15~30 s 정지, 사용자가 줄자 눈금을 mm
+    로 읽음), 0.05 m/s 후진 복귀. 측정 스크립트에 바퀴 값을 직접 넘기고 `pinky_driver` 기동 로그의 `Wheel radius` 로 확인.
+
+    | 로봇 | 줄자 mm | odom mm | 줄자÷odom(평균) | 360도 회전 ICP÷odom 좌/우 |
+    |---|---|---|---|---|
+    | pinky1 | 1008·1008·1013 | 1009.1·1009.7·1013.3 | 0.9990 | 1.00029 / 0.99987 |
+    | pinky2 | 1010·1013·1009 | 1008.0·1011.5·1007.9 | 1.0015 | 1.00079 / 1.00168 |
+    | pinky3 | 1013·1012·1012.5 | 1012.0·1010.6·1011.6 | 1.0011 | 1.00015 / 1.00003 |
+
+  - 모두 1±0.003 안. 반지름을 키우면 같은 odom 1 m 에 실제 이동이 줄어든다(pinky1 2차: 기대 약 −3 mm, 줄자 평균
+    1014.0 → 1009.7 mm).
+  - 원격 기동(`real.launch.py` → `robot_remote`) 적용: T3(`runs/20261126_02_hwfinal_t3_30min/launch.log`) 기동 로그에
+    `[pinkyN] wheel_radius … m, wheel_separation … m (robot value)` 세 줄이 새 값으로 찍힘(T-58 에서 남았던 확인).
+  - 남은 것: 줄자 읽기는 사람 눈(±1 mm 수준), 1 m 한 길이·한 바닥에서만 잼. Nav2 주행 정확도에 미치는 영향은 따로 보지 않음.
+
+## T-61 30분 왕복에서 pinky3 위치 추정이 B 통로 방향으로 밀림 (HW 마무리 T3)
+
+- **증상(2026-11-26, `runs/20261126_02_hwfinal_t3_30min/report.md`):** 세 대가 30분 왕복(pinky3 W3↔B4)하는 동안
+  - 12:13:47~12:14:01 pinky3 이 B4→B5(+x) 구간에서 Nav2 `RegulatedPurePursuitController detected collision ahead`,
+    `Controller patience exceeded` 를 반복하다 `NAV2_FAILED` 로 경로를 돌려줌 → 관제 `TASK_SUSPEND`·관리자 알림.
+    관제 `REJOIN off_node=0.40m`. 녹화로 보면 로봇은 실제로 B5 의 끝 벽 앞(정면 11 cm)에 있었는데 AMCL 은
+    (1.141, −0.380) = B4 근처로 봄. pose check 점수 3.6~3.8 cm(평소 1 cm 안), "no clearly better pose nearby".
+    옮기기 직전 AMCL 공분산 xx 0.104 m²(x 표준편차 약 0.32 m).
+  - 12:23:36~12:23:53 같은 구간에서 같은 현상(어긋남 약 0.2 m). 이번에는 Nav2 실패 뒤 위치 점검이 21 cm 보정해
+    (`pose corrected`, initialpose 재설정) 보류 없이 회복.
+  - 서 있을 때의 위치 보정(`pose corrected`)이 pinky3 21번·pinky2 24번, 거의 모두 +x 방향(평균 +8.5·+7.8 cm). 11-25
+    같은 경로 40왕복(V2·V3)은 8번·7번(평균 +7.6·+5.6 cm), ROUTE_FAIL 0.
+- **원인(추정, 미확정):** 2026-11-26 매장의 테이블 위치를 바꾸고 장애물을 더 놓았는데 지도 test_map_v05 를 다시
+  만들지 않았다(사용자 정보). B 통로는 x 로 길고 x 를 잡아 줄 특징이 적어, 지도와 다른 배치에서 AMCL 이 x 를 덜 간
+  쪽으로 끌린다고 본다. 서 있을 때는 위치 감시(T-50)가 ±20 cm 안에서 되돌리지만 주행 중에는 하지 않아, 출발 뒤 크게
+  어긋나면 벽 앞에서 Nav2 가 실패한다. 근거:
+  - 정지 스캔을 지도에 겹치면 지도 점유 셀에서 5 cm 넘게 떨어진 점이 오늘 25~33 %, 11-25 20~29 %(오늘 4~7 %p 많음,
+    가운데 테이블과 위쪽 장애물 둘레).
+  - 바퀴 값(T-60) 변화는 0.39 m 구간에서 4~7 mm 라 0.2~0.4 m 를 설명하지 못함. 바퀴 값을 바꾼 pinky1 은 보정 1번뿐.
+  - 확인 못 함: map→odom 이 언제 뛰었는지(로봇 안 bag 에 `/tf`·`amcl_pose` 를 넣지 않음). Pi 온도(최고 75.4 °C,
+    스로틀 0x0)·상태 보고 끊김과의 관계(두 사건 직전 pinky3 의 ROBOT_OFFLINE 은 없음).
+- **조치(그날):** 사용자가 pinky3 을 W3 에 다시 놓고, 스택 스캔을 지도에 맞춘 자세로 `/pinky3/initialpose` 를 넣은 뒤
+  (AMCL 공분산 xx 0.0024) 보류 임무를 `CANCEL_TASK` 하고 왕복을 이어 감. 코드·지도·nav2_store.yaml 은 바꾸지 않음.
+- **검증·남은 것:** 미해결. 원인 확정에는 지도를 다시 만든 뒤 같은 30분 왕복 재시험이 필요(이번 작업 범위 밖). 그때
+  로봇 안 bag 에 `/tf`(map→odom)·`amcl_pose` 를 넣어 밀린 시각을 본다. `pose_monitor` 는 런치 인자로 노출되지
+  않지만 노드 기본값이 켜짐(`mobile_controller.py` `p('pose_monitor', True)`)이라 실기기에서 동작함.
+
+## T-62 스택 종료 때 pinky_driver 가 종료 코드 1 로 끝남 (T-59 남은 것)
+
+- **증상:** 로봇 스택을 `robot_remote --stop`·`real.launch.py` Ctrl-C 로 끄면 런치가 `[ERROR] [pinky_driver-4]: process has died
+  [pid …, exit code 1, …]` 를 남김. MT-7 D(2026-11-25) 13회 중 10회, HW 마무리 T3(2026-11-26) 주행 중 종료에서 pinky2·pinky3.
+  토크는 꺼짐(T-59 의 `finally` 정리는 돎). 종료가 실패처럼 보여 진짜 오류와 구별하기 어렵다.
+- **원인(robot_launch.log traceback 으로 확인):** 신호를 받은 rclpy 가 컨텍스트를 내린 뒤에도 30 Hz 타이머 콜백
+  `update_and_publish` → `_publish_joint_states` 가 한 번 더 돌아 `publish` 가 `RCLError: Failed to publish: publisher's
+  context is invalid` 를 냄. 실행기는 콜백 예외를 `rclpy.spin` 밖으로 다시 올리는데, `main()` 의 `except` 는
+  `KeyboardInterrupt`·`ExternalShutdownException` 만 받아 예외가 프로세스 밖으로 나가 종료 코드 1.
+- **수정(2026-11-26, `frybot_mobile/pinky_driver.py` `main()`):** 종료 중(`rclpy.ok()` 거짓)에 난 `RCLError` 만 정상 종료로
+  받음. 컨텍스트가 살아 있을 때 난 `RCLError` 는 주행 중 통신 오류를 숨기지 않도록 다시 올림. `RCLError` 는 rclpy 내부
+  모듈들과 같은 경로(`rclpy.impl.implementation_singleton.rclpy_implementation`)에서 가져옴. `finally` 의 terminate·
+  `try_shutdown` 은 그대로.
+
+  수정 전:
+
+  ```python
+      try:
+          node = Pinky()
+          rclpy.spin(node)
+      except (KeyboardInterrupt, ExternalShutdownException):
+          pass
+      finally:
+          ...
+  ```
+
+  수정 후:
+
+  ```python
+  from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+  ...
+      try:
+          node = Pinky()
+          rclpy.spin(node)
+      except (KeyboardInterrupt, ExternalShutdownException):
+          pass
+      # [수정 2026-11-26] T-62: 신호로 컨텍스트가 내려간 뒤 30 Hz 타이머의
+      # publish 가 "publisher's context is invalid" RCLError 를 내 종료 코드 1
+      # 이 됐음. 종료 중(rclpy.ok() 거짓)의 것만 정상 종료로 받고, 컨텍스트가
+      # 살아 있을 때 난 RCLError 는 통신 오류를 숨기지 않도록 다시 올림
+      except _rclpy.RCLError:
+          if rclpy.ok():
+              raise
+      finally:
+          ...
+  ```
+
+- **검증(2026-11-26, `runs/20261126_03_t59_exitcode`):**
+  - 단위(`frybot_mobile/test/test_driver_shutdown.py` 2건 추가): 컨텍스트가 내려간 뒤 spin 이 RCLError 를 내면 `main()` 이
+    정상 반환하고 terminate·destroy·try_shutdown 이 불림 / 컨텍스트가 살아 있을 때의 RCLError 는 다시 올라오고 terminate 는
+    불림. 수정 전 코드로는 첫 시험이 RCLError 로 실패, 수정 뒤 통과. `colcon build --symlink-install --packages-select
+    frybot_mobile` 성공, frybot_mobile pytest 55 passed.
+  - 배포: `robot_remote --all --deploy` 세 대 성공, 로봇의 `build/frybot_mobile/frybot_mobile/pinky_driver.py` 에 수정 반영 확인.
+  - 실기기(바퀴 안 돎, 관제 없음, 로봇은 충전기에 꽂힌 채): 세 대 각 5회 `robot_remote <로봇> --map-id test_map_v05 --arg
+    localize_camera:=false` 로 띄우고(1회차는 기동 약 16~24 s 뒤, 2~3회차는 약 150 s 뒤, 4~5회차는 자동 위치 추정 결과 줄
+    뒤 10 s) `robot_remote <로봇> --stop`. 끈 뒤 `hw_regs.py` 로 레지스터를 읽음.
+
+    | 회차 | --stop 시간 s | pinky_driver 종료 | 드라이버 RCLError·Traceback | torque_enable | Hardware Error | torque off failed |
+    |---|---|---|---|---|---|---|
+    | pinky1 0 | 12.6 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky2 0 | 12.4 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky3 0 | 12.7 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky1 1 | 14.0 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky2 1 | 12.8 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky3 1 | 12.6 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky1 2 | 12.8 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky2 2 | 14.3 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky3 2 | 12.8 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky1 3 | 14.2 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky2 3 | 12.2 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky3 3 | 12.7 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky1 4 | 14.0 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky2 4 | 14.0 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+    | pinky3 4 | 14.0 | finished cleanly | 0 | 0/0 | 0/0 | 0 |
+
+  - 15회 모두 `[INFO] [pinky_driver-4]: process has finished cleanly`, 드라이버의 'process has died'·RCLError traceback 0건,
+    양쪽 모터 토크 0, 'torque off failed' 0건. `--stop` 시간 12.2~14.3 s(수정 전 11.9~15.6 s).
+  - 같은 로그의 다른 노드(이번 범위 밖, 고치지 않음): `pinky_battery` 15/15 'process has died'(exit −2, KeyboardInterrupt,
+    1회는 `RCLError: rcl_shutdown already called`), `mobile_controller` 15/15 'process has died'(exit −2), `planner_server`
+    10/15 'process has died'(exit −6, `terminate called without an active exception`, Nav2 기동이 끝나기 전에 끈 경우 포함).
+    자동 위치 추정은 충전 자리에서 AMBIGUOUS 였고 이 시험의 판정과 무관.
+  - 남은 것: 종료 중 RCLError 를 받아도 로그를 남기지 않음(조용히 정상 종료). 주행 중 종료(D7·D8)에서의 확인은 다음 실주행 때.
+
+## T-63 장애물 앞에서 Nav2 가 구간을 포기한 자리에서 바로 제자리 회전 (2차 연동 R2.5)
+
+- **증상(2026-11-27, `runs/20261127_04_integ2_r3_dock`):** pinky2 H2 → A4, A4 → H2 에서 A5 구간을 Nav2 가 세 번씩 실패해
+  `NAV2_FAILED` 를 돌려줌. 관제는 `ROUTE_RETRY`·`REJOIN` 뒤 A5 를 피해 아래 통로로 다시 계획했고, 로봇은 막힌 그 자리에서 제자리
+  회전해 출발함. 막힌 순간 정면 띠(±6.5 cm) 최소 거리는 몸 중심에서 0.090·0.097 m(앞끝에서 약 3 cm). 제자리 회전 때 모서리
+  반경은 약 8.1 cm 라 장애물(H3 바닥의 서빙 팔 받침)에 닿을 수 있음.
+- **원인:** H3 의 팔은 정적 지도에 없어 전역 계획은 A5 를 쓰고, 지역 costmap 에서는 팔과 inflation 이 A5 를 덮어(비용 99, C3→A5 는
+  A5 앞 8 cm 부터) 제어기(RPP)가 막힘. `mobile_controller` 는 Nav2 실패 뒤 그 자리 그대로 경로를 돌려주므로 다음 경로의 회전이
+  장애물 바로 앞에서 일어남. 사용자 결정으로 팔은 의도적 장애물로 그대로 둠.
+- **수정(2026-11-27, `frybot_mobile/mobile_controller.py`):** 일반 Nav2 구간이 `nav2_retries` 까지 실패해 `NAV2_FAILED` 를 돌려주기
+  직전에 `_blocked_backoff` 를 부름. 진행 방향 띠(`front_half_width` 폭, 후진 구간이면 뒤쪽)의 최소 거리(몸 중심 기준)가
+  `blocked_backoff_trigger`(0.20 m) 미만일 때만 반대쪽으로 `blocked_backoff_dist`(0.05 m, 오도메트리) 만큼 `cmd_vel` 로 물러남
+  (속도 `min(speed, guide_speed)`). 물러나는 쪽이 정지 거리(`rear_stop_dist`·`front_stop_dist`, 라이다 기준) 안이 되면 거기서,
+  `blocked_backoff_timeout`(4 s)·비상 정지·경로 취소·선점·관제 끊김·위치 추정 끊김에서는 바로 0 속도. 끝나면 0 속도를 내고 그대로
+  `NAV2_FAILED` 를 돌려줌(사유·관제 처리 불변). 물러나는 동안 상태는 `BACKOFF`(RobotStatus.msg 주석에 추가). 도크 구간과 직접 주행
+  구간은 대상이 아님. `blocked_backoff_dist` 가 0 이하면 끔. 같은 날 지도에서 A5·C3·B5 를 5 cm 왼쪽으로 옮김(H 앞 노드–H 15.7 → 20.7 cm).
+
+  수정 전:
+
+  ```python
+                  done = self._nav2_segment(
+                      (pv, tgt), route[tgt].x, route[tgt].y,
+                      rev[tgt] and (not self.measured_map or (
+                          guide and tgt > 0 and self.guide_reverse)))
+  ...
+                  self.get_logger().error(
+                      f'{self.rid}: Nav2 failed the segment to '
+                      f'{route[tgt].node_id} {tries[tgt]} times, giving the '
+                      'route back (NAV2_FAILED)')
+  ```
+
+  수정 후:
+
+  ```python
+                  # [수정 2026-11-27] T-63: 진행 방향을 남김(막힘 뒤 물러나기)
+                  nav2_rev = rev[tgt] and (not self.measured_map or (
+                      guide and tgt > 0 and self.guide_reverse))
+                  done = self._nav2_segment(
+                      (pv, tgt), route[tgt].x, route[tgt].y, nav2_rev)
+  ...
+                  # [수정 2026-11-27] T-63: 장애물에 막혀 실패했으면 돌려주기
+                  # 전에 조금 물러남(사유·관제 처리는 그대로 NAV2_FAILED)
+                  if nav2_rev is not None:
+                      self._blocked_backoff(nav2_rev, gh)
+                  self.get_logger().error(...)
+
+      def _blocked_backoff(self, reverse: bool, gh) -> str:
+          ...
+          ahead = self._band_min(back=reverse)
+          before = ahead + (-lidar_x if reverse else lidar_x)   # 몸 중심 기준
+          if before >= self.backoff_trigger:
+              return 'clear'
+          ...
+          while True:   # estop·취소·관제·위치·거리·시간·물러나는 쪽 정지 거리 확인
+              ...
+              cmd.linear.x = -v if go_back else v
+          self.pub_cmd.publish(Twist())
+          self.get_logger().warn(f'{self.rid}: blocked backoff ({why}): moved ...')
+  ```
+
+- **검증:**
+  - 단위 `frybot_mobile/test/test_blocked_backoff.py` 7건(앞 9 cm 막힘 → 뒤로 5 cm, 20 cm 밖이면 안 움직임, 뒤가 막혀 덜 감, 0 이하면 끔,
+    도중 비상 정지, 후진 구간은 앞으로, 새 스캔 없으면 안 함): 수정 전 코드(배포본 md5 967cbd95…)에서 7 실패, 수정 후 7 통과.
+    `python3 -m pytest src/frybot` 136 통과. `colcon build --packages-select frybot_interfaces frybot_control frybot_web frybot_mobile` 성공.
+  - `fleet_bench --scenario moves --map-id test_map_v06 --robots 2 --check`(노드 이동 전후): 기본 조합 min_cost_eta_rh + sipp 139.2 s·최소 간격
+    0.157 m → 138.1 s·0.207 m, 통과 그대로. 조합별 통과·실패 같음(independent_astar 실패는 이전부터).
+  - 경량 시뮬은 Nav2 를 거치지 않아 이 분기를 재현하지 못함. 실기기 재실험(R2.5) 확인 필요.
+
+## T-64 후진 도킹에서 도킹 서버가 로봇을 180° 돌려 도크 반대로 가거나 제자리에서 돎 (2차 연동, v06)
+
+- **증상(2026-11-27, 실기기 `runs/20261127_04_integ2_r3_dock`·`_06_integ2_r25_retry`·`_09_integ2_pinky2_guide_serve`):**
+  - H2(도킹한 로봇 방향 180°): C3 에서 -x 를 보고 시작하면 도킹 서버가 20 s 동안 제자리 회전(회전 합계 983°·1030°, cmd_vel
+    wz ±1.0, 전후진 거의 0)하다 `Timed out approaching dock`. 3번 모두(R2.5·재실험·안내/서빙 복귀) 같음. 대체 Nav2 로 마무리.
+  - D1_STOP(도킹한 로봇 방향 0°): D1_IN 에서 0°(+x)로 돌아 선 뒤 도킹 서버가 3.5 s 동안 0° → -180° 로 180° 돌리고, 그 방향에서 후진
+    = +x(도크 반대쪽)로 감 → 테이블 앞에서 뒤 라이다 정지(97 mm) → `docked at D1_STOP (0.220, 0.183, -179.4 deg): +206 mm short,
+    heading error 179.4 deg`. LOAD 가 도크가 아닌 자리에서 실행됨.
+- **원인(opennav_docking 1.3.13 소스 대조로 확정, `docking_server.cpp` `approachDock`):** 서버는 접근 목표를 도크 자세의 방향으로
+  0.25 m 밀고(`backward_projection`: `x += cos(yaw)*0.25`), `dock_backwards` 이면 base 좌표로 바꾼 목표의 방향을 다시 +π 돌려
+  후진 제어 법칙(`computeVelocityCommand(..., backward=true)`)에 넘김. 즉 후진 모드에서 서버는 **도크 자세 방향 = 진행 방향(도킹한 로봇이
+  보는 방향의 반대)** 으로 보고, 목표가 도크 너머로 밀리기를 기대함. `mobile_controller` 는 roadmap 의 `yaw_deg`(도킹한 로봇이 보는 방향)를
+  그대로 넘겨, 목표가 도크 **앞**(로봇 쪽) 0.25 m 에 생김:
+  - D1_STOP: 도크 (0.014, 0.2015), yaw 0 → 목표 x 0.264(로봇 앞 14 cm), 방향 180°. 후진으로 거기 가려고 180° 돌고 +x 로 후진.
+  - H2: 도크 (1.681, 0.2015), yaw 180 → 목표 x 1.431(C3 1.474 바로 옆), 방향 0°. 목표가 로봇 위치와 거의 같아 제어 법칙이 방향만 맞추려
+    돌다(atan2 가 불안정한 구간) 시간 초과.
+  - `navigate_to_staging_pose=False` 라 staging 자세는 쓰이지 않음(로그의 "already within pre-staging pose tolerance" 는 이 때문).
+    `isDocked` 는 위치만 봄(`docking_threshold` 6 mm).
+- **수정(2026-11-27, `frybot_mobile/mobile_controller.py` `_dock_segment` 의 DockRobot 목표):** `dock_backwards` 이면 도킹 서버에 넘기는
+  도크 자세 방향만 +π. roadmap `yaw_deg`(도킹한 로봇 방향)·제어기 안의 판정(along·trim)·전진 도킹(가상 매장 마커 도크, v04·v05)은 그대로.
+
+  수정 전:
+
+  ```python
+              g.dock_pose.pose.orientation.z, g.dock_pose.pose.orientation.w = math.sin(d['yaw'] / 2), math.cos(d['yaw'] / 2)
+  ```
+
+  수정 후:
+
+  ```python
+              # [수정 2026-11-27] T-64: 후진 도킹이면 도킹 서버에 넘기는 도크
+              # 자세 방향을 180도 돌림. ...
+              g_yaw = d['yaw'] + (math.pi if self.dock_backwards else 0.0)
+              g.dock_pose.pose.orientation.z = math.sin(g_yaw / 2)
+              g.dock_pose.pose.orientation.w = math.cos(g_yaw / 2)
+  ```
+
+- **검증:**
+  - 단위 `test_dock_backwards.py`: 후진 D1(목표 방향 180°, 서버가 미는 목표가 도크 너머 -x), 후진 H2(목표 방향 0°, 너머 +x), 전진(그대로)
+    3건 추가, 11-26 의 기존 시험 1건(목표 방향 0° 를 기대하던 것)을 서버 규약으로 고침. 수정 전 코드에서 3 실패, 수정 후 14 통과.
+    `python3 -m pytest src/frybot` 139 통과, `colcon build --packages-select frybot_mobile` 성공.
+  - PC 에서 실제 `docking_server`(opennav_docking 1.3.13, nav2_store.yaml 설정 + `dock_backwards: true`, 지역 costmap 이 없어 충돌 검사만 끔)를
+    가짜 로봇(cmd_vel 적분 → tf 100 Hz)으로 돌림(`archive/sim_runs_2026-11-27/20261127_backoff_node_shift/dock_server_test/`):
+    | 경우 | 도크 자세 방향 | 결과 |
+    |---|---|---|
+    | D1_STOP, D1_IN(0.124) 0° 출발 | 0°(수정 전) | 2/2 실패, 20.1 s 시간 초과, 회전 775°·683°, 끝 x 0.264(도크 반대 25 cm) — 실기기와 같음 |
+    | 〃 | 180°(수정 후) | 2/2 성공(3번째 시도는 가짜 로봇 tf 준비 전이라 제외), 2.3·2.5 s, 회전 0°, 후진만, 도크에서 4 mm |
+    | H2, C3(1.474) 180° 출발 | 180°(수정 전) | 2/2 실패, 20.1 s, 회전 1043°·956°, 끝 x 1.431 — 실기기와 같음 |
+    | 〃 | 0°(수정 후) | 2/2 성공, 4.5·4.6 s, 회전 0°, 후진만, 도크에서 4·5 mm |
+  - Gazebo 는 가상 매장(proto, 전진 마커 도크) 전용이라 v06 후진 도킹을 돌리지 못함. 경량 시뮬은 도킹 서버를 거치지 않음.
+  - 실기기 확인 필요(재배포 뒤 D1_STOP·H2). 지역 costmap 충돌 검사(`dock_collision_threshold` 0.33)는 PC 시험에서 껐으므로, 실기기에서 도크 앞
+    벽이 충돌로 잡히는지도 봐야 함.

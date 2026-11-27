@@ -1,29 +1,705 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FryBot 관제</title><link rel="stylesheet" href="/static/app.css"></head><body>
-<header><h1>FryBot · 통합 관제</h1><span class="mute" id="run" style="color:#bbb"></span><span class="sp"></span><span id="msg" style="color:#fbbf24"></span><a href="/">처음으로</a></header>
-<main><div class="grid" style="grid-template-columns:minmax(520px,3fr) minmax(360px,2fr)">
-<div><div class="card"><canvas id="cv" width="1100"></canvas></div>
- <div class="card"><h2>AMR 임무</h2><table id="tasks"></table></div>
- <div class="card"><h2>주문 · 조리</h2><table id="orders"></table><div class="mute" id="cook" style="margin-top:8px"></div></div></div>
-<div><div class="card"><h2>알고리즘 (실행 중 교체)</h2>
-  <div class="row"><label>스케줄러 <select id="sch" onchange="adm('SET_SCHEDULER',this.value)"></select></label><label>경로 계획 <select id="pln" onchange="adm('SET_PLANNER',this.value)"></select></label></div>
-  <label class="row" style="margin-top:6px"><input type="checkbox" id="sb" onchange="adm('SET_STANDBY',this.checked?'on':'off')"> 대기 위치 사용 (한 대는 충전대, 나머지는 조리 구역 옆 대기)</label><div class="mute" id="algd" style="margin-top:6px"></div><table id="met" style="margin-top:8px"></table></div>
- <div class="card"><h2>AMR</h2><table id="robots"></table></div>
- <div class="card"><h2>테이블</h2><table id="tables"></table></div>
- <div class="card"><h2>알림 · 오류</h2><table id="inc"></table></div></div></div></main>
-<script src="/static/map.js"></script><script>
-let L=null,filled=false;getJSON('/api/layout').then(l=>L=l);
-async function adm(command,target,arg){const r=await postJSON('/api/admin',{command,target,arg:arg||''});msg.textContent=(r.ok?'✔ ':'✖ ')+r.message;setTimeout(()=>msg.textContent='',5000)}
-const MK={grants:'통행 허가',blocked_wait:'점유 대기(초)',planned_wait:'계획 대기(초)',stalls:'정체 감지',replans:'재계획',retreats:'비켜서기',flips:'우선순위 교환',plan_fail:'계획 실패',plan_calls:'계획 호출',plan_ms:'계획 시간 합(ms)',tasks_done:'완료 임무'};
-async function tick(){const S=await getJSON('/api/state');const R=S.rest||{},F=S.fms||{};drawMap(cv,L,S);run.textContent=R.run_id||'';
- const A=F.algorithms;if(A){if(!filled){sch.innerHTML=Object.keys(A.schedulers).map(k=>`<option>${k}</option>`).join('');pln.innerHTML=Object.keys(A.planners).map(k=>`<option>${k}</option>`).join('');filled=true}
-  sb.checked=!!A.standby;if(document.activeElement!==sch)sch.value=A.scheduler;if(document.activeElement!==pln)pln.value=A.planner;algd.innerHTML=`${A.schedulers[A.scheduler]}<br>${A.planners[A.planner]}`}
- met.innerHTML=Object.entries(F.metrics||{}).map(([k,v])=>`<tr><th>${MK[k]||k}</th><td>${v}</td></tr>`).join('');
- robots.innerHTML='<tr><th>ID</th><th>상태</th><th>기기 상태</th><th>임무</th><th>배터리</th><th>위치</th><th></th></tr>'+(F.robots||[]).map(r=>`<tr><td><b style="color:${RC[r.id]}">${r.id}</b></td><td>${tag(r.state)}${r.blocked_by?` <span class="mute">대기←${r.blocked_by}</span>`:''}</td><td>${dev(r.device)}</td><td>${r.task||'-'}</td><td>${r.battery}%${r.charging?' ⚡':''}</td><td class="mute">${r.heading?r.node+'→'+r.heading:r.node}</td>
-  <td>${r.state==='E_STOP'?`<button class="sm" onclick="adm('RESUME','${r.id}')">재개</button>`:`<button class="sm danger" onclick="adm('ESTOP','${r.id}','admin')">비상 정지</button>`}</td></tr>`).join('');
- tasks.innerHTML='<tr><th>임무</th><th>유형</th><th>상태</th><th>AMR</th><th>대상</th><th>경과</th><th></th></tr>'+(F.tasks||[]).filter(t=>t.type!=='COOK').slice(-12).reverse().map(t=>`<tr><td>${t.id}</td><td>${t.type}</td><td>${tag(t.state)} <span class="mute">${t.reason||''}</span></td><td>${t.robot||'-'}</td><td>T${t.table}${t.menu?' · '+t.menu:''}</td><td>${t.age}s</td>
-  <td>${t.state==='SUSPENDED'?`<button class="sm" onclick="adm('RETRY_TASK','${t.id}')">재시도</button> <button class="sm" onclick="adm('REASSIGN','${t.id}')">재할당</button> <button class="sm danger" onclick="adm('CANCEL_TASK','${t.id}')">취소</button>`:(t.state==='PENDING'?`<button class="sm danger" onclick="adm('CANCEL_TASK','${t.id}')">취소</button>`:'')}</td></tr>`).join('');
- orders.innerHTML='<tr><th>주문</th><th>테이블</th><th>상태</th><th>음식별 진행</th><th>경과</th></tr>'+(R.orders||[]).slice(-8).reverse().map(o=>`<tr><td>#${o.id}</td><td>T${o.table}</td><td>${tag(o.state)}</td><td>${o.items.map(i=>`${i.name}: ${ko(i.state)}`).join('<br>')}</td><td>${o.age}s</td></tr>`).join('');
- const C=F.cooking||{};cook.innerHTML='조리 팔 — '+Object.entries(C.arms||{}).map(([k,d])=>`${k}: ${dev(d)}`).join(' · ')+'<br>조리 셀 — '+Object.entries(C.resources||{}).map(([k,v])=>`${k}: ${v||'비어 있음'}`).join(' · ')+' · 인계대 '+Object.entries(C.slots||{}).map(([k,v])=>`${k}=${v}`).join(', ')+'<br>'+(C.jobs||[]).map(j=>`${j.task} ${j.menu} → ${j.step}${j.retries?` (재튀김 ${j.retries})`:''}`).join(' / ');
- tables.innerHTML='<tr><th>테이블</th><th>좌석</th><th>상태</th><th>손님</th><th></th></tr>'+(R.tables||[]).map(t=>`<tr><td>T${t.id}</td><td>${t.seats}</td><td>${tag(t.state)}</td><td>${t.visit||'-'}</td><td>${t.state==='IN_USE'||t.state==='VACANT_CHECK'?`<button class="sm" onclick="adm('END_USE',${t.id})">이용 종료</button>`:''}${t.state==='COLLECTING'?`<button class="sm" onclick="adm('SET_TABLE',${t.id},'AVAILABLE')">수동 가용</button>`:''}</td></tr>`).join('');
- inc.innerHTML=(R.incidents||[]).length?'<tr><th>임무</th><th>장치</th><th>원인</th><th>처리</th></tr>'+R.incidents.slice().reverse().map(i=>`<tr><td>${i.task}</td><td>${i.robot||i.type}</td><td>${i.reason}</td><td>${i.resolved?tag(i.resolved):tag('SUSPENDED')}</td></tr>`).join(''):'<tr><td class="mute">알림 없음</td></tr>'}
-setInterval(tick,500);tick()</script></body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FryBot 관제</title><link rel="stylesheet" href="/static/admin.css"></head><body>
+<!-- [수정 2026-11-17] GUI 화면 구성도 초안 v0.1 반영: A1 통합 관제, A2 테이블·주문·조리, A3 알람·이력.
+     기존 기능(지도 선택, 노드 이동 명령, 알고리즘 교체, 지표)은 그대로 두고 "설정" 탭으로 옮김 -->
+<header class="top">
+ <div class="brand">FryBot<span>관제</span></div>
+ <nav class="tabs" id="tabs">
+  <button data-tab="monitor">통합 관제</button>
+  <button data-tab="tables">테이블 · 주문</button>
+  <button data-tab="alarms">알람 · 이력<span class="cnt" id="alarmCount" hidden></span></button>
+  <button data-tab="settings">설정</button>
+ </nav>
+ <span class="sp"></span>
+ <span class="pill">모드 <b>LIVE</b></span>
+ <!-- [수정 2026-11-17] 연결된 AMR 전체 홈 복귀 -->
+ <button class="btn sm" type="button" data-cmd="GO_HOME" data-target="ALL" data-arg="admin"
+  data-confirm="연결된 AMR을 모두 홈으로 복귀시킬까요? 임무 중이거나 비상 정지된 로봇은 제외됩니다.">전체 홈 복귀</button>
+ <span class="pill" id="conn"><i class="dot"></i>ROS2 <b>확인 중</b></span>
+ <span id="clock"></span><span class="mute small" id="run"></span><a href="/">처음으로</a>
+</header>
+<div id="toast" role="status"></div>
+<main>
+
+<!-- A1 통합 관제: 요약, 장치 목록, 지도·이동 명령, 임무 큐, 상세, 최근 알람 -->
+<section id="tab-monitor">
+ <div class="summary" id="summary"></div>
+ <div class="cols">
+  <div class="card"><h2>대상 목록 <span class="mute" id="listCount"></span></h2>
+   <div id="devList"></div>
+   <div class="hint">목록에서 고르면 지도에서 강조되고 오른쪽에 상세가 표시됩니다.</div>
+  </div>
+  <div>
+   <div class="card"><h2>지도
+     <div class="maptools">
+      <select id="mapSelect" aria-label="지도"></select><span id="mapStatus" role="status"></span>
+      <button class="tog on" id="togRoute" type="button">경로</button>
+      <button class="tog on" id="togNode" type="button">노드</button>
+      <!-- [수정 2026-11-17] T-27: 지도 목록·지도·로봇 표시를 다시 불러오는 버튼 -->
+      <button class="tog" id="mapReload" type="button" title="지도 목록과 로봇 표시를 다시 불러옵니다">새로고침</button>
+     </div></h2>
+    <div class="body">
+     <canvas id="cv" width="1100"></canvas>
+     <section id="mapStations" hidden aria-labelledby="stationTitle">
+      <div class="mute small" id="stationTitle" style="margin-top:10px">임시 운영 지점</div>
+      <ul id="stationList" class="map-stations"></ul>
+     </section>
+     <form id="vertexMove" hidden style="margin-top:10px"><div class="row">
+      <label>로봇 <select id="moveRobot" required></select></label>
+      <label>목적 노드 <select id="moveVertex" required></select></label>
+      <button class="btn" type="submit">이동 명령</button>
+     </div></form>
+    </div>
+   </div>
+   <div class="card"><h2>임무 큐 <span class="mute" id="queueCount"></span></h2>
+    <div class="body" style="padding:4px 8px"><table id="queue"></table></div></div>
+  </div>
+  <div>
+   <div class="card"><div id="detail"></div></div>
+   <div class="card"><h2>최근 알람 <a href="#alarms" class="mute small" style="margin-left:auto">전체 보기</a></h2>
+    <div id="recent"></div></div>
+  </div>
+ </div>
+</section>
+
+<!-- A2 테이블·주문: 테이블 카드, 조리 구역, 주문·조리 현황 -->
+<section id="tab-tables" hidden>
+ <div class="summary" id="tableSummary"></div>
+ <div class="tgrid" id="tableCards"></div>
+ <div class="two" style="margin-top:12px">
+  <div class="card"><h2>조리 구역 <span class="mute">로봇팔 2대 · 받는 곳</span></h2><div class="body" id="cookZone"></div></div>
+  <div class="card"><h2>주문 · 조리 현황
+    <div class="filters"><button class="tog on" data-orders="open" type="button">진행 중</button>
+     <button class="tog" data-orders="done" type="button">완료</button></div></h2>
+   <div class="body"><div class="flow" style="margin:0 0 8px">접수 → 조리 → 서빙 준비 → 서빙 → 완료</div>
+    <table id="orders"></table></div></div>
+ </div>
+</section>
+
+<!-- A3 알람·이력: 알람 목록과 상세, 운영 이력 조회(/api/events) -->
+<section id="tab-alarms" hidden>
+ <div class="two">
+  <div>
+   <div class="card"><h2>알람 <span class="mute" id="alarmSub"></span>
+     <div class="filters" id="alarmFilter">
+      <button class="tog on" data-level="" type="button">전체</button>
+      <button class="tog" data-level="error" type="button">오류</button>
+      <button class="tog" data-level="warn" type="button">경고</button>
+      <button class="tog" data-level="info" type="button">정보</button></div></h2>
+    <div id="alarmList"></div></div>
+  </div>
+  <div class="card"><div class="body" id="alarmDetail"></div></div>
+ </div>
+ <div class="card"><h2>운영 이력 조회 <span class="mute" id="histInfo"></span>
+   <div class="filters">
+    <select id="histKind" aria-label="작업 유형">
+     <option value="main">주요 (통행 제외)</option><option value="guide">안내</option><option value="order">주문 · 조리</option>
+     <option value="task">AMR 임무</option><option value="traffic">통행 · 경로 계획</option><option value="fail">오류 · 중단</option>
+     <option value="all">전체</option></select>
+    <!-- [수정 2026-11-17] UR-22: 기간과 처리 결과로 조회 -->
+    <select id="histResult" aria-label="처리 결과">
+     <option value="">결과 전체</option><option value="ok">성공 · 완료</option><option value="fail">실패 · 중단</option>
+     <option value="cancel">취소</option></select>
+    <label class="mute small">기간 <input type="datetime-local" id="histFrom" aria-label="시작"></label>
+    <label class="mute small">~ <input type="datetime-local" id="histTo" aria-label="끝"></label>
+    <button class="btn sm" id="histClear" type="button" title="기간을 비우고 현재 실행만 조회">기간 지움</button>
+    <button class="btn sm" id="histLoad" type="button">조회</button></div></h2>
+  <div class="body" style="padding:4px 8px;max-height:420px;overflow:auto"><table id="history"></table></div>
+ </div>
+</section>
+
+<!-- 설정: 스케줄러·플래너 교체, 대기 위치 사용, 관제 지표 -->
+<section id="tab-settings" hidden>
+ <div class="two">
+  <div class="card"><h2>알고리즘 (실행 중 교체)</h2><div class="body">
+   <div class="row"><label>스케줄러 <select id="sch"></select></label><label>경로 계획 <select id="pln"></select></label></div>
+   <label class="row" style="margin-top:10px"><input type="checkbox" id="sb"> 대기 위치 사용 (한 대는 충전대, 나머지는 조리 구역 옆 대기)</label>
+   <div class="mute small" id="algd" style="margin-top:10px"></div></div></div>
+  <div class="card"><h2>관제 지표</h2><div class="body" style="padding:4px 8px"><table id="met"></table></div></div>
+ </div>
+</section>
+</main>
+<script src="/static/map.js"></script><script src="/static/ui.js"></script><script>
+const $id = id => document.getElementById(id);
+// 자주 쓰는 요소
+const cv = $id('cv'), mapSelect = $id('mapSelect'), mapStatus = $id('mapStatus');
+const moveForm = $id('vertexMove'), moveRobot = $id('moveRobot'), moveVertex = $id('moveVertex');
+const mapStations = $id('mapStations'), stationList = $id('stationList');
+// 화면 상태. L: 가상 매장 도면, catalog: /api/maps 응답, selectedMap:
+// 고른 실측 지도(가상 매장이면 null), loadedMap: 다 불러온 지도 id,
+// lastState: 마지막 /api/state, filled: 알고리즘 선택 상자를 채웠는지
+let L = null, catalog = null, selectedMap = null, loadedMap = null, lastState = {}, filled = false;
+// selected: 고른 장치 id, alarmSel: 고른 알람 키
+let selected = '', showRoute = true, showNode = true, ordersTab = 'open', alarmLevel = '', alarmSel = '';
+// 관제 상태의 now 가 마지막으로 바뀐 때(연결 표시용), 웹 서비스 응답 여부
+let lastFleetNow = 0, lastFleetSeen = 0, webOk = true;
+
+// ---- 탭
+// 탭 하나만 보이게 함. 주소의 #이름 으로 고름
+function showTab(name) {
+  if (!$id('tab-' + name)) name = 'monitor';
+  document.querySelectorAll('main>section').forEach(s => { s.hidden = s.id !== 'tab-' + name; });
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  if (name === 'alarms') loadHistory();
+  if (name === 'monitor') showMap();
+}
+// 탭 버튼은 주소의 # 만 바꾸고, hashchange 가 탭을 바꿈
+$id('tabs').addEventListener('click', e => {
+  const button = e.target.closest('button');
+  if (button) location.hash = button.dataset.tab;
+});
+addEventListener('hashchange', () => showTab(location.hash.slice(1)));
+
+// ---- 명령
+// 명령 결과 알림(5초 동안)
+function toast(ok, message) {
+  const el = $id('toast');
+  el.textContent = (ok ? '✔ ' : '✖ ') + message;
+  el.className = ok ? 'ok' : 'bad';
+  el.style.display = 'block';
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+// [수정 2026-11-17] D6: 관제 PC 가 아닌 기기는 관리자 토큰(X-Admin-Token)을
+// 함께 보냄. 서버가 토큰을 요구하면(need_token) 한 번 물어 이 브라우저에 저장
+async function admPost(body) {
+  const headers = {'Content-Type': 'application/json'};
+  const token = localStorage.getItem('frybotAdminToken');
+  if (token) headers['X-Admin-Token'] = token;
+  // [수정 2026-11-25] I/F 정의서 v0.2 경로: /api/admin -> /api/admin/operations
+  const res = await fetch(API + '/api/admin/operations',
+    {method: 'POST', headers, body: JSON.stringify(body)});
+  return res.json();
+}
+// 관리자 명령 보내기(POST /api/admin/operations). 토큰이 필요하면 한 번 묻고 다시 보냄
+async function adm(command, target, arg) {
+  try {
+    const body = {command, target, arg: arg || ''};
+    let r = await admPost(body);
+    if (r.need_token) {
+      const token = prompt('관리자 토큰을 입력하세요 (실행할 때 정한 admin_token)');
+      if (token) {
+        localStorage.setItem('frybotAdminToken', token);
+        r = await admPost(body);
+      }
+    }
+    toast(r.ok, r.message);
+  } catch (error) {
+    toast(false, '웹 서비스에 연결할 수 없습니다.');
+  }
+}
+// 화면이 0.5초마다 다시 그려져 click(누름+뗌)이 사라질 수 있으므로 누르는 순간에 명령을 보낸다
+let lastPress = 0;
+// data-cmd 버튼 공통 처리. 누를 때 보낸 뒤 0.8초 안의 click 은 무시,
+// data-confirm 이 있으면 먼저 확인
+function onCommand(e) {
+  const button = e.target.closest('[data-cmd]');
+  if (!button || button.disabled) return;
+  if (e.type === 'click' && Date.now() - lastPress < 800) return;
+  if (e.type === 'pointerdown') lastPress = Date.now();
+  if (button.dataset.confirm && !confirm(button.dataset.confirm)) return;
+  adm(button.dataset.cmd, button.dataset.target, button.dataset.arg);
+}
+document.addEventListener('pointerdown', onCommand);
+document.addEventListener('click', onCommand);
+// 관리자 명령 버튼 마크업(data-cmd, data-target, data-arg, data-confirm)
+const cmdBtn = (label, cmd, target, arg, cls, ask) =>
+  '<button class="btn ' + (cls || '') + '" type="button" data-cmd="' + cmd + '" data-target="' + esc(target) +
+  '" data-arg="' + esc(arg || '') + '"' + (ask ? ' data-confirm="' + esc(ask) + '"' : '') + '>' + label + '</button>';
+
+// ---- 지도 (기존 지도 선택 · 노드 이동 명령을 그대로 유지)
+// 고른 지도를 그림. 관제가 쓰는 지도면 로봇도 그리고, 실측 지도면
+// 연결된 로봇의 이동 명령 양식을 보임
+function showMap() {
+  if (!catalog || loadedMap !== mapSelect.value) return;
+  const active = catalog.active === mapSelect.value;
+  mapStatus.textContent = active ? '관제 사용 중' : '미리보기';
+  const opt = {theme: 'dark', selected, showRoute, showNodes: showNode};
+  cv.classList.toggle('measured', !!selectedMap);
+  if (selectedMap) drawMeasuredMap(cv, selectedMap, active ? lastState : {}, opt);
+  else drawStore(cv, L, active ? lastState : {}, opt);
+  const fleet = lastState.fms || {};
+  const available = (fleet.robots || []).filter(robot => robot.online);
+  moveForm.hidden = !(active && selectedMap && available.length && fleet.map_id === catalog.active);
+  if (fleet.map_id === catalog.active && !moveForm.hidden) {
+    const previous = moveRobot.value;
+    if (Array.from(moveRobot.options).map(option => option.value).join() !== available.map(robot => robot.id).join()) {
+      moveRobot.replaceChildren(...available.map(robot => new Option(robot.id, robot.id)));
+      if (available.some(robot => robot.id === previous)) moveRobot.value = previous;
+    }
+  }
+}
+// 실측 지도의 운영 지점(stations-<map_id>.json) 목록 표시
+function showStations(stations) {
+  mapStations.hidden = !stations.length;
+  stationList.replaceChildren(...stations.map(station => {
+    const item = document.createElement('li');
+    const node = document.createElement('strong');
+    node.textContent = station.node;
+    node.style.color = stationColor(station.role);
+    item.append(node, ' ' + station.label);
+    return item;
+  }));
+}
+// 고른 지도 불러오기: 실측 지도는 /api/map 의 그림·노드와 운영 지점,
+// 가상 매장(id 빈 문자열)은 도면(L)으로 그림
+async function selectMap() {
+  const id = mapSelect.value;
+  mapStatus.textContent = '지도 불러오는 중';
+  moveForm.hidden = true;
+  showStations([]);
+  loadedMap = null;
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  try {
+    const data = id ? await getJSON('/api/map?id=' + encodeURIComponent(id)) : null;
+    if (data && !data.image) throw new Error(data.message);
+    if (data) {
+      const image = new Image();
+      image.src = data.image;
+      const stationRequest = fetch(API + '/static/stations-' + encodeURIComponent(id) + '.json')
+        .then(response => response.ok ? response.json() : []).catch(() => []);
+      const [, stations] = await Promise.all([image.decode(), stationRequest]);
+      data.stations = stations.filter(station => Object.hasOwn(data.nodes, station.node));
+      data.bitmap = image;
+    }
+    if (mapSelect.value !== id) return;
+    selectedMap = data;
+    loadedMap = id;
+    const stations = data?.stations || [];
+    const stationNames = new Map(stations.map(station => [station.node, station.label]));
+    showStations(stations);
+    moveVertex.replaceChildren(new Option('선택', ''),
+      ...Object.keys(data?.nodes || {}).map(vertex => {
+        const station = stationNames.get(vertex);
+        return new Option(station ? vertex + ' · ' + station : vertex, vertex);
+      }));
+    showMap();
+  } catch (error) {
+    if (mapSelect.value === id) mapStatus.textContent = error.message || '지도를 불러올 수 없습니다.';
+  }
+}
+mapSelect.addEventListener('change', selectMap);
+// 이동 명령: MOVE_TO_VERTEX(로봇, 목적 노드). 관제가 쓰는 지도일 때만
+moveForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!catalog || mapSelect.value !== catalog.active || !moveVertex.value || moveForm.hidden) return;
+  const button = moveForm.querySelector('button');
+  button.disabled = true;
+  try { await adm('MOVE_TO_VERTEX', moveRobot.value, moveVertex.value); }
+  finally { button.disabled = false; }
+});
+// 경로·노드 표시 켜기/끄기
+$id('togRoute').addEventListener('click', e => { showRoute = !showRoute; e.target.classList.toggle('on', showRoute); showMap(); });
+$id('togNode').addEventListener('click', e => { showNode = !showNode; e.target.classList.toggle('on', showNode); showMap(); });
+// [수정 2026-11-17] T-27: 지도 목록을 페이지를 열 때 한 번만 받아, 관제를 다른
+// 지도로 다시 띄우면 "관제 사용 중" 판정이 어긋나 로봇이 지도에 나오지 않았음.
+// 다시 받는 함수로 묶어 새로고침 버튼과 실행 변경 감지(tick)에서 함께 씀
+let catalogRun = '', catalogTried = 0, catalogBusy = false;
+// 도면(/api/layout)과 지도 목록(/api/maps)을 받고 관제의 지도를 고름
+async function loadCatalog() {
+  if (catalogBusy) return;
+  catalogBusy = true;
+  catalogTried = Date.now();
+  mapStatus.textContent = '지도 목록 불러오는 중';
+  try {
+    const [layout, maps] = await Promise.all([getJSON('/api/layout'), getJSON('/api/maps')]);
+    L = layout;
+    catalog = maps;
+    mapSelect.replaceChildren(...maps.maps.map(map => new Option(map.label, map.id)));
+    mapSelect.value = catalog.active;
+    await selectMap();
+  } catch (error) {
+    mapStatus.textContent = '지도 목록을 불러올 수 없습니다.';
+  } finally {
+    catalogBusy = false;
+  }
+}
+// 새로고침 버튼: 지도 목록과 상태를 바로 다시 받음
+$id('mapReload').addEventListener('click', async e => {
+  e.target.disabled = true;
+  try { await loadCatalog(); await tick(); }
+  finally { e.target.disabled = false; }
+});
+// 실행(run_id)이 바뀌었거나, 관제가 쓰는 지도가 화면이 아는 것과 다르거나,
+// 처음에 목록을 받지 못했으면 3초 간격으로 다시 받음
+function checkCatalog(S) {
+  const run = (S.rest || {}).run_id || '', fleet = S.fms || {};
+  const changed = run && catalogRun && run !== catalogRun;
+  const mismatch = catalog && fleet.map_id !== undefined && fleet.map_id !== catalog.active;
+  if (run) catalogRun = run;
+  if ((changed || mismatch || !catalog) && Date.now() - catalogTried > 3000) loadCatalog();
+}
+// 페이지를 열 때 한 번 받음
+loadCatalog();
+
+// ---- 공통 계산
+// 배터리 막대(20% 미만 crit, 40% 미만 low)
+const batteryBar = pct => '<div class="bar"><i class="' + (pct < 20 ? 'crit' : pct < 40 ? 'low' : '') +
+  '" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>';
+// 임무 대상 문구('3번 · 주문 #2 · 메뉴'). MOVE 는 '노드 이동'
+function taskTarget(t) {
+  if (!t) return '';
+  const menu = t.menu ? ' · ' + (((lastState.rest || {}).menu || {})[t.menu] || {name: t.menu}).name : '';
+  if (t.type === 'MOVE') return '노드 이동';
+  return (t.table ? t.table + '번' : '—') + (t.order ? ' · 주문 #' + t.order : '') + menu;
+}
+// 장치 목록의 로봇 한 줄 설명(임무, 복귀 중, 충전대, 대기 위치, 임무 없음)
+function robotTaskLine(r, tasks) {
+  const t = tasks.find(x => x.id === r.task);
+  if (t) return (TASK_KO[t.type] || t.type) + ' · ' + taskTarget(t);
+  if (r.state === 'RETURNING') return '복귀 중';
+  return r.charging ? '충전대' : (r.state === 'STANDBY' ? '대기 위치' : '임무 없음');
+}
+// 메뉴 코드 → 메뉴 이름(식당 상태의 menu)
+const menuName = code => (((lastState.rest || {}).menu || {})[code] || {name: code}).name;
+// 조리 팔: [장치 id, 팔 자원, 표시 이름, 조리 기구 자원(튀김기·웍)].
+// 자원 이름은 관제 cooking.resources 의 키
+const ARMS = [['cook_arm_a', 'ARM_A', '튀김 로봇팔', 'FRYER'], ['cook_arm_b', 'ARM_B', '웍 로봇팔', 'WOK']];
+// 조리 팔 하나의 상태(장치 보고, 맡은 조리 작업, 작업 중, 오류)
+function armInfo(F, arm) {
+  const C = F.cooking || {}, device = (C.arms || {})[arm[0]] || {};
+  const owner = (C.resources || {})[arm[1]] || (C.resources || {})[arm[3]];
+  const job = (C.jobs || []).find(j => j.task === owner);
+  const busy = !!owner || (device.state && device.state !== 'IDLE');
+  return {id: arm[0], label: arm[2], device, job, busy,
+          error: device.error_code && device.error_code !== 'ERR_000'};
+}
+// 알람 목록 만들기: 보류된 임무(incidents), 로봇 연결 끊김·비상 정지·
+// 일시 중단·오류·노드 이탈·배터리 부족·부착 팔 오류, 조리 팔 오류.
+// 미해결이 먼저, 그다음 최근 것이 먼저
+function buildAlarms(S) {
+  const R = S.rest || {}, F = S.fms || {}, out = [];
+  // [수정 2026-11-17] UR-18: 관리자가 일시 중단한 임무는 오류가 아닌 경고
+  (R.incidents || []).forEach((i, n) => out.push({
+    key: 'inc' + n + i.task, level: i.resolved ? 'info' : i.reason === 'PAUSED' ? 'warn' : 'error', time: i.t,
+    device: i.robot ? amrLabel(i.robot) : (TASK_KO[i.type] || i.type || '시스템'), code: i.reason || 'SUSPENDED',
+    // [수정 2026-11-18] W8-3: 길 막힘으로 보류된 임무의 사유를 문구로 보임
+    msg: (TASK_KO[i.type] || i.type || '') + ' 임무 ' + i.task + ' 중단' +
+      (i.reason === 'PLAN_FAIL' ? ' (20초 넘게 길이 막힘)' : '') +
+      (i.resolved ? ' → ' + ({RESUMED: '재개됨', REASSIGNED: '재할당됨', CANCELED: '취소됨'}[i.resolved] || i.resolved) : ' — 복구 대기'),
+    task: i.task, robot: i.robot, open: !i.resolved}));
+  (F.robots || []).forEach(r => {
+    // [수정 2026-11-17] UR-19: 발생 시각은 관제가 기록한 이상 시작 시각
+    // (fault_since). 예전에는 현재 시각이 찍혔음
+    const since = r.fault_since || {};
+    const base = {device: amrLabel(r.id), robot: r.id, task: r.task, open: true};
+    const add = (kind, key, level, code, msg) => out.push({...base, time: since[kind] || F.now, key: key + r.id, level, code, msg});
+    if (!r.online) add('OFFLINE', 'off', 'error', 'OFFLINE', '상태 수신 없음 (로봇 연결 확인)');
+    else if (r.state === 'E_STOP') add('E_STOP', 'es', 'error', 'E_STOP', '비상 정지 상태 — 재개 명령 필요');
+    else if (r.state === 'PAUSED') add('PAUSED', 'pa', 'warn', 'PAUSED', '일시 중단 상태 — 재개 명령 필요');
+    else if (r.error) add('ERROR', 'err', 'error', r.error, '로봇 오류 보고: ' + r.error);
+    if (r.online && r.off_node) add('OFF_NODE', 'on', 'warn', 'OFF_NODE', '주행 노드에서 벗어나 있음 — 다음 이동 때 가까운 노드로 복귀');
+    if (r.online && r.battery < 20 && !r.charging) add('LOW_BATTERY', 'bat', 'warn', 'LOW_BATTERY', '배터리 ' + r.battery + '%');
+    // [수정 2026-11-17] UR-17, 19: 부착 로봇팔이 보고한 오류
+    if (r.arm && r.arm.error) add('ARM_ERROR', 'sarm', 'error', r.arm.error, '부착 로봇팔 오류 보고: ' + r.arm.error);
+  });
+  ARMS.forEach(arm => {
+    const a = armInfo(F, arm);
+    if (a.error) out.push({key: 'arm' + a.id, level: 'error', time: a.device.since || F.now, device: a.label, code: a.device.error_code,
+                           msg: (a.device.ko || '로봇팔 오류') + (a.device.error ? ' · ' + a.device.error : ''), open: true});
+  });
+  return out.sort((a, b) => (b.open - a.open) || (b.time - a.time));
+}
+// 알람 등급 → [표시 이름, 배지 클래스]
+const LEVEL = {error: ['오류', 'b-bad'], warn: ['경고', 'b-warn'], info: ['정보', 'b-mute']};
+// 알람 한 줄 마크업. pick 이면 눌러서 고를 수 있음
+const alarmRow = (a, pick) => '<div class="alarm' + (pick ? ' pick' : '') + (pick && a.key === alarmSel ? ' sel' : '') +
+  '" data-alarm="' + esc(a.key) + '"><div class="r1"><span class="badge ' + LEVEL[a.level][1] + '">' + LEVEL[a.level][0] +
+  '</span><b>' + esc(a.device) + '</b><span>' + esc(a.code) + '</span><span style="margin-left:auto">' +
+  (a.time ? clock(a.time) : '') + '</span></div><div>' + esc(a.msg) + '</div></div>';
+
+// ---- A1 통합 관제
+// A1 그리기: 요약 줄, 장치 목록(로봇·조리 팔), 임무 큐(진행 중 + 최근
+// 끝난 4건), 상세, 최근 알람 3건
+function renderMonitor(S) {
+  const R = S.rest || {}, F = S.fms || {}, robots = F.robots || [], tasks = F.tasks || [];
+  const count = {};
+  robots.forEach(r => { const c = robotCat(r); count[c] = (count[c] || 0) + 1; });
+  const arms = ARMS.map(arm => armInfo(F, arm));
+  const tables = R.tables || [], amrTasks = tasks.filter(t => t.type !== 'COOK');
+  const cell = (cat) => '<span class="c"><i style="color:' + CAT[cat].map + '">●</i>' + CAT[cat].ko + ' ' + (count[cat] || 0) + '</span>';
+  $id('summary').innerHTML =
+    '<div class="grp"><b>AMR ' + robots.length + '대</b>' + ['guide', 'serve', 'work', 'idle', 'charge', 'hold', 'error', 'late'].map(cell).join('') + '</div>' +
+    '<div class="grp"><b>로봇팔 ' + arms.length + '대</b><span class="c"><i style="color:#2DD4BF">●</i>조리 ' + arms.filter(a => a.busy).length +
+    '</span><span class="c"><i>●</i>대기 ' + arms.filter(a => !a.busy).length + '</span></div>' +
+    '<div class="grp"><b>테이블 ' + tables.filter(t => t.state !== 'AVAILABLE').length + '/' + tables.length + ' 이용</b>' +
+    '<span class="c">안내 중 ' + tables.filter(t => t.state === 'ASSIGNED').length + '</span>' +
+    '<span class="c">정리 대기 ' + tables.filter(t => t.state === 'COLLECTING').length + '</span>' +
+    '<span class="c">대기 임무 ' + amrTasks.filter(t => t.state === 'PENDING').length + '</span></div>';
+  $id('listCount').textContent = '수신 ' + (robots.filter(r => r.online).length + arms.length) + ' / ' + (robots.length + arms.length);
+  if (selected && !robots.some(r => r.id === selected) && !arms.some(a => a.id === selected)) selected = '';
+  if (!selected && robots.length) selected = robots[0].id;
+  $id('devList').innerHTML = robots.map(r => {
+    const cat = CAT[robotCat(r)];
+    return '<div class="dev' + (r.id === selected ? ' sel' : '') + '" data-dev="' + esc(r.id) + '"><div class="r1"><b>' + amrLabel(r.id) +
+      '</b><span class="mute small">' + esc(r.id) + '</span><span class="badge" style="margin-left:auto;background:' + cat.bg + ';color:' + cat.fg + '">' +
+      cat.ko + '</span></div><div class="r1">' + batteryBar(r.battery) + '<span class="small">' + Math.round(r.battery) + '%' + (r.charging ? ' ⚡' : '') +
+      '</span></div><div class="task">' + esc(robotTaskLine(r, tasks)) + '</div></div>';
+  }).join('') + arms.map(a =>
+    '<div class="dev' + (a.id === selected ? ' sel' : '') + '" data-dev="' + a.id + '"><div class="r1"><b>' + a.label + '</b><span class="badge ' +
+    (a.error ? 'b-bad' : a.busy ? 'b-ok' : 'b-mute') + '" style="margin-left:auto">' + (a.error ? '오류' : a.busy ? '조리 중' : '대기') +
+    '</span></div><div class="task">' + esc(a.job ? a.job.task + ' · ' + menuName(a.job.menu) + ' · ' + a.job.step : (a.device.ko || '')) + '</div></div>').join('') ||
+    '<div class="empty">관제에서 받은 장치가 없습니다.</div>';
+
+  const open = amrTasks.filter(t => t.state === 'PENDING' || t.state === 'IN_PROGRESS' || t.state === 'SUSPENDED');
+  $id('queueCount').textContent = '수행 ' + open.filter(t => t.state === 'IN_PROGRESS').length + ' · 대기 ' +
+    open.filter(t => t.state === 'PENDING').length + ' · 중단 ' + open.filter(t => t.state === 'SUSPENDED').length;
+  const recentDone = amrTasks.filter(t => !open.includes(t)).slice(-4).reverse();
+  const stateCls = {IN_PROGRESS: 'b-ok', PENDING: 'b-warn', SUSPENDED: 'b-bad', DONE: 'b-mute', CANCELED: 'b-mute'};
+  $id('queue').innerHTML = '<tr><th>임무</th><th>유형</th><th>대상</th><th>배정</th><th>상태</th><th>경과</th><th></th></tr>' +
+    (open.slice().reverse().concat(recentDone).map(t => '<tr><td>' + esc(t.id) + '</td><td>' + (TASK_KO[t.type] || t.type) + '</td><td>' +
+      esc(taskTarget(t)) + '</td><td>' + (t.robot ? amrLabel(t.robot) : '—') + '</td><td><span class="badge ' + (stateCls[t.state] || 'b-mute') + '">' +
+      (TASK_STATE_KO[t.state] || t.state) + '</span> <span class="mute small">' + esc(t.state === 'PENDING' && !t.robot ? '가용 AMR 대기' : t.reason || '') +
+      '</span></td><td>' + mmss(t.age) + '</td><td><div class="btnrow">' +
+      (t.state === 'SUSPENDED' ? cmdBtn('재시도', 'RETRY_TASK', t.id, '', 'sm') + cmdBtn('재할당', 'REASSIGN', t.id, '', 'sm') : '') +
+      (t.state === 'SUSPENDED' || t.state === 'PENDING' ? cmdBtn('취소', 'CANCEL_TASK', t.id, 'admin', 'sm danger', t.id + ' 임무를 취소할까요?') : '') +
+      '</div></td></tr>').join('') || '<tr><td colspan="7" class="mute">임무가 없습니다.</td></tr>');
+
+  renderDetail(S, robots, arms, tasks);
+  const alarms = buildAlarms(S);
+  $id('recent').innerHTML = alarms.slice(0, 3).map(a => alarmRow(a, false)).join('') || '<div class="empty">알람 없음</div>';
+}
+// 고른 장치의 상세: 조리 팔이면 작업·오류, 로봇이면 상태·위치·임무 단계와
+// 명령 버튼(재시도·재할당, 홈 복귀, 일시 중단, 재개, 비상 정지)
+function renderDetail(S, robots, arms, tasks) {
+  const el = $id('detail'), r = robots.find(x => x.id === selected), a = arms.find(x => x.id === selected);
+  if (a) {
+    el.innerHTML = '<h2 style="margin:0;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)">' + a.label +
+      ' <span class="mute small" style="font-weight:400">' + a.id + '</span></h2><div class="body"><div class="detail-title">' +
+      (a.error ? '오류' : a.busy ? '조리 중' : '대기') + '</div><dl class="kv"><div><dt>기기 상태</dt><dd>' + esc(a.device.code || '') + ' ' + esc(a.device.ko || '') +
+      '</dd></div><div><dt>오류 코드</dt><dd>' + esc(a.device.error_code || '—') + '</dd></div><div><dt>조리 임무</dt><dd>' + esc(a.job ? a.job.task : '—') +
+      '</dd></div><div><dt>단계</dt><dd>' + esc(a.job ? a.job.step + (a.job.retries ? ' (재조리 ' + a.job.retries + ')' : '') : '—') + '</dd></div></dl></div>';
+    return;
+  }
+  if (!r) { el.innerHTML = '<div class="empty">목록에서 장치를 고르세요.</div>'; return; }
+  const cat = CAT[robotCat(r)], t = tasks.find(x => x.id === r.task);
+  const steps = t ? STEPS[t.type] : null, now = steps ? steps.findIndex(s => s[0] === r.state) : -1;
+  const goal = r.route && r.route.length ? r.route[r.route.length - 1] : (r.heading || r.node);
+  el.innerHTML = '<h2 style="margin:0;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)"><span class="badge" style="background:' +
+    cat.map + ';color:#fff;font-weight:700;margin-right:8px">' + robotNo(r.id) + '</span>' + amrLabel(r.id) + ' <span class="mute small" style="font-weight:400">' +
+    esc(r.id) + ' · ' + (r.online ? '수신 중' : '수신 없음') + '</span></h2><div class="body"><div class="detail-title" style="color:' + cat.fg + '">' +
+    (ROBOT_KO[r.state] || r.state) + (r.blocked_by ? ' <span class="badge b-mute">대기 ← ' + amrLabel(r.blocked_by) + '</span>' : '') +
+    (r.yield_to ? ' <span class="badge b-warn">양보 → ' + esc(r.yield_to) + '</span>' : '') +
+    (r.off_node ? ' <span class="badge b-warn">노드 이탈</span>' : '') + '</div><dl class="kv">' +
+    '<div><dt>목적지</dt><dd>' + esc(goal || '—') + (t && t.table ? ' (' + t.table + '번 테이블)' : '') + '</dd></div>' +
+    '<div><dt>임무 · 주문</dt><dd>' + esc(t ? t.id + (t.order ? ' · #' + t.order : '') : '—') + '</dd></div>' +
+    '<div><dt>위치 x · y · θ</dt><dd>' + r.x.toFixed(2) + ' · ' + r.y.toFixed(2) + ' · ' + Math.round(r.yaw * 180 / Math.PI) + '°</dd></div>' +
+    // [수정 2026-11-20] T-53: 누적 주행 거리(dist) 대신 현재 경로의 남은 거리
+    '<div><dt>남은 거리 · 배터리</dt><dd>' + (r.route && r.route.length && r.remaining != null ? r.remaining.toFixed(2) + ' m' : '—') + ' · ' + Math.round(r.battery) + '%' + (r.charging ? ' ⚡' : '') + '</dd></div>' +
+    // [수정 2026-11-20] T-53: 누적 주행 거리(snapshot dist, 관제가 받은 위치 보고의 합)
+    '<div><dt>누적 주행 거리</dt><dd>' + (r.dist || 0).toFixed(2) + ' m</dd></div>' +
+    '<div><dt>현재 노드</dt><dd>' + esc(r.heading ? r.node + ' → ' + r.heading : r.node) + '</dd></div>' +
+    '<div><dt>기기 상태</dt><dd>' + esc(r.device ? r.device.code + ' ' + r.device.ko : '—') +
+    (r.device && r.device.error_code !== 'ERR_000' ? ' · ' + esc(r.device.error_code) : '') + '</dd></div>' +
+    // [수정 2026-11-17] UR-17: 부착 로봇팔의 작업·오류 상태
+    '<div><dt>부착 로봇팔</dt><dd>' + esc(r.arm ? (ARM_KO[r.arm.state] || r.arm.state) + (r.arm.job ? ' · ' + r.arm.job : '') +
+      (r.arm.error ? ' · 오류 ' + r.arm.error : '') + (r.arm.reported ? '' : ' (보고 없음)') : '—') + '</dd></div>' +
+    // [수정 2026-11-17] UR-21: 충전 위치 복귀, 충전 여부, 임무 가용 여부
+    '<div><dt>충전 위치</dt><dd>' + (r.at_home ? '복귀 완료' : r.state === 'RETURNING' ? '복귀 중' : '벗어나 있음') + '</dd></div>' +
+    '<div><dt>충전</dt><dd>' + (r.charging ? '충전 중 ⚡' : '충전 중 아님') + '</dd></div>' +
+    '<div><dt>임무 가용</dt><dd>' + (r.available ? '가능' : '불가 · ' + esc(UNAVAILABLE_KO[r.unavailable_reason] || r.unavailable_reason || '')) +
+      (r.unavailable_reason === 'LOW_BATTERY' ? ' (' + (S.fms || {}).min_battery + '% 미만)' : '') + '</dd></div></dl>' +
+    '<div class="mute small" style="margin:16px 0 8px">임무 단계</div>' +
+    (steps ? '<ul class="steps">' + steps.map((s, i) => '<li class="' + (now < 0 ? '' : i < now ? 'done' : i === now ? 'now' : '') + '"><i></i>' + s[1] +
+      (i === now ? '<span>진행 중</span>' : '') + '</li>').join('') + '<li class="' + (r.state === 'RETURNING' ? 'now' : '') + '"><i></i>복귀 · 대기 위치</li></ul>' +
+      (now < 0 && t ? '<div class="note" style="margin-top:8px">현재 상태: ' + (ROBOT_KO[r.state] || r.state) + (t.reason ? ' · ' + esc(t.reason) : '') + '</div>' : '')
+      : '<div class="mute small">' + (r.state === 'RETURNING' ? '복귀 중' : '진행 중인 임무 없음') + '</div>') +
+    '<div class="btnrow" style="margin-top:16px">' +
+    (t && t.state === 'SUSPENDED' ? cmdBtn('재시도', 'RETRY_TASK', t.id) + cmdBtn('재할당', 'REASSIGN', t.id) : '') +
+    // [수정 2026-11-17] 홈 복귀 버튼(연결되고 비상 정지가 아닐 때)
+    // [수정 2026-11-17] UR-18: 일시 중단 / 재개
+    (r.online && r.state !== 'E_STOP' && r.state !== 'PAUSED' ? cmdBtn('홈 복귀', 'GO_HOME', r.id, 'admin') +
+      cmdBtn('일시 중단', 'PAUSE', r.id, 'admin') : '') +
+    (r.state === 'E_STOP' || r.state === 'PAUSED' ? cmdBtn('재개', 'RESUME', r.id, '', 'primary') : '') +
+    (r.state === 'E_STOP' ? '' : cmdBtn('비상 정지', 'ESTOP', r.id, 'admin', 'danger')) + '</div></div>';
+}
+// 장치 목록에서 고르기
+$id('devList').addEventListener('click', e => {
+  const row = e.target.closest('[data-dev]');
+  if (row) { selected = row.dataset.dev; render(lastState); showMap(); }
+});
+
+// ---- A2 테이블 · 주문 · 조리
+// A2 그리기: 테이블 요약·카드(상태별 명령 버튼), 조리 구역, 주문 목록
+// (진행 중/완료 최근 12건)
+function renderTables(S) {
+  const R = S.rest || {}, F = S.fms || {}, tables = R.tables || [], visits = {}, now = R.now || 0;
+  (R.visits || []).forEach(v => { visits[v.id] = v; });
+  const n = st => tables.filter(t => st.includes(t.state)).length;
+  $id('tableSummary').innerHTML = '<div class="grp"><b>테이블 현황</b><span class="c">이용 가능 ' + n(['AVAILABLE']) + '</span><span class="c">안내 중 ' +
+    n(['ASSIGNED']) + '</span><span class="c">이용 중 ' + n(['IN_USE', 'VACANT_CHECK']) + '</span><span class="c">정리 대기 ' + n(['COLLECTING']) +
+    '</span><span class="c">사용 중지 ' + n(['CLOSED']) + '</span></div><div class="grp mute">' + tables.length + '개 테이블 ' + tables.reduce((s, t) => s + t.seats, 0) +
+    '석 · 상태 변경은 관제가 중복 배정 여부를 검사한 뒤 반영합니다</div>';
+  const cls = {AVAILABLE: 'b-mute', ASSIGNED: 'b-blue', IN_USE: 'b-ok', VACANT_CHECK: 'b-warn', COLLECTING: 'b-mute', CLOSED: 'b-bad'};
+  $id('tableCards').innerHTML = tables.map(t => {
+    const v = visits[t.visit], orders = (R.orders || []).filter(o => o.table === t.id && o.visit === t.visit), last = orders[orders.length - 1];
+    let line1 = '비어 있음', line2 = '';
+    if (t.state === 'ASSIGNED' && v) { line1 = v.party + '명 · ' + (v.robot ? amrLabel(v.robot) + ' 안내' : '안내 로봇 대기'); line2 = clock(v.created) + ' 입구 접수'; }
+    else if ((t.state === 'IN_USE' || t.state === 'VACANT_CHECK') && v) {
+      line1 = v.party + '명 · 이용 ' + Math.max(0, Math.round((now - (v.seated || v.created)) / 60)) + '분';
+      line2 = last ? '주문 #' + last.id + ' ' + last.items.map(i => i.name).join(', ') + ' · ' + ko(last.state) : '주문 없음';
+      if (t.state === 'VACANT_CHECK') line2 = '의자 QR로 빈자리 확인 중 · ' + line2;
+    } else if (t.state === 'COLLECTING') { line1 = '이용 종료 · 식기 회수 중'; line2 = '신규 배정 대상에서 제외됨'; }
+    else if (t.state === 'CLOSED') { line1 = '사용 중지'; line2 = '신규 배정 대상에서 제외됨'; }
+    // [수정 2026-11-17] UR-15: 빈 테이블 사용 중지 / 사용 재개
+    const action = t.state === 'AVAILABLE' ? cmdBtn('사용 중지', 'SET_TABLE', t.id, 'CLOSED', '', t.id + '번 테이블을 배정 대상에서 뺄까요?')
+      : t.state === 'CLOSED' ? cmdBtn('사용 재개', 'SET_TABLE', t.id, 'AVAILABLE', 'primary')
+      : t.state === 'COLLECTING' ? cmdBtn('정리 완료 → 이용 가능', 'SET_TABLE', t.id, 'AVAILABLE', 'primary', t.id + '번 테이블을 이용 가능으로 바꿀까요?')
+      : (t.state === 'IN_USE' || t.state === 'VACANT_CHECK') ? cmdBtn('이용 종료', 'END_USE', t.id, '', '', t.id + '번 테이블 이용을 종료할까요?') : '';
+    return '<div class="tcard' + (t.state === 'COLLECTING' ? ' wait' : '') + '"><div class="r1"><b>' + t.id + '번</b><span class="mute small">' + t.seats +
+      '인석</span><span class="badge ' + (cls[t.state] || 'b-mute') + '">' + (TABLE_KO[t.state] || t.state) + '</span></div><div>' + esc(line1) +
+      '</div><div class="l2">' + esc(line2) + '</div>' + action + '</div>';
+  }).join('') || '<div class="empty">테이블 정보를 받지 못했습니다.</div>';
+
+  const C = F.cooking || {}, slots = C.slots || {};
+  $id('cookZone').innerHTML = ARMS.map(arm => {
+    const a = armInfo(F, arm);
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="row"><b>' + a.label + '</b><span class="mute small">' + a.id +
+      '</span><span class="badge ' + (a.error ? 'b-bad' : a.busy ? 'b-ok' : 'b-mute') + '" style="margin-left:auto">' + (a.error ? '오류' : a.busy ? '조리 중' : '대기') +
+      '</span></div><div class="small mute" style="margin-top:4px">' + esc(a.job ? a.job.task + ' · 주문 #' + a.job.order + ' ' + menuName(a.job.menu) + ' · ' + a.job.step +
+      (a.job.retries ? ' (재조리 ' + a.job.retries + ')' : '') : (a.device.code || '') + ' ' + (a.device.ko || '')) + '</div></div>';
+  }).join('') + '<div style="padding:10px 0 0"><div class="row"><b>받는 곳</b><span class="badge ' +
+    ((slots.FRY_PICKUP || 0) + (slots.WOK_PICKUP || 0) ? 'b-warn' : 'b-mute') + '" style="margin-left:auto">' +
+    ((slots.FRY_PICKUP || 0) + (slots.WOK_PICKUP || 0) ? '음식 대기' : '비어 있음') + '</span></div><div class="small mute" style="margin-top:4px">튀김 받는 곳 ' +
+    (slots.FRY_PICKUP || 0) + '개 · 볶음밥 받는 곳 ' + (slots.WOK_PICKUP || 0) + '개' +
+    ((C.jobs || []).length ? ' · 조리 대기·진행 ' + C.jobs.length + '건' : '') + '</div></div>';
+
+  const done = o => o.state === 'COMPLETED' || o.state === 'CANCELED';
+  const list = (R.orders || []).filter(o => ordersTab === 'done' ? done(o) : !done(o)).slice(-12).reverse();
+  $id('orders').innerHTML = '<tr><th>주문</th><th>테이블</th><th>경과</th><th>음식별 진행</th></tr>' + (list.map(o => '<tr><td>#' + o.id + '</td><td>' + o.table +
+    '번</td><td>' + mmss(o.age) + '</td><td>' + o.items.map(i => {
+      const stage = ITEM_STAGE[i.state];
+      return '<span class="chip ' + (stage === undefined ? 's-hold' : 's' + stage) + '">' + esc(i.name) + ' · ' + (stage === undefined ? ko(i.state) : STAGE_KO[stage]) + '</span>';
+    }).join('') + '</td></tr>').join('') || '<tr><td colspan="4" class="mute">' + (ordersTab === 'done' ? '완료된' : '진행 중인') + ' 주문이 없습니다.</td></tr>');
+}
+// 주문 목록 진행 중/완료 필터
+document.querySelectorAll('[data-orders]').forEach(b => b.addEventListener('click', () => {
+  ordersTab = b.dataset.orders;
+  document.querySelectorAll('[data-orders]').forEach(x => x.classList.toggle('on', x === b));
+  renderTables(lastState);
+}));
+
+// ---- A3 알람 · 이력
+// A3 알람: 미해결 오류 수(탭 배지), 등급 필터 목록, 고른 알람의 상세와
+// 복구 버튼
+function renderAlarms(S) {
+  const all = buildAlarms(S), open = all.filter(a => a.open && a.level === 'error').length;
+  const cnt = $id('alarmCount');
+  cnt.hidden = !open; cnt.textContent = open;
+  $id('alarmSub').textContent = '미해결 오류 ' + open + ' · 전체 ' + all.length;
+  const list = all.filter(a => !alarmLevel || a.level === alarmLevel);
+  $id('alarmList').innerHTML = list.map(a => alarmRow(a, true)).join('') || '<div class="empty">알람 없음</div>';
+  const a = all.find(x => x.key === alarmSel) || list[0];
+  const el = $id('alarmDetail');
+  if (!a) { el.innerHTML = '<div class="mute">선택한 알람이 없습니다.</div>'; return; }
+  const F = S.fms || {}, t = (F.tasks || []).find(x => x.id === a.task), r = (F.robots || []).find(x => x.id === a.robot);
+  el.innerHTML = '<div class="r1 row"><span class="badge ' + LEVEL[a.level][1] + '">' + LEVEL[a.level][0] + '</span><span class="mute">' + esc(a.device) + ' · ' +
+    esc(a.code) + '</span></div><div class="detail-title">' + esc(a.msg) + '</div><dl class="kv">' +
+    '<div><dt>발생 시각</dt><dd>' + (a.time ? clock(a.time) : '—') + '</dd></div><div><dt>장치</dt><dd>' + esc(a.device) + (a.robot ? ' (' + esc(a.robot) + ')' : '') + '</dd></div>' +
+    '<div><dt>관련 임무</dt><dd>' + esc(t ? t.id + ' ' + (TASK_KO[t.type] || t.type) : a.task || '—') + '</dd></div>' +
+    '<div><dt>관련 주문 · 테이블</dt><dd>' + esc(t ? (t.order ? '#' + t.order : '—') + ' · ' + (t.table ? t.table + '번' : '—') : '—') + '</dd></div>' +
+    '<div><dt>임무 상태</dt><dd>' + esc(t ? (TASK_STATE_KO[t.state] || t.state) + (t.reason ? ' · ' + t.reason : '') : '—') + '</dd></div>' +
+    '<div><dt>장치 현재 상태</dt><dd>' + esc(r ? (ROBOT_KO[r.state] || r.state) : '—') + '</dd></div></dl>' +
+    (t && t.state === 'SUSPENDED' ? '<div class="note" style="margin:14px 0">재시도 전 확인: 로봇 주변 장애물 제거 · 음식 용기 위치 · 장치 상태 정상</div><div class="btnrow">' +
+      cmdBtn('재시도', 'RETRY_TASK', t.id, '', 'primary') + cmdBtn('재할당', 'REASSIGN', t.id) +
+      cmdBtn('작업 취소', 'CANCEL_TASK', t.id, 'admin', 'danger', t.id + ' 임무를 취소할까요?') + '</div>' : '') +
+    (r && (r.state === 'E_STOP' || r.state === 'PAUSED') ? '<div class="btnrow" style="margin-top:14px">' + cmdBtn('재개', 'RESUME', r.id, '', 'primary') + '</div>' : '');
+}
+// 알람 고르기, 등급 필터
+$id('alarmList').addEventListener('click', e => {
+  const row = e.target.closest('[data-alarm]');
+  if (row) { alarmSel = row.dataset.alarm; renderAlarms(lastState); }
+});
+$id('alarmFilter').addEventListener('click', e => {
+  const b = e.target.closest('[data-level]');
+  if (!b) return;
+  alarmLevel = b.dataset.level;
+  document.querySelectorAll('#alarmFilter button').forEach(x => x.classList.toggle('on', x === b));
+  renderAlarms(lastState);
+});
+// 이력 조회 종류 → /api/events 의 prefix(포함)·skip(제외) 이벤트 접두어
+const HIST = {
+  main: {skip: 'ZONE_,PLAN,EVT_,ARM_,COOK_STEP,HOME'}, guide: {prefix: 'CHECKIN,SEATED,EVT_AT_START,EVT_ARRIVED,END_USE,TABLE_'},
+  order: {prefix: 'ORDER,COOK_,DONENESS,DELIVERED,EVT_COOKING,EVT_READY,EVT_LOADED,EVT_SERVING,EVT_DELIVERED'},
+  task: {prefix: 'TASK_,EVT_ASSIGNED,EVT_DONE,HOME'}, traffic: {prefix: 'ZONE_,PLAN,YIELD,REPLAN,RETREAT'},
+  fail: {prefix: 'TASK_SUSPEND,PLAN_FAIL,EVT_SUSPENDED,EVT_CANCELED,ESTOP,PAUSE,CHECKIN_REJECT,ROUTE_RETRY,REJOIN'}, all: {}};
+// 운영 이력 조회(최근 300건). 기간을 주면 다른 실행 기록도 함께 찾음
+async function loadHistory() {
+  const q = HIST[$id('histKind').value] || {}, info = $id('histInfo');
+  info.textContent = '불러오는 중';
+  try {
+    // [수정 2026-11-17] UR-22: 기간(유닉스 초)과 처리 결과를 함께 보냄
+    const sec = id => { const v = $id(id).value; return v ? Math.round(new Date(v).getTime() / 1000) : 0; };
+    const since = sec('histFrom'), until = sec('histTo'), result = $id('histResult').value;
+    const data = await getJSON('/api/events?limit=300' + (q.prefix ? '&prefix=' + q.prefix : '') + (q.skip ? '&skip=' + q.skip : '') +
+      (since ? '&since=' + since : '') + (until ? '&until=' + until : '') + (result ? '&result=' + result : ''));
+    if (!data.ok) { info.textContent = data.message || '이력을 불러올 수 없습니다.'; $id('history').innerHTML = ''; return; }
+    info.textContent = (since || until ? '실행 ' + data.runs + '개' : data.run_id) + ' · ' + data.total + '건 중 최근 ' + data.events.length + '건';
+    $id('history').innerHTML = '<tr><th>시각</th><th>이벤트</th><th>임무</th><th>장치</th><th>위치</th><th>결과</th><th>내용</th></tr>' +
+      data.events.slice().reverse().map(e => '<tr><td>' + stamp(+e.timestamp) + '</td><td>' + esc(e.event) + '</td><td>' + esc(e.task_id || (e.order_id ? '#' + e.order_id : '')) +
+        '</td><td>' + esc(e.robot_id ? (/^pinky/.test(e.robot_id) ? amrLabel(e.robot_id) : e.robot_id) : '') + '</td><td>' + esc(e.zone_id) + '</td><td>' + esc(e.result) +
+        '</td><td class="mute">' + esc(e.reason) + '</td></tr>').join('');
+  } catch (error) { info.textContent = '이력을 불러올 수 없습니다.'; }
+}
+// 조회 버튼, 종류·결과 변경, 기간 지움
+$id('histLoad').addEventListener('click', loadHistory);
+$id('histKind').addEventListener('change', loadHistory);
+$id('histResult').addEventListener('change', loadHistory);
+$id('histClear').addEventListener('click', () => { $id('histFrom').value = ''; $id('histTo').value = ''; loadHistory(); });
+
+// ---- 설정 (기존 알고리즘 교체 · 지표)
+// 관제 지표(fms metrics) 키 → 표시 이름
+const MK = {grants: '통행 허가', blocked_wait: '점유 대기(초)', planned_wait: '계획 대기(초)', stalls: '정체 감지', replans: '재계획', retreats: '비켜서기',
+  flips: '우선순위 교환', plan_fail: '계획 실패', plan_calls: '계획 호출', plan_ms: '계획 시간 합(ms)', tasks_done: '완료 임무', yields: '양보(대기·비켜 주기)',
+  rejoins: '노드 복귀', route_retries: '주행 실패 자동 재시도', reassign: '재배정', joint_plans: '공동 계획', joint_fail: '공동 계획 실패'};
+// 알고리즘 교체·대기 위치 사용: 바꾸면 바로 관리자 명령을 보냄
+const sch = $id('sch'), pln = $id('pln'), sb = $id('sb');
+sch.addEventListener('change', () => adm('SET_SCHEDULER', sch.value));
+pln.addEventListener('change', () => adm('SET_PLANNER', pln.value));
+sb.addEventListener('change', () => adm('SET_STANDBY', sb.checked ? 'on' : 'off'));
+// 설정 그리기: 선택 상자는 처음 한 번 채우고, 사용 중이 아니면 현재 값으로
+function renderSettings(S) {
+  const F = S.fms || {}, A = F.algorithms;
+  if (A) {
+    if (!filled) {
+      sch.replaceChildren(...Object.keys(A.schedulers).map(k => new Option(k, k)));
+      pln.replaceChildren(...Object.keys(A.planners).map(k => new Option(k, k)));
+      filled = true;
+    }
+    sb.checked = !!A.standby;
+    if (document.activeElement !== sch) sch.value = A.scheduler;
+    if (document.activeElement !== pln) pln.value = A.planner;
+    $id('algd').innerHTML = esc(A.schedulers[A.scheduler]) + '<br>' + esc(A.planners[A.planner]);
+  }
+  $id('met').innerHTML = Object.entries(F.metrics || {}).map(([k, v]) => '<tr><th>' + (MK[k] || k) + '</th><td>' + v + '</td></tr>').join('');
+}
+
+// ---- 갱신
+// 모든 탭 다시 그리기
+function render(S) { renderMonitor(S); renderTables(S); renderAlarms(S); renderSettings(S); }
+// 연결 표시: 웹 서비스 응답, 관제 상태가 3초 넘게 안 바뀌면 수신 없음
+function renderConn() {
+  const el = $id('conn'), stale = Date.now() - lastFleetSeen > 3000;
+  const state = !webOk ? ['bad', '웹 서비스 끊김'] : !lastFleetSeen ? ['warn', '관제 대기'] : stale ? ['bad', '관제 수신 없음'] : ['ok', '연결됨'];
+  el.innerHTML = '<i class="dot ' + state[0] + '"></i>ROS2 <b>' + state[1] + '</b>';
+  $id('clock').textContent = clock(Date.now() / 1000);
+}
+// 0.5초마다 /api/state 를 받아 화면을 다시 그림
+async function tick() {
+  try {
+    const S = await getJSON('/api/state');
+    webOk = true;
+    const now = (S.fms || {}).now || 0;
+    if (now && now !== lastFleetNow) { lastFleetNow = now; lastFleetSeen = Date.now(); }
+    lastState = S;
+    checkCatalog(S);
+    $id('run').textContent = (S.rest || {}).run_id || '';
+    render(S);
+    if (!$id('tab-monitor').hidden) showMap();
+  } catch (error) { webOk = false; }
+  renderConn();
+}
+// 시작: 주소의 탭을 열고 0.5초마다 갱신
+showTab(location.hash.slice(1) || 'monitor');
+setInterval(tick, 500); tick();
+</script></body></html>

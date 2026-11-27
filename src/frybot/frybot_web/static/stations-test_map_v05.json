@@ -1,0 +1,8 @@
+[
+  {"node": "D1_STOP", "role": "pickup", "label": "음식 픽업 (도킹)"},
+  {"node": "D1_IN", "role": "dock", "label": "도킹 1 접근 (통로 교차점)"},
+  {"node": "B4", "role": "table", "label": "T1 서빙"},
+  {"node": "W1", "role": "waiting", "label": "대기 위치 1"},
+  {"node": "W2", "role": "waiting", "label": "대기 위치 2"},
+  {"node": "W3", "role": "waiting", "label": "대기 위치 3"}
+]

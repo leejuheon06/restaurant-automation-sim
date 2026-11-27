@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>frybot_arm</name>
+  <version>0.1.0</version>
+  <!-- [수정 2026-11-17] SW 아키텍처 v016 의 Frybot Cooking Package 를
+       frybot_sim 에서 떼어 별도 패키지로 만듦 -->
+  <description>Frybot Cooking Package (조리 팔 A 치킨 / B 웍): FrybotArm Master Controller,
+    FrybotArm Controller, Camera Streamer. 팔 구동 방식은 아직 정해지지 않아 FrybotArm Controller 는
+    시간 기반 대역(관절 애니메이션)입니다.</description>
+  <maintainer email="oneteam@example.com">OneTeam</maintainer>
+  <license>Apache-2.0</license>
+  <!-- 실행 의존: 노드(rclpy, 메시지·액션)와 런치(launch, launch_ros) -->
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>action_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>frybot_interfaces</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

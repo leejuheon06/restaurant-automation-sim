@@ -2,17 +2,37 @@
 <package format="3">
   <name>frybot_bringup</name>
   <version>0.1.0</version>
-  <description>FryBot launch files: lightweight simulation + RViz, and Gazebo variant</description>
+  <!-- [수정 2026-11-18] P2: 실기기 런치를 앞에 둔 설명 -->
+  <description>FryBot launch files: real robots (central PC + Pinky over SSH, fleet RViz), lightweight simulation + RViz, and Gazebo variant</description>
   <maintainer email="oneteam@example.com">OneTeam</maintainer>
   <license>Apache-2.0</license>
+  <!-- 실행 의존: 런치가 띄우거나 가져다 쓰는 FryBot 패키지 -->
   <exec_depend>frybot_control</exec_depend>
   <exec_depend>frybot_mobile</exec_depend>
   <exec_depend>frybot_sim</exec_depend>
+  <!-- [수정 2026-11-17] 조리 팔(Frybot Cooking Package) -->
+  <exec_depend>frybot_arm</exec_depend>
   <exec_depend>frybot_web</exec_depend>
-  <exec_depend>pinky_description</exec_depend>
-  <exec_depend>mycobot_description</exec_depend>
+  <!-- [수정 2026-11-17] pinky_description, mycobot_description 대신 내부 사본 -->
+  <exec_depend>frybot_description</exec_depend>
+  <!-- 시뮬 런치의 로봇 모델 표시(xacro, robot_state_publisher)와 RViz -->
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>xacro</exec_depend>
   <exec_depend>rviz2</exec_depend>
+  <!-- [수정 2026-11-17] 실측 지도 시뮬(sim.launch.py map_id:=...)의 지도 서버 -->
+  <exec_depend>nav2_map_server</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+  <exec_depend>nav2_costmap_2d</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>frybot_interfaces</exec_depend>
+  <!-- robot_remote: 등록부 읽기(yaml), SSH 접속, 배포(rsync) -->
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>openssh-client</exec_depend>
+  <exec_depend>rsync</exec_depend>
   <export><build_type>ament_python</build_type></export>
 </package>

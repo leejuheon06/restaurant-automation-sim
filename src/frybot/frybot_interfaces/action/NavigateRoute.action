@@ -1,16 +1,32 @@
 # Route execution on an AMR. mode=GUIDE is the "GuideGuest" behaviour (reverse driving + guest follow check).
-string task_id
+string task_id         # for logs and status only
+# robot_id: 경로를 실행할 로봇(관제가 채움). 로봇은 읽지 않음(액션 이름이
+#   /<로봇>/navigate_route 로 로봇마다 따로임)
 string robot_id
+# plan_version: 이 경로의 번호. TrafficGrant 의 plan_version 과 짝지음.
+#   새 번호의 목표가 오면 진행 중인 경로를 선점(PREEMPTED)함
 int32 plan_version
-string mode            # NORMAL | GUIDE
+string mode            # NORMAL | GUIDE | YIELD (step aside for another robot: backs out when the spot is behind)
 int64 visit_id         # guest group to keep in sight (GUIDE)
+# route: 지나갈 노드 순서. route[0]은 출발(복귀) 노드로 허가 없이 감
 frybot_interfaces/Waypoint[] route
 ---
+# success: 마지막 노드까지 갔으면 true
 bool success
+# plan_version: 결과가 속한 경로 번호
 int32 plan_version
+# reached_index: 마지막으로 도착한 route 순번 (-1 = route[0]에도 못 감)
 int32 reached_index
-string reason          # OK PREEMPTED CANCELED GUEST_LOST E_STOP
+# reason: OK | PREEMPTED (newer route) | CANCELED | GUEST_LOST | NAV2_FAILED (segment could not be driven)
+#         | E_STOP (emergency-stop channel) | FMS_RESTART (Task Manager restarted)
+# [수정 2026-11-20] T-44: NO_PROGRESS 추가. 주행 중 no_progress_sec(기본
+#         20초) 동안 위치·방향이 거의 바뀌지 않음(허가·관제·위치 추정·손님
+#         대기는 제외). 관제는 다시 시도하지 않고 임무를 보류(SUSPENDED)함
+#         REJECTED is not sent by the robot: the Task Manager uses it when the robot refuses the goal.
+string reason
 ---
+# 피드백: 경로 수락, 노드 도착, 손님 대기 때 보냄. 관제는 plan_version,
+#   reached_index 로 진행을 갱신하고 state 는 쓰지 않음
 int32 plan_version
 int32 reached_index
-string state           # ACCEPTED MOVING WAIT_GRANT PAUSED_GUEST ARRIVED
+string state           # ACCEPTED MOVING PAUSED_GUEST
